@@ -1,0 +1,239 @@
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
+
+.header {
+  @include flex-between;
+  margin-bottom: 1.5rem;
+}
+
+.voltarBtn {
+  @include btn($gray-200, $gray-700);
+}
+
+.editarBtn {
+  @include btn($secondary);
+  margin-left: 0.5rem;
+}
+
+.headerActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+// Perfil Card
+.perfil {
+  @include card;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+}
+
+.perfilItem {
+  label {
+    display: block;
+    font-size: $font-size-xs;
+    color: $gray-500;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+  }
+
+  span {
+    font-size: $font-size-sm;
+    color: $gray-800;
+  }
+}
+
+.perfilNome {
+  grid-column: 1 / -1;
+
+  h2 {
+    font-size: $font-size-2xl;
+    font-weight: 700;
+    color: $gray-900;
+  }
+}
+
+// Tabs
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid $gray-200;
+  margin-bottom: 1.5rem;
+}
+
+.tab {
+  padding: 0.75rem 1.25rem;
+  font-size: $font-size-sm;
+  font-weight: 500;
+  color: $gray-500;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+
+  &:hover {
+    color: $gray-700;
+  }
+
+  &.active {
+    color: $primary;
+    border-bottom-color: $primary;
+  }
+}
+
+// Evolução
+.evolucaoCard {
+  @include card;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.evolucaoHeader {
+  @include flex-between;
+  margin-bottom: 1rem;
+
+  h3 {
+    font-size: $font-size-base;
+    font-weight: 600;
+  }
+}
+
+.evolucaoDate {
+  font-size: $font-size-xs;
+  color: $gray-500;
+}
+
+.evolucaoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.evolucaoField {
+  label {
+    display: block;
+    font-size: $font-size-xs;
+    font-weight: 600;
+    color: $gray-500;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+  }
+
+  p {
+    font-size: $font-size-sm;
+    color: $gray-700;
+    white-space: pre-wrap;
+  }
+}
+
+.novaEvolucaoBtn {
+  @include btn;
+  margin-bottom: 1rem;
+}
+
+// Evolução Form
+.evolucaoForm {
+  @include card;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+
+  label {
+    font-size: $font-size-sm;
+    font-weight: 500;
+    color: $gray-700;
+  }
+
+  textarea {
+    @include input-base;
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  input {
+    @include input-base;
+  }
+}
+
+.formActions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.cancelBtn {
+  @include btn($gray-200, $gray-700);
+}
+
+.submitBtn {
+  @include btn;
+}
+
+// Medidas
+.medidasTable {
+  @include card;
+  overflow-x: auto;
+
+  table {
+    width: 100%;
+
+    th {
+      background: $gray-50;
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      font-size: $font-size-xs;
+      font-weight: 600;
+      color: $gray-500;
+      text-transform: uppercase;
+      border-bottom: 1px solid $gray-200;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 0.625rem 0.75rem;
+      font-size: $font-size-sm;
+      color: $gray-700;
+      border-bottom: 1px solid $gray-100;
+      white-space: nowrap;
+    }
+  }
+}
+
+.novaMedidaBtn {
+  @include btn;
+  margin-bottom: 1rem;
+}
+
+.medidaActionBtn {
+  padding: 0.375rem;
+  border-radius: $radius-sm;
+  color: $gray-500;
+  font-size: 1rem;
+
+  &:hover {
+    background: #fee2e2;
+    color: $danger;
+  }
+}
+
+.empty {
+  padding: 2rem;
+  text-align: center;
+  color: $gray-400;
+  font-size: $font-size-sm;
+}

@@ -1,0 +1,23 @@
+{
+  "name": "nutricao",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "dev:api": "turbo run dev --filter=@nutricao/api",
+    "dev:web": "turbo run dev --filter=@nutricao/web",
+    "db:migrate": "turbo run db:migrate --filter=@nutricao/api",
+    "db:generate": "turbo run db:generate --filter=@nutricao/api",
+    "db:seed": "turbo run db:seed --filter=@nutricao/api",
+    "db:studio": "turbo run db:studio --filter=@nutricao/api"
+  },
+  "devDependencies": {
+    "turbo": "^2"
+  },
+  "packageManager": "npm@10.9.2"
+}

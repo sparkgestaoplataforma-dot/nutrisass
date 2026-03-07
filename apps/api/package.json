@@ -1,0 +1,38 @@
+{
+  "name": "@nutricao/api",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "lint": "tsc --noEmit",
+    "db:migrate": "prisma migrate dev",
+    "db:generate": "prisma generate",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@nutricao/shared": "*",
+    "@prisma/client": "^6",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4",
+    "express": "^4.21",
+    "express-async-errors": "^3.1",
+    "ioredis": "^5.4",
+    "jsonwebtoken": "^9.0",
+    "socket.io": "^4.8",
+    "zod": "^3.23"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4",
+    "@types/cors": "^2.8",
+    "@types/express": "^5",
+    "@types/jsonwebtoken": "^9",
+    "@types/node": "^22",
+    "prisma": "^6",
+    "tsx": "^4",
+    "typescript": "^5.5"
+  }
+}

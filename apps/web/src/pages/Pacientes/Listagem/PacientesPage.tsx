@@ -1,0 +1,110 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { LuPlus, LuPencil, LuTrash2 } from 'react-icons/lu';
+import { listarPacientes } from '@/services/pacientes';
+import { api } from '@/services/api';
+import { useDebounce } from '@/hooks/useDebounce';
+import styles from './PacientesPage.module.scss';
+
+export function PacientesPage() {
+  const [busca, setBusca] = useState('');
+  const buscaDebounced = useDebounce(busca);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['pacientes', buscaDebounced],
+    queryFn: () => listarPacientes(buscaDebounced || undefined),
+  });
+
+  const excluirMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/pacientes/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pacientes'] });
+    },
+  });
+
+  function handleDelete(id: string) {
+    if (confirm('Deseja realmente excluir este paciente?')) {
+      excluirMutation.mutate(id);
+    }
+  }
+
+  const pacientes = data?.data || [];
+
+  return (
+    <div>
+      <div className={styles.header}>
+        <input
+          type="text"
+          className={styles.searchBox}
+          placeholder="Buscar por nome, e-mail ou telefone..."
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
+        <button
+          className={styles.novoBtn}
+          onClick={() => navigate('/pacientes/novo')}
+        >
+          <LuPlus /> Novo Paciente
+        </button>
+      </div>
+
+      <div className={styles.container}>
+        {isLoading ? (
+          <div className={styles.empty}>Carregando...</div>
+        ) : pacientes.length === 0 ? (
+          <div className={styles.empty}>Nenhum paciente encontrado.</div>
+        ) : (
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>Telefone</th>
+                <th>Convênio</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pacientes.map((p) => (
+                <tr key={p.id}>
+                  <td>
+                    <span
+                      className={styles.nomeLink}
+                      onClick={() => navigate(`/pacientes/${p.id}`)}
+                    >
+                      {p.nome}
+                    </span>
+                  </td>
+                  <td>{p.email || '-'}</td>
+                  <td>{p.telefone || '-'}</td>
+                  <td>{p.convenio?.nome || 'Particular'}</td>
+                  <td>
+                    <div className={styles.actions}>
+                      <button
+                        className={styles.actionBtn}
+                        onClick={() => navigate(`/pacientes/${p.id}/editar`)}
+                        title="Editar"
+                      >
+                        <LuPencil />
+                      </button>
+                      <button
+                        className={`${styles.actionBtn} ${styles.danger}`}
+                        onClick={() => handleDelete(p.id)}
+                        title="Excluir"
+                      >
+                        <LuTrash2 />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}

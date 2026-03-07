@@ -1,0 +1,216 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Perfil {
+  ADMIN
+  NUTRICIONISTA
+  SECRETARIA
+}
+
+enum Sexo {
+  MASCULINO
+  FEMININO
+}
+
+enum TipoAgendamento {
+  CONSULTA
+  RETORNO
+}
+
+enum StatusAgendamento {
+  AGENDADO
+  CONFIRMOU
+  PRESENTE
+  ENCAIXE
+  CANCELADO
+  NAO_COMPARECEU
+  REALIZADO
+  DESISTIU
+  REMARCOU
+}
+
+model Usuario {
+  id           String        @id @default(uuid())
+  nome         String
+  email        String        @unique
+  senha        String
+  perfil       Perfil
+  criadoEm     DateTime      @default(now()) @map("criado_em")
+  atualizadoEm DateTime      @updatedAt @map("atualizado_em")
+  agendamentos Agendamento[]
+
+  @@map("usuarios")
+}
+
+model Paciente {
+  id               String                 @id @default(uuid())
+  nome             String
+  email            String?
+  telefone         String?
+  whatsapp         String?
+  sexo             Sexo?
+  dataNascimento   DateTime?              @map("data_nascimento")
+  identidade       String?
+  ufIdentidade     String?                @map("uf_identidade")
+  orgaoExpedidor   String?                @map("orgao_expedidor")
+  cpf              String?
+  endereco         String?
+  bairro           String?
+  municipio        String?
+  uf               String?
+  cep              String?
+  profissao        String?
+  escolaridade     String?
+  nomeMae          String?                @map("nome_mae")
+  convenioId       String?                @map("convenio_id")
+  convenio         Convenio?              @relation(fields: [convenioId], references: [id])
+  numeroCarteira   String?                @map("numero_carteira")
+  validadeCarteira DateTime?              @map("validade_carteira")
+  criadoEm         DateTime               @default(now()) @map("criado_em")
+  atualizadoEm     DateTime               @updatedAt @map("atualizado_em")
+  agendamentos     Agendamento[]
+  evolucoes        EvolucaoClinica[]
+  medidas          Medida[]
+  solicitacoes     SolicitacaoExame[]
+  questionarios    RespostaQuestionario[]
+
+  @@map("pacientes")
+}
+
+model Convenio {
+  id           String        @id @default(uuid())
+  nome         String
+  registroANS  String?       @map("registro_ans")
+  logomarca    String?
+  criadoEm     DateTime      @default(now()) @map("criado_em")
+  atualizadoEm DateTime      @updatedAt @map("atualizado_em")
+  pacientes    Paciente[]
+  agendamentos Agendamento[]
+
+  @@map("convenios")
+}
+
+model Agendamento {
+  id          String             @id @default(uuid())
+  pacienteId  String             @map("paciente_id")
+  paciente    Paciente           @relation(fields: [pacienteId], references: [id])
+  usuarioId   String             @map("usuario_id")
+  usuario     Usuario            @relation(fields: [usuarioId], references: [id])
+  convenioId  String?            @map("convenio_id")
+  convenio    Convenio?          @relation(fields: [convenioId], references: [id])
+  dataHora    DateTime           @map("data_hora")
+  tipo        TipoAgendamento
+  status      StatusAgendamento  @default(AGENDADO)
+  encaixe     Boolean            @default(false)
+  observacao  String?
+  criadoEm    DateTime           @default(now()) @map("criado_em")
+  atualizadoEm DateTime          @updatedAt @map("atualizado_em")
+
+  @@index([dataHora])
+  @@index([pacienteId])
+  @@index([usuarioId])
+  @@map("agendamentos")
+}
+
+model EvolucaoClinica {
+  id                   String   @id @default(uuid())
+  pacienteId           String   @map("paciente_id")
+  paciente             Paciente @relation(fields: [pacienteId], references: [id])
+  estadoClinico        String?  @map("estado_clinico")
+  aparelhoDigestivo    String?  @map("aparelho_digestivo")
+  antecedentesMorbidos String?  @map("antecedentes_morbidos")
+  medicamentos         String?
+  outros               String?
+  criadoEm             DateTime @default(now()) @map("criado_em")
+
+  @@index([pacienteId])
+  @@map("evolucoes_clinicas")
+}
+
+model Medida {
+  id            String   @id @default(uuid())
+  pacienteId    String   @map("paciente_id")
+  paciente      Paciente @relation(fields: [pacienteId], references: [id])
+  data          DateTime
+  peso          Float?
+  altura        Float?
+  cintura       Float?
+  abdomen       Float?
+  quadril       Float?
+  bracoDireito  Float?   @map("braco_direito")
+  bracoEsquerdo Float?   @map("braco_esquerdo")
+  coxaDireita   Float?   @map("coxa_direita")
+  coxaEsquerda  Float?   @map("coxa_esquerda")
+  culote        Float?
+  criadoEm      DateTime @default(now()) @map("criado_em")
+
+  @@index([pacienteId])
+  @@map("medidas")
+}
+
+model Questionario {
+  id        String                 @id @default(uuid())
+  nome      String
+  perguntas Json
+  criadoEm  DateTime               @default(now()) @map("criado_em")
+  respostas RespostaQuestionario[]
+
+  @@map("questionarios")
+}
+
+model RespostaQuestionario {
+  id              String       @id @default(uuid())
+  pacienteId      String       @map("paciente_id")
+  paciente        Paciente     @relation(fields: [pacienteId], references: [id])
+  questionarioId  String       @map("questionario_id")
+  questionario    Questionario @relation(fields: [questionarioId], references: [id])
+  respostas       Json
+  somatorio       Int?
+  resultado       String?
+  criadoEm        DateTime     @default(now()) @map("criado_em")
+
+  @@index([pacienteId])
+  @@map("respostas_questionarios")
+}
+
+model ExameBase {
+  id          String                 @id @default(uuid())
+  codigo      String                 @unique
+  nome        String
+  valorMinimo Float?                 @map("valor_minimo")
+  valorMaximo Float?                 @map("valor_maximo")
+  unidade     String?
+  criadoEm    DateTime               @default(now()) @map("criado_em")
+  itens       SolicitacaoExameItem[]
+
+  @@map("exames_base")
+}
+
+model SolicitacaoExame {
+  id             String                 @id @default(uuid())
+  pacienteId     String                 @map("paciente_id")
+  paciente       Paciente               @relation(fields: [pacienteId], references: [id])
+  dataSolicitada DateTime               @default(now()) @map("data_solicitada")
+  itens          SolicitacaoExameItem[]
+
+  @@index([pacienteId])
+  @@map("solicitacoes_exames")
+}
+
+model SolicitacaoExameItem {
+  id             String           @id @default(uuid())
+  solicitacaoId  String           @map("solicitacao_id")
+  solicitacao    SolicitacaoExame @relation(fields: [solicitacaoId], references: [id], onDelete: Cascade)
+  exameBaseId    String           @map("exame_base_id")
+  exameBase      ExameBase        @relation(fields: [exameBaseId], references: [id])
+  dataResultado  DateTime?        @map("data_resultado")
+  resultado      String?
+
+  @@map("solicitacoes_exames_itens")
+}

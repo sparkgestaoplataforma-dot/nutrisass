@@ -1,0 +1,63 @@
+@use './variables' as *;
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin card {
+  background: $white;
+  border-radius: $radius-md;
+  box-shadow: $shadow-sm;
+  border: 1px solid $gray-200;
+}
+
+@mixin input-base {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid $gray-300;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  color: $gray-800;
+  background: $white;
+  transition: border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+  }
+
+  &::placeholder {
+    color: $gray-400;
+  }
+}
+
+@mixin btn($bg: $primary, $color: $white) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: $bg;
+  color: $color;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  font-weight: 500;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
