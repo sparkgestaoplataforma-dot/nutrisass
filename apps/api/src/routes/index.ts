@@ -7,9 +7,11 @@ import { prontuarioRoutes } from '../modules/prontuario/infra/prontuario.routes.
 import { examesRoutes } from '../modules/exames/infra/exames.routes.js';
 import { usuariosRoutes } from '../modules/usuarios/infra/usuarios.routes.js';
 import { relatoriosRoutes } from '../modules/relatorios/infra/relatorios.routes.js';
+import { dashboardRoutes } from '../modules/dashboard/infra/dashboard.routes.js';
 
 const router = Router();
 
+router.use('/dashboard', dashboardRoutes);
 router.use('/auth', authRoutes);
 router.use('/agendamentos', agendaRoutes);
 router.use('/pacientes', pacientesRoutes);
