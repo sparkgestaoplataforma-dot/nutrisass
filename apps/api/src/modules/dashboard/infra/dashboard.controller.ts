@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../../shared/providers/prisma.js';
+import { getClinicaId } from '../../../shared/middlewares/auth.js';
 
 export async function getDashboard(req: Request, res: Response) {
+  const clinicaId = getClinicaId(req);
+
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
   const amanha = new Date(hoje);
@@ -20,22 +23,23 @@ export async function getDashboard(req: Request, res: Response) {
     naoCompareceuMes,
     proximosAgendamentos,
   ] = await Promise.all([
-    prisma.paciente.count(),
+    prisma.paciente.count({ where: { clinicaId } }),
 
     prisma.paciente.count({
-      where: { criadoEm: { gte: inicioMes, lte: fimMes } },
+      where: { clinicaId, criadoEm: { gte: inicioMes, lte: fimMes } },
     }),
 
     prisma.agendamento.count({
-      where: { dataHora: { gte: hoje, lt: amanha } },
+      where: { clinicaId, dataHora: { gte: hoje, lt: amanha } },
     }),
 
     prisma.agendamento.count({
-      where: { dataHora: { gte: inicioMes, lte: fimMes } },
+      where: { clinicaId, dataHora: { gte: inicioMes, lte: fimMes } },
     }),
 
     prisma.agendamento.count({
       where: {
+        clinicaId,
         dataHora: { gte: inicioMes, lte: fimMes },
         status: 'REALIZADO',
       },
@@ -43,6 +47,7 @@ export async function getDashboard(req: Request, res: Response) {
 
     prisma.agendamento.count({
       where: {
+        clinicaId,
         dataHora: { gte: inicioMes, lte: fimMes },
         status: { in: ['CANCELADO', 'DESISTIU'] },
       },
@@ -50,13 +55,14 @@ export async function getDashboard(req: Request, res: Response) {
 
     prisma.agendamento.count({
       where: {
+        clinicaId,
         dataHora: { gte: inicioMes, lte: fimMes },
         status: 'NAO_COMPARECEU',
       },
     }),
 
     prisma.agendamento.findMany({
-      where: { dataHora: { gte: hoje, lt: amanha } },
+      where: { clinicaId, dataHora: { gte: hoje, lt: amanha } },
       include: {
         paciente: { select: { id: true, nome: true, telefone: true } },
         convenio: { select: { id: true, nome: true } },

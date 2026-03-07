@@ -5,6 +5,7 @@ import type { CreateAgendamentoInput } from '@nutricao/shared';
 export async function criarAgendamentoUseCase(
   input: CreateAgendamentoInput,
   usuarioId: string,
+  clinicaId: string,
 ) {
   const paciente = await prisma.paciente.findUnique({
     where: { id: input.pacienteId },
@@ -16,6 +17,7 @@ export async function criarAgendamentoUseCase(
 
   const agendamento = await prisma.agendamento.create({
     data: {
+      clinicaId,
       pacienteId: input.pacienteId,
       usuarioId,
       convenioId: input.convenioId || null,

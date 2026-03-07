@@ -1,6 +1,6 @@
 import { prisma } from '../../../shared/providers/prisma.js';
 
-export async function listarAgendaDiaUseCase(data: string, usuarioId?: string) {
+export async function listarAgendaDiaUseCase(data: string, clinicaId: string, usuarioId?: string) {
   const inicio = new Date(data);
   inicio.setHours(0, 0, 0, 0);
 
@@ -8,6 +8,7 @@ export async function listarAgendaDiaUseCase(data: string, usuarioId?: string) {
   fim.setHours(23, 59, 59, 999);
 
   const where: any = {
+    clinicaId,
     dataHora: { gte: inicio, lte: fim },
   };
 

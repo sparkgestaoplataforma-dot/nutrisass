@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '../../config/env.js';
-import { redis } from '../providers/redis.js';
+import { redisGet } from '../providers/redis.js';
 import { AppError } from './errorHandler.js';
 import type { TokenPayload } from '@nutricao/shared';
 
@@ -26,7 +26,7 @@ export async function authMiddleware(
 
   const token = authHeader.split(' ')[1];
 
-  const isBlacklisted = await redis.get(`bl:${token}`);
+  const isBlacklisted = await redisGet(`bl:${token}`);
   if (isBlacklisted) {
     throw new AppError('Token inválido', 401);
   }
@@ -38,6 +38,11 @@ export async function authMiddleware(
   } catch {
     throw new AppError('Token inválido ou expirado', 401);
   }
+}
+
+export function getClinicaId(req: Request): string {
+  if (!req.user?.clinicaId) throw new AppError('Clínica não identificada', 401);
+  return req.user.clinicaId;
 }
 
 export function roleGuard(...roles: string[]) {

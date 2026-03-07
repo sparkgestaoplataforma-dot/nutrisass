@@ -65,6 +65,21 @@
   margin-top: 0.5rem;
 }
 
+.cadastroLink {
+  text-align: center;
+  font-size: $font-size-sm;
+  color: $gray-500;
+
+  a {
+    color: $primary;
+    font-weight: 500;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
 .apiError {
   background: rgba($danger, 0.1);
   color: $danger;

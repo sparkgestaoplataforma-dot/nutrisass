@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { redis } from '../../../shared/providers/redis.js';
+import { redisGet, redisSet } from '../../../shared/providers/redis.js';
 import { env } from '../../../config/env.js';
 import { AppError } from '../../../shared/middlewares/errorHandler.js';
 import type { TokenPayload, AuthTokens } from '@nutricao/shared';
@@ -13,14 +13,15 @@ export async function refreshUseCase(refreshToken: string): Promise<AuthTokens> 
     throw new AppError('Refresh token inválido', 401);
   }
 
-  const storedToken = await redis.get(`refresh:${decoded.userId}`);
+  const storedToken = await redisGet(`refresh:${decoded.userId}`);
 
-  if (!storedToken || storedToken !== refreshToken) {
+  if (storedToken && storedToken !== refreshToken) {
     throw new AppError('Refresh token inválido ou expirado', 401);
   }
 
   const payload: TokenPayload = {
     userId: decoded.userId,
+    clinicaId: decoded.clinicaId,
     email: decoded.email,
     perfil: decoded.perfil,
   };
@@ -33,7 +34,7 @@ export async function refreshUseCase(refreshToken: string): Promise<AuthTokens> 
     expiresIn: env.JWT_REFRESH_EXPIRES_IN,
   });
 
-  await redis.set(
+  await redisSet(
     `refresh:${decoded.userId}`,
     newRefreshToken,
     'EX',

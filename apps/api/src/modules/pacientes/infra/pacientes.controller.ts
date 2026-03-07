@@ -1,19 +1,20 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../../shared/providers/prisma.js';
 import { AppError } from '../../../shared/middlewares/errorHandler.js';
+import { getClinicaId } from '../../../shared/middlewares/auth.js';
 
 export async function listar(req: Request, res: Response) {
+  const clinicaId = getClinicaId(req);
   const { busca, page = '1', limit = '20' } = req.query;
 
-  const where = busca
-    ? {
-        OR: [
-          { nome: { contains: busca as string, mode: 'insensitive' as const } },
-          { email: { contains: busca as string, mode: 'insensitive' as const } },
-          { telefone: { contains: busca as string } },
-        ],
-      }
-    : {};
+  const where: any = { clinicaId };
+  if (busca) {
+    where.OR = [
+      { nome: { contains: busca as string, mode: 'insensitive' as const } },
+      { email: { contains: busca as string, mode: 'insensitive' as const } },
+      { telefone: { contains: busca as string } },
+    ];
+  }
 
   const pageNum = Number(page);
   const limitNum = Number(limit);
@@ -48,10 +49,11 @@ export async function listar(req: Request, res: Response) {
 }
 
 export async function buscarPorId(req: Request<{ id: string }>, res: Response) {
+  const clinicaId = getClinicaId(req);
   const { id } = req.params;
 
-  const paciente = await prisma.paciente.findUnique({
-    where: { id },
+  const paciente = await prisma.paciente.findFirst({
+    where: { id, clinicaId },
     include: {
       convenio: { select: { id: true, nome: true } },
       agendamentos: {
@@ -62,17 +64,18 @@ export async function buscarPorId(req: Request<{ id: string }>, res: Response) {
     },
   });
 
-  if (!paciente) {
-    throw new AppError('Paciente não encontrado', 404);
-  }
+  if (!paciente) throw new AppError('Paciente não encontrado', 404);
 
   return res.json({ success: true, data: paciente });
 }
 
 export async function criar(req: Request, res: Response) {
+  const clinicaId = getClinicaId(req);
+
   const paciente = await prisma.paciente.create({
     data: {
       ...req.body,
+      clinicaId,
       dataNascimento: req.body.dataNascimento
         ? new Date(req.body.dataNascimento)
         : null,
@@ -86,12 +89,11 @@ export async function criar(req: Request, res: Response) {
 }
 
 export async function editar(req: Request<{ id: string }>, res: Response) {
+  const clinicaId = getClinicaId(req);
   const { id } = req.params;
 
-  const existente = await prisma.paciente.findUnique({ where: { id } });
-  if (!existente) {
-    throw new AppError('Paciente não encontrado', 404);
-  }
+  const existente = await prisma.paciente.findFirst({ where: { id, clinicaId } });
+  if (!existente) throw new AppError('Paciente não encontrado', 404);
 
   const paciente = await prisma.paciente.update({
     where: { id },
@@ -110,12 +112,11 @@ export async function editar(req: Request<{ id: string }>, res: Response) {
 }
 
 export async function excluir(req: Request<{ id: string }>, res: Response) {
+  const clinicaId = getClinicaId(req);
   const { id } = req.params;
 
-  const existente = await prisma.paciente.findUnique({ where: { id } });
-  if (!existente) {
-    throw new AppError('Paciente não encontrado', 404);
-  }
+  const existente = await prisma.paciente.findFirst({ where: { id, clinicaId } });
+  if (!existente) throw new AppError('Paciente não encontrado', 404);
 
   await prisma.paciente.delete({ where: { id } });
 

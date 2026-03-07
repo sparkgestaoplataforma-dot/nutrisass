@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../../shared/providers/prisma.js';
+import { getClinicaId } from '../../../shared/middlewares/auth.js';
 
 export async function gerarRelatorio(req: Request, res: Response) {
+  const clinicaId = getClinicaId(req);
   const { dataInicio, dataFim, status, convenioId } = req.query;
 
   const inicio = dataInicio
@@ -13,6 +15,7 @@ export async function gerarRelatorio(req: Request, res: Response) {
   fim.setHours(23, 59, 59, 999);
 
   const where: any = {
+    clinicaId,
     dataHora: { gte: inicio, lte: fim },
   };
 

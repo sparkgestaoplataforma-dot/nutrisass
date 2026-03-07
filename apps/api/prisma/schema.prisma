@@ -35,8 +35,31 @@ enum StatusAgendamento {
   REMARCOU
 }
 
+model Clinica {
+  id           String        @id @default(uuid())
+  nome         String
+  cnpj         String?       @unique
+  telefone     String?
+  email        String?
+  endereco     String?
+  logomarca    String?
+  ativa        Boolean       @default(true)
+  criadoEm     DateTime      @default(now()) @map("criado_em")
+  atualizadoEm DateTime      @updatedAt @map("atualizado_em")
+  usuarios     Usuario[]
+  pacientes    Paciente[]
+  convenios    Convenio[]
+  agendamentos Agendamento[]
+  questionarios Questionario[]
+  examesBase   ExameBase[]
+
+  @@map("clinicas")
+}
+
 model Usuario {
   id           String        @id @default(uuid())
+  clinicaId    String        @map("clinica_id")
+  clinica      Clinica       @relation(fields: [clinicaId], references: [id])
   nome         String
   email        String        @unique
   senha        String
@@ -45,11 +68,14 @@ model Usuario {
   atualizadoEm DateTime      @updatedAt @map("atualizado_em")
   agendamentos Agendamento[]
 
+  @@index([clinicaId])
   @@map("usuarios")
 }
 
 model Paciente {
   id               String                 @id @default(uuid())
+  clinicaId        String                 @map("clinica_id")
+  clinica          Clinica                @relation(fields: [clinicaId], references: [id])
   nome             String
   email            String?
   telefone         String?
@@ -80,11 +106,14 @@ model Paciente {
   solicitacoes     SolicitacaoExame[]
   questionarios    RespostaQuestionario[]
 
+  @@index([clinicaId])
   @@map("pacientes")
 }
 
 model Convenio {
   id           String        @id @default(uuid())
+  clinicaId    String        @map("clinica_id")
+  clinica      Clinica       @relation(fields: [clinicaId], references: [id])
   nome         String
   registroANS  String?       @map("registro_ans")
   logomarca    String?
@@ -93,11 +122,14 @@ model Convenio {
   pacientes    Paciente[]
   agendamentos Agendamento[]
 
+  @@index([clinicaId])
   @@map("convenios")
 }
 
 model Agendamento {
   id          String             @id @default(uuid())
+  clinicaId   String             @map("clinica_id")
+  clinica     Clinica            @relation(fields: [clinicaId], references: [id])
   pacienteId  String             @map("paciente_id")
   paciente    Paciente           @relation(fields: [pacienteId], references: [id])
   usuarioId   String             @map("usuario_id")
@@ -112,6 +144,7 @@ model Agendamento {
   criadoEm    DateTime           @default(now()) @map("criado_em")
   atualizadoEm DateTime          @updatedAt @map("atualizado_em")
 
+  @@index([clinicaId])
   @@index([dataHora])
   @@index([pacienteId])
   @@index([usuarioId])
@@ -156,11 +189,14 @@ model Medida {
 
 model Questionario {
   id        String                 @id @default(uuid())
+  clinicaId String                 @map("clinica_id")
+  clinica   Clinica                @relation(fields: [clinicaId], references: [id])
   nome      String
   perguntas Json
   criadoEm  DateTime               @default(now()) @map("criado_em")
   respostas RespostaQuestionario[]
 
+  @@index([clinicaId])
   @@map("questionarios")
 }
 
@@ -181,7 +217,9 @@ model RespostaQuestionario {
 
 model ExameBase {
   id          String                 @id @default(uuid())
-  codigo      String                 @unique
+  clinicaId   String                 @map("clinica_id")
+  clinica     Clinica                @relation(fields: [clinicaId], references: [id])
+  codigo      String
   nome        String
   valorMinimo Float?                 @map("valor_minimo")
   valorMaximo Float?                 @map("valor_maximo")
@@ -189,6 +227,8 @@ model ExameBase {
   criadoEm    DateTime               @default(now()) @map("criado_em")
   itens       SolicitacaoExameItem[]
 
+  @@unique([clinicaId, codigo])
+  @@index([clinicaId])
   @@map("exames_base")
 }
 

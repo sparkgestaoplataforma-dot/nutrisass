@@ -1,28 +1,36 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../../shared/providers/prisma.js';
 import { AppError } from '../../../shared/middlewares/errorHandler.js';
+import { getClinicaId } from '../../../shared/middlewares/auth.js';
 
 // Exames Base (config)
-export async function listarExamesBase(_req: Request, res: Response) {
+export async function listarExamesBase(req: Request, res: Response) {
+  const clinicaId = getClinicaId(req);
   const exames = await prisma.exameBase.findMany({
+    where: { clinicaId },
     orderBy: { nome: 'asc' },
   });
   return res.json({ success: true, data: exames });
 }
 
 export async function criarExameBase(req: Request, res: Response) {
-  const existente = await prisma.exameBase.findUnique({
-    where: { codigo: req.body.codigo },
+  const clinicaId = getClinicaId(req);
+
+  const existente = await prisma.exameBase.findFirst({
+    where: { clinicaId, codigo: req.body.codigo },
   });
   if (existente) throw new AppError('Código de exame já existe', 409);
 
-  const exame = await prisma.exameBase.create({ data: req.body });
+  const exame = await prisma.exameBase.create({
+    data: { ...req.body, clinicaId },
+  });
   return res.status(201).json({ success: true, data: exame });
 }
 
 export async function editarExameBase(req: Request<{ id: string }>, res: Response) {
+  const clinicaId = getClinicaId(req);
   const { id } = req.params;
-  const existente = await prisma.exameBase.findUnique({ where: { id } });
+  const existente = await prisma.exameBase.findFirst({ where: { id, clinicaId } });
   if (!existente) throw new AppError('Exame não encontrado', 404);
 
   const exame = await prisma.exameBase.update({ where: { id }, data: req.body });
@@ -30,8 +38,9 @@ export async function editarExameBase(req: Request<{ id: string }>, res: Respons
 }
 
 export async function excluirExameBase(req: Request<{ id: string }>, res: Response) {
+  const clinicaId = getClinicaId(req);
   const { id } = req.params;
-  const existente = await prisma.exameBase.findUnique({ where: { id } });
+  const existente = await prisma.exameBase.findFirst({ where: { id, clinicaId } });
   if (!existente) throw new AppError('Exame não encontrado', 404);
 
   await prisma.exameBase.delete({ where: { id } });

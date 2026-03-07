@@ -1,3 +1,6 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateEnum
 CREATE TYPE "Perfil" AS ENUM ('ADMIN', 'NUTRICIONISTA', 'SECRETARIA');
 
@@ -11,8 +14,25 @@ CREATE TYPE "TipoAgendamento" AS ENUM ('CONSULTA', 'RETORNO');
 CREATE TYPE "StatusAgendamento" AS ENUM ('AGENDADO', 'CONFIRMOU', 'PRESENTE', 'ENCAIXE', 'CANCELADO', 'NAO_COMPARECEU', 'REALIZADO', 'DESISTIU', 'REMARCOU');
 
 -- CreateTable
+CREATE TABLE "clinicas" (
+    "id" TEXT NOT NULL,
+    "nome" TEXT NOT NULL,
+    "cnpj" TEXT,
+    "telefone" TEXT,
+    "email" TEXT,
+    "endereco" TEXT,
+    "logomarca" TEXT,
+    "ativa" BOOLEAN NOT NULL DEFAULT true,
+    "criado_em" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "atualizado_em" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "clinicas_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "usuarios" (
     "id" TEXT NOT NULL,
+    "clinica_id" TEXT NOT NULL,
     "nome" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "senha" TEXT NOT NULL,
@@ -26,6 +46,7 @@ CREATE TABLE "usuarios" (
 -- CreateTable
 CREATE TABLE "pacientes" (
     "id" TEXT NOT NULL,
+    "clinica_id" TEXT NOT NULL,
     "nome" TEXT NOT NULL,
     "email" TEXT,
     "telefone" TEXT,
@@ -56,6 +77,7 @@ CREATE TABLE "pacientes" (
 -- CreateTable
 CREATE TABLE "convenios" (
     "id" TEXT NOT NULL,
+    "clinica_id" TEXT NOT NULL,
     "nome" TEXT NOT NULL,
     "registro_ans" TEXT,
     "logomarca" TEXT,
@@ -68,6 +90,7 @@ CREATE TABLE "convenios" (
 -- CreateTable
 CREATE TABLE "agendamentos" (
     "id" TEXT NOT NULL,
+    "clinica_id" TEXT NOT NULL,
     "paciente_id" TEXT NOT NULL,
     "usuario_id" TEXT NOT NULL,
     "convenio_id" TEXT,
@@ -119,6 +142,7 @@ CREATE TABLE "medidas" (
 -- CreateTable
 CREATE TABLE "questionarios" (
     "id" TEXT NOT NULL,
+    "clinica_id" TEXT NOT NULL,
     "nome" TEXT NOT NULL,
     "perguntas" JSONB NOT NULL,
     "criado_em" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -142,6 +166,7 @@ CREATE TABLE "respostas_questionarios" (
 -- CreateTable
 CREATE TABLE "exames_base" (
     "id" TEXT NOT NULL,
+    "clinica_id" TEXT NOT NULL,
     "codigo" TEXT NOT NULL,
     "nome" TEXT NOT NULL,
     "valor_minimo" DOUBLE PRECISION,
@@ -173,7 +198,22 @@ CREATE TABLE "solicitacoes_exames_itens" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "clinicas_cnpj_key" ON "clinicas"("cnpj");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "usuarios_email_key" ON "usuarios"("email");
+
+-- CreateIndex
+CREATE INDEX "usuarios_clinica_id_idx" ON "usuarios"("clinica_id");
+
+-- CreateIndex
+CREATE INDEX "pacientes_clinica_id_idx" ON "pacientes"("clinica_id");
+
+-- CreateIndex
+CREATE INDEX "convenios_clinica_id_idx" ON "convenios"("clinica_id");
+
+-- CreateIndex
+CREATE INDEX "agendamentos_clinica_id_idx" ON "agendamentos"("clinica_id");
 
 -- CreateIndex
 CREATE INDEX "agendamentos_data_hora_idx" ON "agendamentos"("data_hora");
@@ -191,16 +231,34 @@ CREATE INDEX "evolucoes_clinicas_paciente_id_idx" ON "evolucoes_clinicas"("pacie
 CREATE INDEX "medidas_paciente_id_idx" ON "medidas"("paciente_id");
 
 -- CreateIndex
+CREATE INDEX "questionarios_clinica_id_idx" ON "questionarios"("clinica_id");
+
+-- CreateIndex
 CREATE INDEX "respostas_questionarios_paciente_id_idx" ON "respostas_questionarios"("paciente_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "exames_base_codigo_key" ON "exames_base"("codigo");
+CREATE INDEX "exames_base_clinica_id_idx" ON "exames_base"("clinica_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "exames_base_clinica_id_codigo_key" ON "exames_base"("clinica_id", "codigo");
 
 -- CreateIndex
 CREATE INDEX "solicitacoes_exames_paciente_id_idx" ON "solicitacoes_exames"("paciente_id");
 
 -- AddForeignKey
+ALTER TABLE "usuarios" ADD CONSTRAINT "usuarios_clinica_id_fkey" FOREIGN KEY ("clinica_id") REFERENCES "clinicas"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "pacientes" ADD CONSTRAINT "pacientes_clinica_id_fkey" FOREIGN KEY ("clinica_id") REFERENCES "clinicas"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "pacientes" ADD CONSTRAINT "pacientes_convenio_id_fkey" FOREIGN KEY ("convenio_id") REFERENCES "convenios"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "convenios" ADD CONSTRAINT "convenios_clinica_id_fkey" FOREIGN KEY ("clinica_id") REFERENCES "clinicas"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "agendamentos" ADD CONSTRAINT "agendamentos_clinica_id_fkey" FOREIGN KEY ("clinica_id") REFERENCES "clinicas"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "agendamentos" ADD CONSTRAINT "agendamentos_paciente_id_fkey" FOREIGN KEY ("paciente_id") REFERENCES "pacientes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -218,10 +276,16 @@ ALTER TABLE "evolucoes_clinicas" ADD CONSTRAINT "evolucoes_clinicas_paciente_id_
 ALTER TABLE "medidas" ADD CONSTRAINT "medidas_paciente_id_fkey" FOREIGN KEY ("paciente_id") REFERENCES "pacientes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "questionarios" ADD CONSTRAINT "questionarios_clinica_id_fkey" FOREIGN KEY ("clinica_id") REFERENCES "clinicas"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "respostas_questionarios" ADD CONSTRAINT "respostas_questionarios_paciente_id_fkey" FOREIGN KEY ("paciente_id") REFERENCES "pacientes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "respostas_questionarios" ADD CONSTRAINT "respostas_questionarios_questionario_id_fkey" FOREIGN KEY ("questionario_id") REFERENCES "questionarios"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "exames_base" ADD CONSTRAINT "exames_base_clinica_id_fkey" FOREIGN KEY ("clinica_id") REFERENCES "clinicas"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "solicitacoes_exames" ADD CONSTRAINT "solicitacoes_exames_paciente_id_fkey" FOREIGN KEY ("paciente_id") REFERENCES "pacientes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -231,3 +295,4 @@ ALTER TABLE "solicitacoes_exames_itens" ADD CONSTRAINT "solicitacoes_exames_iten
 
 -- AddForeignKey
 ALTER TABLE "solicitacoes_exames_itens" ADD CONSTRAINT "solicitacoes_exames_itens_exame_base_id_fkey" FOREIGN KEY ("exame_base_id") REFERENCES "exames_base"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+

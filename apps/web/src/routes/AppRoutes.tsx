@@ -9,12 +9,14 @@ import { PacienteFormPage } from '@/pages/Pacientes/Cadastro/PacienteFormPage';
 import { ProntuarioPage } from '@/pages/Pacientes/Prontuario/ProntuarioPage';
 import { ConfigPage } from '@/pages/Configuracoes/ConfigPage';
 import { RelatoriosPage } from '@/pages/Relatorios/RelatoriosPage';
+import { OnboardingPage } from '@/pages/Onboarding/OnboardingPage';
 
 export function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/cadastro" element={<OnboardingPage />} />
 
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>

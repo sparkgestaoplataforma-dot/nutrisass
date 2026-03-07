@@ -15,6 +15,7 @@ export interface PaginatedResponse<T> {
 
 export interface TokenPayload {
   userId: string;
+  clinicaId: string;
   email: string;
   perfil: string;
 }

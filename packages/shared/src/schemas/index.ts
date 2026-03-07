@@ -4,3 +4,4 @@ export * from './agenda.schema';
 export * from './prontuario.schema';
 export * from './exame.schema';
 export * from './convenio.schema';
+export * from './clinica.schema';

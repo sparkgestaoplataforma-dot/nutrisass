@@ -2,9 +2,12 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../../../shared/providers/prisma.js';
 import { AppError } from '../../../shared/middlewares/errorHandler.js';
+import { getClinicaId } from '../../../shared/middlewares/auth.js';
 
-export async function listar(_req: Request, res: Response) {
+export async function listar(req: Request, res: Response) {
+  const clinicaId = getClinicaId(req);
   const usuarios = await prisma.usuario.findMany({
+    where: { clinicaId },
     select: {
       id: true,
       nome: true,
@@ -18,6 +21,8 @@ export async function listar(_req: Request, res: Response) {
 }
 
 export async function criar(req: Request, res: Response) {
+  const clinicaId = getClinicaId(req);
+
   const existente = await prisma.usuario.findUnique({
     where: { email: req.body.email },
   });
@@ -27,6 +32,7 @@ export async function criar(req: Request, res: Response) {
 
   const usuario = await prisma.usuario.create({
     data: {
+      clinicaId,
       nome: req.body.nome,
       email: req.body.email,
       senha: senhaHash,
@@ -45,9 +51,10 @@ export async function criar(req: Request, res: Response) {
 }
 
 export async function editar(req: Request<{ id: string }>, res: Response) {
+  const clinicaId = getClinicaId(req);
   const { id } = req.params;
 
-  const existente = await prisma.usuario.findUnique({ where: { id } });
+  const existente = await prisma.usuario.findFirst({ where: { id, clinicaId } });
   if (!existente) throw new AppError('Usuário não encontrado', 404);
 
   const data: any = {
@@ -76,14 +83,15 @@ export async function editar(req: Request<{ id: string }>, res: Response) {
 }
 
 export async function excluir(req: Request<{ id: string }>, res: Response) {
+  const clinicaId = getClinicaId(req);
   const { id } = req.params;
 
-  const existente = await prisma.usuario.findUnique({ where: { id } });
+  const existente = await prisma.usuario.findFirst({ where: { id, clinicaId } });
   if (!existente) throw new AppError('Usuário não encontrado', 404);
 
   if (existente.perfil === 'ADMIN') {
     const totalAdmins = await prisma.usuario.count({
-      where: { perfil: 'ADMIN' },
+      where: { clinicaId, perfil: 'ADMIN' },
     });
     if (totalAdmins <= 1) {
       throw new AppError('Não é possível excluir o último administrador', 400);

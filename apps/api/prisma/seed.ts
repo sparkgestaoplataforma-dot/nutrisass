@@ -6,10 +6,22 @@ const prisma = new PrismaClient();
 async function main() {
   const senhaHash = await bcrypt.hash('123456', 10);
 
+  // Criar clínica demo
+  const clinica = await prisma.clinica.upsert({
+    where: { cnpj: '00000000000100' },
+    update: {},
+    create: {
+      nome: 'Clínica Demo',
+      cnpj: '00000000000100',
+      email: 'demo@nutricao.com',
+    },
+  });
+
   await prisma.usuario.upsert({
     where: { email: 'admin@nutricao.com' },
     update: {},
     create: {
+      clinicaId: clinica.id,
       nome: 'Administrador',
       email: 'admin@nutricao.com',
       senha: senhaHash,
@@ -21,6 +33,7 @@ async function main() {
     where: { email: 'nutri@nutricao.com' },
     update: {},
     create: {
+      clinicaId: clinica.id,
       nome: 'Dr(a). Nutricionista',
       email: 'nutri@nutricao.com',
       senha: senhaHash,
@@ -32,6 +45,7 @@ async function main() {
     where: { email: 'secretaria@nutricao.com' },
     update: {},
     create: {
+      clinicaId: clinica.id,
       nome: 'Secretária',
       email: 'secretaria@nutricao.com',
       senha: senhaHash,
@@ -39,19 +53,20 @@ async function main() {
     },
   });
 
-  const particular = await prisma.convenio.upsert({
+  await prisma.convenio.upsert({
     where: { id: 'particular' },
     update: {},
     create: {
       id: 'particular',
+      clinicaId: clinica.id,
       nome: 'Particular',
     },
   });
 
   console.log('Seed executado com sucesso!');
-  console.log('Usuarios criados: admin@nutricao.com / nutri@nutricao.com / secretaria@nutricao.com');
+  console.log(`Clínica: ${clinica.nome} (${clinica.id})`);
+  console.log('Usuarios: admin@nutricao.com / nutri@nutricao.com / secretaria@nutricao.com');
   console.log('Senha padrão: 123456');
-  console.log(`Convenio: ${particular.nome}`);
 }
 
 main()

@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../../../shared/providers/prisma.js';
-import { redis } from '../../../shared/providers/redis.js';
+import { redisSet } from '../../../shared/providers/redis.js';
 import { env } from '../../../config/env.js';
 import { AppError } from '../../../shared/middlewares/errorHandler.js';
 import type { LoginInput } from '@nutricao/shared';
@@ -24,6 +24,7 @@ export async function loginUseCase(input: LoginInput): Promise<AuthTokens> {
 
   const payload: TokenPayload = {
     userId: usuario.id,
+    clinicaId: usuario.clinicaId,
     email: usuario.email,
     perfil: usuario.perfil,
   };
@@ -36,7 +37,7 @@ export async function loginUseCase(input: LoginInput): Promise<AuthTokens> {
     expiresIn: env.JWT_REFRESH_EXPIRES_IN,
   });
 
-  await redis.set(
+  await redisSet(
     `refresh:${usuario.id}`,
     refreshToken,
     'EX',

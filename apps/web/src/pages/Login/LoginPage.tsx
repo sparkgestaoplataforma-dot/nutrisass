@@ -1,5 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Link } from 'react-router-dom';
 import { loginSchema, type LoginInput } from '@nutricao/shared';
 import { useLogin } from '@/hooks/useAuth';
 import styles from './LoginPage.module.scss';
@@ -61,6 +62,10 @@ export function LoginPage() {
           <button type="submit" className={styles.submitBtn} disabled={isPending}>
             {isPending ? 'Acessando...' : 'Acessar'}
           </button>
+
+          <p className={styles.cadastroLink}>
+            Não tem conta? <Link to="/cadastro">Cadastre sua clínica</Link>
+          </p>
         </form>
       </div>
     </div>
