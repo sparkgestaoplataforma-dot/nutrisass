@@ -1,6 +1,3 @@
--- CreateSchema
-CREATE SCHEMA IF NOT EXISTS "public";
-
 -- CreateEnum
 CREATE TYPE "Perfil" AS ENUM ('ADMIN', 'NUTRICIONISTA', 'SECRETARIA');
 
@@ -295,4 +292,3 @@ ALTER TABLE "solicitacoes_exames_itens" ADD CONSTRAINT "solicitacoes_exames_iten
 
 -- AddForeignKey
 ALTER TABLE "solicitacoes_exames_itens" ADD CONSTRAINT "solicitacoes_exames_itens_exame_base_id_fkey" FOREIGN KEY ("exame_base_id") REFERENCES "exames_base"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-

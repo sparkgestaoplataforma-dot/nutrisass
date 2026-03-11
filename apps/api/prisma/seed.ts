@@ -1,72 +1,72 @@
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
-
-const prisma = new PrismaClient();
+import bcrypt from "bcryptjs";
+import { prisma } from "../src/shared/providers/prisma";
 
 async function main() {
-  const senhaHash = await bcrypt.hash('123456', 10);
+  const senhaHash = await bcrypt.hash("123456", 10);
 
   // Criar clínica demo
   const clinica = await prisma.clinica.upsert({
-    where: { cnpj: '00000000000100' },
+    where: { cnpj: "00000000000100" },
     update: {},
     create: {
-      nome: 'Clínica Demo',
-      cnpj: '00000000000100',
-      email: 'demo@nutricao.com',
+      nome: "Clínica Demo",
+      cnpj: "00000000000100",
+      email: "demo@nutricao.com",
     },
   });
 
   await prisma.usuario.upsert({
-    where: { email: 'admin@nutricao.com' },
+    where: { email: "admin@nutricao.com" },
     update: {},
     create: {
       clinicaId: clinica.id,
-      nome: 'Administrador',
-      email: 'admin@nutricao.com',
+      nome: "Administrador",
+      email: "admin@nutricao.com",
       senha: senhaHash,
-      perfil: 'ADMIN',
+      perfil: "ADMIN",
     },
   });
 
   await prisma.usuario.upsert({
-    where: { email: 'nutri@nutricao.com' },
+    where: { email: "nutri@nutricao.com" },
     update: {},
     create: {
       clinicaId: clinica.id,
-      nome: 'Dr(a). Nutricionista',
-      email: 'nutri@nutricao.com',
+      nome: "Dr(a). Nutricionista",
+      email: "nutri@nutricao.com",
       senha: senhaHash,
-      perfil: 'NUTRICIONISTA',
+      perfil: "NUTRICIONISTA",
     },
   });
 
   await prisma.usuario.upsert({
-    where: { email: 'secretaria@nutricao.com' },
+    where: { email: "secretaria@nutricao.com" },
     update: {},
     create: {
       clinicaId: clinica.id,
-      nome: 'Secretária',
-      email: 'secretaria@nutricao.com',
+      nome: "Secretária",
+      email: "secretaria@nutricao.com",
       senha: senhaHash,
-      perfil: 'SECRETARIA',
+      perfil: "SECRETARIA",
     },
   });
 
   await prisma.convenio.upsert({
-    where: { id: 'particular' },
+    where: { id: "particular" },
     update: {},
     create: {
-      id: 'particular',
+      id: "particular",
       clinicaId: clinica.id,
-      nome: 'Particular',
+      nome: "Particular",
     },
   });
 
-  console.log('Seed executado com sucesso!');
+  console.log("Seed executado com sucesso!");
   console.log(`Clínica: ${clinica.nome} (${clinica.id})`);
-  console.log('Usuarios: admin@nutricao.com / nutri@nutricao.com / secretaria@nutricao.com');
-  console.log('Senha padrão: 123456');
+  console.log(
+    "Usuarios: admin@nutricao.com / nutri@nutricao.com / secretaria@nutricao.com",
+  );
+  console.log("Senha padrão: 123456");
 }
 
 main()
