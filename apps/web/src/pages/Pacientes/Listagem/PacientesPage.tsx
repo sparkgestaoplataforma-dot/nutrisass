@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { LuPlus, LuPencil, LuTrash2 } from 'react-icons/lu';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { PlusSignIcon, PencilEdit01Icon, Delete02Icon } from '@hugeicons/core-free-icons';
 import { listarPacientes } from '@/services/pacientes';
 import { api } from '@/services/api';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -47,7 +48,7 @@ export function PacientesPage() {
           className={styles.novoBtn}
           onClick={() => navigate('/pacientes/novo')}
         >
-          <LuPlus /> Novo Paciente
+          <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} /> Novo Paciente
         </button>
       </div>
 
@@ -88,14 +89,14 @@ export function PacientesPage() {
                         onClick={() => navigate(`/pacientes/${p.id}/editar`)}
                         title="Editar"
                       >
-                        <LuPencil />
+                        <HugeiconsIcon icon={PencilEdit01Icon} size={16} strokeWidth={2} />
                       </button>
                       <button
                         className={`${styles.actionBtn} ${styles.danger}`}
                         onClick={() => handleDelete(p.id)}
                         title="Excluir"
                       >
-                        <LuTrash2 />
+                        <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={2} />
                       </button>
                     </div>
                   </td>

@@ -1,30 +1,49 @@
 import { NavLink } from 'react-router-dom';
+import { HugeiconsIcon } from '@hugeicons/react';
 import {
-  LuLayoutDashboard,
-  LuCalendar,
-  LuUsers,
-  LuFileText,
-  LuChartBar,
-  LuSettings,
-} from 'react-icons/lu';
+  DashboardSquareIcon,
+  CalendarIcon,
+  UserGroupIcon,
+  TestTubeIcon,
+  BarChartIcon,
+  SettingsIcon,
+} from '@hugeicons/core-free-icons';
+import { useAuthStore } from '@/stores/authStore';
 import styles from './Sidebar.module.scss';
 
 const navItems = [
-  { to: '/', label: 'Início', icon: LuLayoutDashboard },
-  { to: '/agenda', label: 'Agenda', icon: LuCalendar },
-  { to: '/pacientes', label: 'Pacientes', icon: LuUsers },
-  { to: '/exames', label: 'Exames', icon: LuFileText },
-  { to: '/relatorios', label: 'Relatórios', icon: LuChartBar },
-  { to: '/configuracoes', label: 'Configurações', icon: LuSettings },
+  { to: '/', label: 'Início', icon: DashboardSquareIcon },
+  { to: '/agenda', label: 'Agenda', icon: CalendarIcon },
+  { to: '/pacientes', label: 'Pacientes', icon: UserGroupIcon },
+  { to: '/exames', label: 'Exames', icon: TestTubeIcon },
+  { to: '/relatorios', label: 'Relatórios', icon: BarChartIcon },
+  { to: '/configuracoes', label: 'Configurações', icon: SettingsIcon },
 ];
 
+function getInitials(str: string): string {
+  return str
+    .split(/[@.\s]/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s[0])
+    .join('')
+    .toUpperCase();
+}
+
 export function Sidebar() {
+  const user = useAuthStore((s) => s.user);
+
   return (
     <aside className={styles.sidebar}>
+      {/* Logo */}
       <div className={styles.logo}>
-        <h1>Nutrição</h1>
+        <div className={styles.logoIcon}>N</div>
+        <span className={styles.logoText}>NutriSaaS</span>
       </div>
+
+      {/* Navigation */}
       <nav className={styles.nav}>
+        <p className={styles.navLabel}>Menu</p>
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -34,11 +53,24 @@ export function Sidebar() {
               `${styles.navItem} ${isActive ? styles.active : ''}`
             }
           >
-            <item.icon />
-            {item.label}
+            <HugeiconsIcon icon={item.icon} size={18} strokeWidth={2} />
+            <span>{item.label}</span>
           </NavLink>
         ))}
       </nav>
+
+      {/* User footer */}
+      {user && (
+        <div className={styles.userSection}>
+          <div className={styles.userAvatar}>
+            {getInitials(user.email)}
+          </div>
+          <div className={styles.userInfo}>
+            <p className={styles.userName}>{user.email.split('@')[0]}</p>
+            <p className={styles.userRole}>{user.perfil}</p>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }
