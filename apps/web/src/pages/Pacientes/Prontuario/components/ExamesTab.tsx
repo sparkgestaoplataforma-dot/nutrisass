@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { LuPlus, LuTrash2, LuClipboardCheck } from 'react-icons/lu';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { PlusSignIcon, Delete02Icon, TaskDone01Icon } from '@hugeicons/core-free-icons';
 import { api } from '@/services/api';
 import styles from '../ProntuarioPage.module.scss';
 
@@ -77,7 +78,7 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
         className={styles.novaEvolucaoBtn}
         onClick={() => setSolicitando(!solicitando)}
       >
-        <LuPlus /> Solicitar Exame
+        <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} /> Solicitar Exame
       </button>
 
       {solicitando && (
@@ -173,7 +174,7 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
                   if (confirm('Excluir esta solicitação?')) excluirMutation.mutate(sol.id);
                 }}
               >
-                <LuTrash2 />
+                <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={2} />
               </button>
             </div>
             <div className={styles.medidasTable}>
@@ -212,7 +213,7 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
                               })
                             }
                           >
-                            <LuClipboardCheck />
+                            <HugeiconsIcon icon={TaskDone01Icon} size={16} strokeWidth={2} />
                           </button>
                         )}
                       </td>

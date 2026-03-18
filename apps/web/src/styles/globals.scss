@@ -1,5 +1,9 @@
 @use './variables' as *;
 
+// ==========================================
+// Reset & Base
+// ==========================================
+
 *,
 *::before,
 *::after {
@@ -12,14 +16,16 @@ html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
   font-family: $font-family;
   font-size: $font-size-base;
-  color: $gray-800;
+  color: $gray-700;
   background-color: $gray-50;
-  line-height: 1.5;
+  line-height: $line-height-normal;
+  letter-spacing: -0.01em;
 }
 
 a {
@@ -46,15 +52,47 @@ table {
   width: 100%;
 }
 
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+// ==========================================
+// Scrollbar
+// ==========================================
+
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: $gray-100;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: $gray-300;
+  background: $gray-200;
   border-radius: 3px;
+
+  &:hover {
+    background: $gray-300;
+  }
+}
+
+// ==========================================
+// Selection
+// ==========================================
+
+::selection {
+  background: rgba($primary, 0.15);
+  color: $gray-900;
+}
+
+// ==========================================
+// Focus Visible
+// ==========================================
+
+:focus-visible {
+  outline: 2px solid $primary;
+  outline-offset: 2px;
 }

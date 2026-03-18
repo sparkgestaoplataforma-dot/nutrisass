@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { LuChevronLeft, LuChevronRight, LuPlus } from 'react-icons/lu';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { ArrowLeft01Icon, ArrowRight01Icon, PlusSignIcon } from '@hugeicons/core-free-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   useAgendaDia,
@@ -97,7 +98,7 @@ export function AgendaPage() {
       <div className={styles.header}>
         <div className={styles.dateNav}>
           <button className={styles.dateBtn} onClick={() => navigateDate(-1)}>
-            <LuChevronLeft />
+            <HugeiconsIcon icon={ArrowLeft01Icon} size={18} strokeWidth={1.8} />
           </button>
           <input
             type="date"
@@ -106,7 +107,7 @@ export function AgendaPage() {
             onChange={(e) => setDataSelecionada(e.target.value)}
           />
           <button className={styles.dateBtn} onClick={() => navigateDate(1)}>
-            <LuChevronRight />
+            <HugeiconsIcon icon={ArrowRight01Icon} size={18} strokeWidth={1.8} />
           </button>
           <button
             className={styles.todayBtn}
@@ -123,7 +124,7 @@ export function AgendaPage() {
             setModalAberto(true);
           }}
         >
-          <LuPlus /> Agendar
+          <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} /> Agendar
         </button>
       </div>
 

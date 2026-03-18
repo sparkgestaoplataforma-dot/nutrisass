@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { LuArrowLeft } from 'react-icons/lu';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
 import { createPacienteSchema, type CreatePacienteInput } from '@nutricao/shared';
 import { api } from '@/services/api';
 import { listarConvenios } from '@/services/convenios';
@@ -71,7 +72,7 @@ export function PacienteFormPage() {
       <div className={styles.header}>
         <h2>{isEditing ? 'Editar Paciente' : 'Novo Paciente'}</h2>
         <button className={styles.voltarBtn} onClick={() => navigate('/pacientes')}>
-          <LuArrowLeft /> Voltar
+          <HugeiconsIcon icon={ArrowLeft01Icon} size={18} strokeWidth={1.8} /> Voltar
         </button>
       </div>
 

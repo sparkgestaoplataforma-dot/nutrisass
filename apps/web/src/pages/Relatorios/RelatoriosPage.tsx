@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { LuPrinter, LuSearch } from 'react-icons/lu';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { PrinterIcon, Search01Icon } from '@hugeicons/core-free-icons';
 import { api } from '@/services/api';
 import { StatusAgendamento } from '@nutricao/shared';
 import styles from './RelatoriosPage.module.scss';
@@ -59,10 +60,10 @@ export function RelatoriosPage() {
           </select>
         </div>
         <button className={styles.filtrarBtn} onClick={() => refetch()}>
-          <LuSearch /> Filtrar
+          <HugeiconsIcon icon={Search01Icon} size={16} strokeWidth={2} /> Filtrar
         </button>
         <button className={styles.imprimirBtn} onClick={() => window.print()}>
-          <LuPrinter /> Imprimir
+          <HugeiconsIcon icon={PrinterIcon} size={16} strokeWidth={2} /> Imprimir
         </button>
       </div>
 

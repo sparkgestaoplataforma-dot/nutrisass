@@ -3,6 +3,7 @@
 .layout {
   display: flex;
   min-height: 100vh;
+  background: $gray-50;
 }
 
 .main {
@@ -14,6 +15,8 @@
 
 .content {
   flex: 1;
-  padding: 1.5rem;
+  padding: $space-6;
   margin-top: $header-height;
+  max-width: $content-max-width;
+  width: 100%;
 }

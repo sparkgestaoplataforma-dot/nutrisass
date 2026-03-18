@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import { LuX } from 'react-icons/lu';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { CancelCircleIcon } from '@hugeicons/core-free-icons';
 import { createAgendamentoSchema, type CreateAgendamentoInput } from '@nutricao/shared';
 import { listarPacientes } from '@/services/pacientes';
 import { listarConvenios } from '@/services/convenios';
@@ -75,7 +76,7 @@ export function AgendamentoModal({
         <div className={styles.header}>
           <h3>{agendamento ? 'Editar Agendamento' : 'Novo Agendamento'}</h3>
           <button className={styles.closeBtn} onClick={onClose}>
-            <LuX />
+            <HugeiconsIcon icon={CancelCircleIcon} size={18} strokeWidth={1.8} />
           </button>
         </div>
 

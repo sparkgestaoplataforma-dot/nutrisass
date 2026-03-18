@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { LuPlus, LuPencil, LuTrash2 } from 'react-icons/lu';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { PlusSignIcon, PencilEdit01Icon, Delete02Icon } from '@hugeicons/core-free-icons';
 import { api } from '@/services/api';
 import type { CreateUsuarioInput } from '@nutricao/shared';
 import styles from '../ConfigPage.module.scss';
@@ -62,7 +63,7 @@ export function UsuariosConfig() {
       <div className={styles.header}>
         <h3>Usuários</h3>
         <button className={styles.addBtn} onClick={() => { fecharForm(); setFormAberto(true); }}>
-          <LuPlus /> Novo Usuário
+          <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} /> Novo Usuário
         </button>
       </div>
 
@@ -121,10 +122,10 @@ export function UsuariosConfig() {
                   </td>
                   <td>
                     <div className={styles.actions}>
-                      <button className={styles.actionBtn} onClick={() => editar(u)}><LuPencil /></button>
+                      <button className={styles.actionBtn} onClick={() => editar(u)}><HugeiconsIcon icon={PencilEdit01Icon} size={16} strokeWidth={2} /></button>
                       <button className={`${styles.actionBtn} ${styles.danger}`}
                         onClick={() => { if (confirm('Excluir usuário?')) excluirMutation.mutate(u.id); }}>
-                        <LuTrash2 />
+                        <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={2} />
                       </button>
                     </div>
                   </td>

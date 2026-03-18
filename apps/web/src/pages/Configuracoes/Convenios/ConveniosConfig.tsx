@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { LuPlus, LuPencil, LuTrash2 } from 'react-icons/lu';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { PlusSignIcon, PencilEdit01Icon, Delete02Icon } from '@hugeicons/core-free-icons';
 import { api } from '@/services/api';
 import type { CreateConvenioInput } from '@nutricao/shared';
 import styles from '../ConfigPage.module.scss';
@@ -57,7 +58,7 @@ export function ConveniosConfig() {
       <div className={styles.header}>
         <h3>Convênios</h3>
         <button className={styles.addBtn} onClick={() => { fecharForm(); setFormAberto(true); }}>
-          <LuPlus /> Novo Convênio
+          <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} /> Novo Convênio
         </button>
       </div>
 
@@ -99,10 +100,10 @@ export function ConveniosConfig() {
                   <td>{c.registroANS || '-'}</td>
                   <td>
                     <div className={styles.actions}>
-                      <button className={styles.actionBtn} onClick={() => editar(c)}><LuPencil /></button>
+                      <button className={styles.actionBtn} onClick={() => editar(c)}><HugeiconsIcon icon={PencilEdit01Icon} size={16} strokeWidth={2} /></button>
                       <button className={`${styles.actionBtn} ${styles.danger}`}
                         onClick={() => { if (confirm('Excluir convênio?')) excluirMutation.mutate(c.id); }}>
-                        <LuTrash2 />
+                        <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={2} />
                       </button>
                     </div>
                   </td>

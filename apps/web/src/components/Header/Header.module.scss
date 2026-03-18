@@ -8,34 +8,94 @@
   left: $sidebar-width;
   right: 0;
   height: $header-height;
-  padding: 0 1.5rem;
-  background: $white;
-  border-bottom: 1px solid $gray-200;
-  z-index: 5;
+  padding: 0 $space-6;
+  background: rgba($white, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid $gray-100;
+  z-index: $z-sticky;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: $space-4;
 }
 
 .title {
-  font-size: $font-size-lg;
-  font-weight: 600;
-  color: $gray-800;
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $gray-900;
+  line-height: 1.2;
 }
 
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+.subtitle {
+  font-size: $font-size-2xs;
+  color: $gray-400;
+  margin-top: 1px;
 }
 
-.userInfo {
+.right {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: $font-size-sm;
+  gap: $space-3;
+}
+
+.iconBtn {
+  @include flex-center;
+  width: 34px;
+  height: 34px;
+  border-radius: $radius-md;
+  color: $gray-400;
+  transition: all $transition-smooth;
+
+  &:hover {
+    background: $gray-50;
+    color: $gray-700;
+  }
+}
+
+.divider {
+  width: 1px;
+  height: 24px;
+  background: $gray-200;
+}
+
+.userChip {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-1 $space-3 $space-1 $space-2;
+  background: $gray-50;
+  border-radius: $radius-full;
+}
+
+.userDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: $success;
+  flex-shrink: 0;
+}
+
+.userEmail {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
   color: $gray-600;
 }
 
 .logoutBtn {
-  @include btn($danger);
-  padding: 0.5rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: $space-2 $space-3;
+  border-radius: $radius-md;
   font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $gray-500;
+  transition: all $transition-smooth;
+
+  &:hover {
+    background: $danger-light;
+    color: $danger;
+  }
 }

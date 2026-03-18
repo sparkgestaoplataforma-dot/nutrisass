@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { LuPlus } from 'react-icons/lu';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { PlusSignIcon } from '@hugeicons/core-free-icons';
 import { api } from '@/services/api';
 import type { CreateEvolucaoInput } from '@nutricao/shared';
 import styles from '../ProntuarioPage.module.scss';
@@ -44,7 +45,7 @@ export function EvolucaoTab({ pacienteId }: EvolucaoTabProps) {
         className={styles.novaEvolucaoBtn}
         onClick={() => setFormAberto(!formAberto)}
       >
-        <LuPlus /> Nova Evolução
+        <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} /> Nova Evolução
       </button>
 
       {formAberto && (

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { LuPencil, LuTrash2 } from 'react-icons/lu';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { PencilEdit01Icon, Delete02Icon } from '@hugeicons/core-free-icons';
 import { StatusBadge } from './StatusBadge';
 import type { AgendamentoResponse } from '@/services/agenda';
 import styles from './TabelaAgenda.module.scss';
@@ -79,14 +80,14 @@ export function TabelaAgenda({
                     onClick={() => onEdit(ag)}
                     title="Editar"
                   >
-                    <LuPencil />
+                    <HugeiconsIcon icon={PencilEdit01Icon} size={16} strokeWidth={2} />
                   </button>
                   <button
                     className={`${styles.actionBtn} ${styles.danger}`}
                     onClick={() => onDelete(ag.id)}
                     title="Excluir"
                   >
-                    <LuTrash2 />
+                    <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={2} />
                   </button>
                 </div>
               </td>

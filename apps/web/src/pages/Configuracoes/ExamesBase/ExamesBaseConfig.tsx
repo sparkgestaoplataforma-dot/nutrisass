@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { LuPlus, LuPencil, LuTrash2 } from 'react-icons/lu';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { PlusSignIcon, PencilEdit01Icon, Delete02Icon } from '@hugeicons/core-free-icons';
 import { api } from '@/services/api';
 import type { CreateExameBaseInput } from '@nutricao/shared';
 import styles from '../ConfigPage.module.scss';
@@ -62,7 +63,7 @@ export function ExamesBaseConfig() {
       <div className={styles.header}>
         <h3>Exames Base</h3>
         <button className={styles.addBtn} onClick={() => { fecharForm(); setFormAberto(true); }}>
-          <LuPlus /> Novo Exame
+          <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} /> Novo Exame
         </button>
       </div>
 
@@ -119,10 +120,10 @@ export function ExamesBaseConfig() {
                   <td>{ex.unidade || '-'}</td>
                   <td>
                     <div className={styles.actions}>
-                      <button className={styles.actionBtn} onClick={() => editar(ex)}><LuPencil /></button>
+                      <button className={styles.actionBtn} onClick={() => editar(ex)}><HugeiconsIcon icon={PencilEdit01Icon} size={16} strokeWidth={2} /></button>
                       <button className={`${styles.actionBtn} ${styles.danger}`}
                         onClick={() => { if (confirm('Excluir exame?')) excluirMutation.mutate(ex.id); }}>
-                        <LuTrash2 />
+                        <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={2} />
                       </button>
                     </div>
                   </td>
