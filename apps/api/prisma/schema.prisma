@@ -35,6 +35,15 @@ enum StatusAgendamento {
   REMARCOU
 }
 
+enum TipoQuestao {
+  TEXTO
+  BOOLEANO
+  NUMERICO
+  ESCALA
+  MULTIPLA_ESCOLHA
+  CHECKBOX
+}
+
 model Clinica {
   id           String        @id @default(uuid())
   nome         String
@@ -104,7 +113,7 @@ model Paciente {
   evolucoes        EvolucaoClinica[]
   medidas          Medida[]
   solicitacoes     SolicitacaoExame[]
-  questionarios    RespostaQuestionario[]
+  respostasQuestionarios Resposta[]
 
   @@index([clinicaId])
   @@map("pacientes")
@@ -188,31 +197,118 @@ model Medida {
 }
 
 model Questionario {
-  id        String                 @id @default(uuid())
-  clinicaId String                 @map("clinica_id")
-  clinica   Clinica                @relation(fields: [clinicaId], references: [id])
-  nome      String
-  perguntas Json
-  criadoEm  DateTime               @default(now()) @map("criado_em")
-  respostas RespostaQuestionario[]
+  id           String               @id @default(uuid())
+  clinicaId    String               @map("clinica_id")
+  clinica      Clinica              @relation(fields: [clinicaId], references: [id])
+  titulo       String
+  descricao    String?
+  ativo        Boolean              @default(true)
+  criadoEm     DateTime             @default(now()) @map("criado_em")
+  atualizadoEm DateTime             @updatedAt @map("atualizado_em")
+  versoes      QuestionarioVersao[]
 
   @@index([clinicaId])
   @@map("questionarios")
 }
 
-model RespostaQuestionario {
-  id              String       @id @default(uuid())
-  pacienteId      String       @map("paciente_id")
-  paciente        Paciente     @relation(fields: [pacienteId], references: [id])
-  questionarioId  String       @map("questionario_id")
-  questionario    Questionario @relation(fields: [questionarioId], references: [id])
-  respostas       Json
-  somatorio       Int?
-  resultado       String?
-  criadoEm        DateTime     @default(now()) @map("criado_em")
+model QuestionarioVersao {
+  id             String      @id @default(uuid())
+  questionarioId String      @map("questionario_id")
+  questionario   Questionario @relation(fields: [questionarioId], references: [id])
+  versao         Int
+  ativo          Boolean     @default(true)
+  criadoEm       DateTime    @default(now()) @map("criado_em")
+  modulos        Modulo[]
+  respostas      Resposta[]
 
+  @@unique([questionarioId, versao])
+  @@index([questionarioId])
+  @@map("questionarios_versoes")
+}
+
+model Modulo {
+  id                   String              @id @default(uuid())
+  questionarioVersaoId String              @map("questionario_versao_id")
+  questionarioVersao   QuestionarioVersao  @relation(fields: [questionarioVersaoId], references: [id], onDelete: Cascade)
+  titulo               String
+  ordem                Int
+  questoes             Questao[]
+
+  @@index([questionarioVersaoId])
+  @@unique([questionarioVersaoId, ordem])
+  @@map("questionarios_modulos")
+}
+
+model Questao {
+  id          String         @id @default(uuid())
+  moduloId    String         @map("modulo_id")
+  modulo      Modulo         @relation(fields: [moduloId], references: [id], onDelete: Cascade)
+  enunciado   String
+  tipo        TipoQuestao
+  obrigatoria Boolean        @default(false)
+  ordem       Int
+  opcoes      QuestaoOpcao[]
+  respostas   RespostaItem[]
+
+  @@index([moduloId])
+  @@unique([moduloId, ordem])
+  @@map("questionarios_questoes")
+}
+
+model QuestaoOpcao {
+  id        String              @id @default(uuid())
+  questaoId String              @map("questao_id")
+  questao   Questao             @relation(fields: [questaoId], references: [id], onDelete: Cascade)
+  texto     String
+  valor     Float?
+  ordem     Int
+  respostas RespostaItemOpcao[]
+
+  @@index([questaoId])
+  @@unique([questaoId, ordem])
+  @@map("questionarios_questoes_opcoes")
+}
+
+model Resposta {
+  id                   String             @id @default(uuid())
+  questionarioVersaoId String             @map("questionario_versao_id")
+  questionarioVersao   QuestionarioVersao @relation(fields: [questionarioVersaoId], references: [id])
+  pacienteId           String             @map("paciente_id")
+  paciente             Paciente           @relation(fields: [pacienteId], references: [id])
+  criadoEm             DateTime           @default(now()) @map("criado_em")
+  itens                RespostaItem[]
+
+  @@index([questionarioVersaoId])
   @@index([pacienteId])
-  @@map("respostas_questionarios")
+  @@map("questionarios_respostas")
+}
+
+model RespostaItem {
+  id            String              @id @default(uuid())
+  respostaId    String              @map("resposta_id")
+  resposta      Resposta            @relation(fields: [respostaId], references: [id], onDelete: Cascade)
+  questaoId     String              @map("questao_id")
+  questao       Questao             @relation(fields: [questaoId], references: [id])
+  valorTexto    String?             @map("valor_texto")
+  valorNumero   Float?              @map("valor_numero")
+  valorBooleano Boolean?            @map("valor_booleano")
+  opcoes        RespostaItemOpcao[]
+
+  @@index([respostaId])
+  @@index([questaoId])
+  @@map("questionarios_respostas_itens")
+}
+
+model RespostaItemOpcao {
+  id             String       @id @default(uuid())
+  respostaItemId String       @map("resposta_item_id")
+  respostaItem   RespostaItem @relation(fields: [respostaItemId], references: [id], onDelete: Cascade)
+  questaoOpcaoId String       @map("questao_opcao_id")
+  questaoOpcao   QuestaoOpcao @relation(fields: [questaoOpcaoId], references: [id])
+
+  @@index([respostaItemId])
+  @@index([questaoOpcaoId])
+  @@map("questionarios_respostas_itens_opcoes")
 }
 
 model ExameBase {
