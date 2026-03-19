@@ -104,7 +104,8 @@ model Paciente {
   evolucoes        EvolucaoClinica[]
   medidas          Medida[]
   solicitacoes     SolicitacaoExame[]
-  questionarios    RespostaQuestionario[]
+  avaliacoesQuestionarios Avaliacao[]
+  respostasQuestionarios Resposta[]
 
   @@index([clinicaId])
   @@map("pacientes")
@@ -188,31 +189,88 @@ model Medida {
 }
 
 model Questionario {
-  id        String                 @id @default(uuid())
-  clinicaId String                 @map("clinica_id")
-  clinica   Clinica                @relation(fields: [clinicaId], references: [id])
-  nome      String
-  perguntas Json
-  criadoEm  DateTime               @default(now()) @map("criado_em")
-  respostas RespostaQuestionario[]
+  id           String               @id @default(uuid())
+  clinicaId    String               @map("clinica_id")
+  clinica      Clinica              @relation(fields: [clinicaId], references: [id])
+  nome         String
+  versao       Int                  @default(1)
+  ativo        Boolean              @default(true)
+  modulos      Modulo[]
+  regras       RegraInterpretacao[]
+  avaliacoes   Avaliacao[]
 
+  @@unique([clinicaId, nome, versao])
   @@index([clinicaId])
   @@map("questionarios")
 }
 
-model RespostaQuestionario {
-  id              String       @id @default(uuid())
-  pacienteId      String       @map("paciente_id")
-  paciente        Paciente     @relation(fields: [pacienteId], references: [id])
-  questionarioId  String       @map("questionario_id")
-  questionario    Questionario @relation(fields: [questionarioId], references: [id])
-  respostas       Json
-  somatorio       Int?
-  resultado       String?
-  criadoEm        DateTime     @default(now()) @map("criado_em")
+model Modulo {
+  id             String       @id @default(uuid())
+  nome           String
+  ordem          Int
+  questionarioId String       @map("questionario_id")
+  questionario   Questionario @relation(fields: [questionarioId], references: [id], onDelete: Cascade)
+  perguntas      Pergunta[]
+
+  @@index([questionarioId])
+  @@unique([questionarioId, ordem])
+  @@map("questionarios_modulos")
+}
+
+model Pergunta {
+  id          String     @id @default(uuid())
+  descricao   String
+  ordem       Int
+  moduloId    String     @map("modulo_id")
+  modulo      Modulo     @relation(fields: [moduloId], references: [id], onDelete: Cascade)
+  respostas   Resposta[]
+
+  @@index([moduloId])
+  @@unique([moduloId, ordem])
+  @@map("questionarios_questoes")
+}
+
+model RegraInterpretacao {
+  id             String       @id @default(uuid())
+  pontuacaoMin   Int          @map("pontuacao_min")
+  pontuacaoMax   Int          @map("pontuacao_max")
+  classificacao  String
+  questionarioId String       @map("questionario_id")
+  questionario   Questionario @relation(fields: [questionarioId], references: [id], onDelete: Cascade)
+
+  @@index([questionarioId])
+  @@map("questionarios_regras_interpretacao")
+}
+
+model Avaliacao {
+  id             String       @id @default(uuid())
+  dataRealizacao DateTime     @default(now()) @map("data_realizacao")
+  scoreTotal     Int          @map("score_total")
+  pacienteId     String       @map("paciente_id")
+  paciente       Paciente     @relation(fields: [pacienteId], references: [id])
+  questionarioId String       @map("questionario_id")
+  questionario   Questionario @relation(fields: [questionarioId], references: [id])
+  respostas      Resposta[]
 
   @@index([pacienteId])
-  @@map("respostas_questionarios")
+  @@index([questionarioId])
+  @@map("questionarios_avaliacoes")
+}
+
+model Resposta {
+  id         String    @id @default(uuid())
+  nota       Int
+  avaliacaoId String   @map("avaliacao_id")
+  avaliacao  Avaliacao @relation(fields: [avaliacaoId], references: [id], onDelete: Cascade)
+  perguntaId String    @map("pergunta_id")
+  pergunta   Pergunta  @relation(fields: [perguntaId], references: [id])
+  pacienteId String    @map("paciente_id")
+  paciente   Paciente  @relation(fields: [pacienteId], references: [id])
+
+  @@index([avaliacaoId])
+  @@index([perguntaId])
+  @@index([pacienteId])
+  @@map("questionarios_respostas")
 }
 
 model ExameBase {
