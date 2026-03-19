@@ -1,479 +1,271 @@
-# 📊 Documentação - Sistema de Questionários (Anamnese)
+# 📊 Sistema de Questionários Clínicos
+
+## 📑 Sumário
+
+1. [🧠 Visão Geral](#1-visao-geral)
+2. [🧱 Estrutura do Banco](#2-estrutura-do-banco)
+3. [🔗 Relacionamentos (Resumo)](#3-relacionamentos-resumo)
+4. [🧪 Como Funciona (63 Sintomas)](#4-como-funciona-63-sintomas)
+5. [🎯 Regras de Pontuação](#5-regras-de-pontuacao)
+6. [📈 Interpretação do Resultado](#6-interpretacao-do-resultado)
+7. [🔄 Fluxo Operacional (Passo a Passo)](#7-fluxo-operacional-passo-a-passo)
+8. [💡 Exemplo Completo de Execução](#8-exemplo-completo-de-execucao)
+9. [✅ Conclusão](#conclusao)
 
 ---
 
-# 📑 Sumário
+<a id="1-visao-geral"></a>
 
-1. [Estrutura das Tabelas](#-estrutura-das-tabelas)
-2. [Cardinalidade](#-cardinalidade)
-3. [Lógica da Modelagem](#-lógica-por-trás-da-modelagem)
-4. [Tipos de Questão](#-tipos-de-questão-enum)
-5. [Lógica por Tipo de Questão](#-lógica-por-tipo-de-questão)
-6. [Versionamento](#-versionamento)
-7. [Rotas da API](#-rotas-da-api-alto-nível)
-8. [Regras Importantes](#-regras-importantes)
-9. [Conclusão](#-conclusão)
+## 1. 🧠 Visão Geral
 
----
+O sistema de questionários clínicos foi modelado para separar:
 
-# 🧱 Estrutura das Tabelas
+- **Estrutura (imutável):** o que será perguntado.
+- **Execução (dinâmico):** respostas dos pacientes.
 
-## 📋 Questionario
+Com isso, o módulo entrega:
 
-```ts
-id: uuid
-clinicaId: uuid
-titulo: string
-descricao?: string
-ativo: boolean
-createdAt: Date
-```
+- histórico auditável por paciente;
+- versionamento controlado por clínica;
+- interpretação automática por faixas de pontuação;
+- base preparada para novos questionários clínicos.
 
 ---
 
-## 🔁 QuestionarioVersao
+<a id="2-estrutura-do-banco"></a>
 
-```ts
-id: uuid;
-questionarioId: uuid;
-versao: number;
-ativo: boolean;
-createdAt: Date;
-```
+## 2. 🧱 Estrutura do Banco
 
----
+### 📋 Questionário
 
-## 📦 Modulo
+Define o instrumento clínico (ex.: rastreamento de hipersensibilidade).
 
-```ts
-id: uuid;
-questionarioVersaoId: uuid;
-titulo: string;
-ordem: number;
-```
+**Campos:**
 
----
+- `id`
+- `clinicaId`
+- `nome`
+- `versao`
+- `ativo`
 
-## ❓ Questao
+**Relacionamentos:**
 
-```ts
-id: uuid;
-moduloId: uuid;
-enunciado: string;
-tipo: TipoQuestao;
-obrigatoria: boolean;
-ordem: number;
-```
+- N questionários → 1 clínica
+- 1 questionário → N módulos
+- 1 questionário → N regras
+- 1 questionário → N avaliações
 
----
+### 🧩 Módulo (Categoria)
 
-## 🔘 QuestaoOpcao
+Agrupa perguntas por contexto corporal.
 
-```ts
-id: uuid
-questaoId: uuid
-texto: string
-valor?: number
-ordem: number
-```
+**Campos:**
 
----
+- `id`
+- `nome`
+- `ordem`
+- `questionarioId`
 
-## 🧾 Resposta
+**Relacionamento:**
 
-```ts
-id: uuid;
-questionarioVersaoId: uuid;
-pacienteId: uuid;
-createdAt: Date;
-```
+- 1 módulo → N perguntas
 
----
+### ❓ Pergunta (Sintoma)
 
-## 🧩 RespostaItem
+Cada sintoma é uma pergunta.
 
-```ts
-id: uuid
-respostaId: uuid
-questaoId: uuid
+**Campos:**
 
-valorTexto?: string
-valorNumero?: number
-valorBooleano?: boolean
-```
+- `id`
+- `descricao`
+- `ordem`
+- `moduloId`
 
----
+**Relacionamento:**
 
-## ☑️ RespostaItemOpcao
+- 1 pergunta → N respostas
 
-```ts
-id: uuid;
-respostaItemId: uuid;
-questaoOpcaoId: uuid;
-```
+### 📊 RegraInterpretacao
 
----
+Define como interpretar o score final.
 
-# 🔗 Cardinalidade
+**Campos:**
 
-```
-Questionario 1 ─── N QuestionarioVersao
+- `id`
+- `pontuacaoMin`
+- `pontuacaoMax`
+- `classificacao`
+- `questionarioId`
 
-QuestionarioVersao 1 ─── N Modulo
+### 🧾 Avaliacao
 
-Modulo 1 ─── N Questao
+Representa uma aplicação completa do questionário para um paciente.
 
-Questao 1 ─── N QuestaoOpcao
+**Campos:**
 
-QuestionarioVersao 1 ─── N Resposta
+- `id`
+- `dataRealizacao`
+- `scoreTotal`
+- `pacienteId`
+- `questionarioId`
 
-Resposta 1 ─── N RespostaItem
+**Relacionamento:**
 
-RespostaItem 1 ─── N RespostaItemOpcao
-```
+- 1 avaliação → N respostas
+
+### 📝 Resposta
+
+Resposta de uma pergunta dentro de uma avaliação.
+
+**Campos:**
+
+- `id`
+- `nota` (0 a 4)
+- `avaliacaoId`
+- `perguntaId`
+- `pacienteId`
+
+> Observação: `pacienteId` em `Resposta` permite rastreio direto por paciente, mesmo sem navegar pela `Avaliacao`.
 
 ---
 
-# 🧠 Lógica por trás da modelagem
+<a id="3-relacionamentos-resumo"></a>
 
-## 📌 Separação entre estrutura e resposta
+## 3. 🔗 Relacionamentos (Resumo)
 
-O sistema separa:
-
-- Estrutura → Questionario, Modulo, Questao, QuestaoOpcao
-- Dados → Resposta, RespostaItem, RespostaItemOpcao
-
-Isso permite:
-
-- versionamento seguro
-- histórico consistente
-- flexibilidade para novos tipos
+- Clinica → Questionario (1:N)
+- Paciente → Avaliacao (1:N)
+- Questionario → Modulo (1:N)
+- Modulo → Pergunta (1:N)
+- Pergunta → Resposta (1:N)
+- Avaliacao → Resposta (1:N)
+- Questionario → RegraInterpretacao (1:N)
+- Paciente → Resposta (1:N)
 
 ---
 
-## ❓ Por que existe `Questao` e `QuestaoOpcao`?
+<a id="4-como-funciona-63-sintomas"></a>
 
-Nem toda questão possui alternativas.
+## 4. 🧪 Como Funciona (63 Sintomas)
 
-### Exemplos:
+O questionário de hipersensibilidade é composto por **63 sintomas**, organizados por categoria corporal.
 
-### TEXTO
-
-> "Descreva sua dor"
-
-- não precisa de opções
-
----
-
-### MULTIPLA ESCOLHA
-
-> "Onde dói?"
-
-- precisa de opções:
-  - Cabeça
-  - Costas
-  - Pernas
-
-👉 Por isso existe `QuestaoOpcao`
+| Categoria | Sintomas |
+| --- | --- |
+| Cabeça | dor de cabeça, desmaio, tonturas, insônia |
+| Olhos | coceira, inchaço, olheiras, visão borrada |
+| Ouvidos | coceira, dores, fluido, zumbido |
+| Nariz | entupido, sinusite, ataques de espirro |
+| Boca/Garganta | muco, tosse, dor de garganta, língua/lábios, aftas |
+| Pele | acne, pele seca, cabelo, vermelhidão, suor excessivo |
+| Coração | batimento falhando/rápido, dor no peito, congestão |
+| Pulmão | asma, falta de fôlego, dificuldade respiratória |
+| Trato Digestivo | náuseas, diarreia, constipação, distensão, arrotos, azia, dor estomacal |
+| Articulações/Músculos | dor articular, artrite, rigidez, dolorido, fraqueza |
+| Energia/Atividade | fadiga, apatia, hiperatividade, dificuldade de relaxar |
+| Mente | memória, confusão, concentração, coordenação motora, decisão, repetições, pronúncia, aprendizagem |
+| Emocional | humor, ansiedade, raiva, depressão |
+| Outros | doença frequente, urgência urinária, corrimento, edema |
 
 ---
 
-## 🧩 Por que `RespostaItem` e `RespostaItemOpcao`?
+<a id="5-regras-de-pontuacao"></a>
 
-### `RespostaItem`
+## 5. 🎯 Regras de Pontuação
 
-- representa a resposta base de uma questão
+Cada sintoma recebe nota de **0 a 4**:
 
-### `RespostaItemOpcao`
+- **0** = nunca/quase nunca
+- **1** = ocasionalmente
+- **2** = frequentemente
+- **3** = com frequência
+- **4** = sempre/quase sempre
 
-- representa as opções escolhidas
+Ao final, o backend calcula:
 
----
+`somatorio = Σ(nota de todas as respostas)`
 
-### Exemplo:
-
-Checkbox:
-
-> "Quais sintomas você sente?"
-
-- Febre
-- Dor
-
-Resultado:
-
-- 1 `RespostaItem`
-- 2 `RespostaItemOpcao`
+Esse valor é salvo em `Avaliacao.scoreTotal`.
 
 ---
 
-# 🧠 Tipos de Questão (ENUM)
+<a id="6-interpretacao-do-resultado"></a>
 
-```ts
-enum TipoQuestao {
-  TEXTO
-  BOOLEANO
-  NUMERICO
-  ESCALA
-  MULTIPLA_ESCOLHA
-  CHECKBOX
-}
-```
+## 6. 📈 Interpretação do Resultado
+
+| Somatório | Classificação |
+| --- | --- |
+| <= 30 | Pessoa mais saudável, menores chances de hipersensibilidades |
+| 31 a 39 | Indicativo de existência de hipersensibilidades |
+| 40 a 99 | Absoluta certeza de existência de hipersensibilidade |
+| >= 100 | Saúde muito ruim — alta dificuldade para tarefas diárias, possível associação com doenças crônicas e degenerativas |
 
 ---
 
-# 🧪 Lógica por tipo de questão
+<a id="7-fluxo-operacional-passo-a-passo"></a>
 
-## ✍️ TEXTO
+## 7. 🔄 Fluxo Operacional (Passo a Passo)
 
-- não usa opções
-- usa: `valorTexto`
+1. **Configuração da clínica**
+   - Cadastra `Questionario` (nome, versão, ativo) vinculado à `Clinica`.
+   - Cadastra `Modulo` (categorias) e `Pergunta` (sintomas).
+   - Cadastra `RegraInterpretacao` com faixas de score.
 
-Exemplo:
+2. **Aplicação para o paciente**
+   - Cria uma `Avaliacao` para `pacienteId` + `questionarioId`.
+   - Para cada pergunta, grava uma `Resposta` com `nota`.
 
-```json
-{
-  "valorTexto": "Dor na lombar"
-}
-```
+3. **Cálculo e persistência**
+   - Soma todas as notas das respostas da avaliação.
+   - Atualiza `Avaliacao.scoreTotal` com o resultado.
 
----
+4. **Classificação automática**
+   - Busca a regra onde `pontuacaoMin <= scoreTotal <= pontuacaoMax`.
+   - Retorna a classificação correspondente.
 
-## 🔘 BOOLEANO
-
-- não usa opções
-- usa: `valorBooleano`
-
-Exemplo:
-
-```json
-{
-  "valorBooleano": true
-}
-```
+5. **Consumo no sistema**
+   - Exibe score final, categoria de risco e histórico de avaliações.
 
 ---
 
-## 🔢 NUMERICO
+<a id="8-exemplo-completo-de-execucao"></a>
 
-- número livre
-- usa: `valorNumero`
+## 8. 💡 Exemplo Completo de Execução
 
-Exemplo:
+### Cenário
 
-```json
-{
-  "valorNumero": 8
-}
-```
+- Paciente responde 63 sintomas.
+- O backend grava todas as respostas com notas de 0 a 4.
 
----
+### Exemplo simplificado (10 respostas)
 
-## 📊 ESCALA
+Notas respondidas: `2, 1, 3, 0, 4, 2, 1, 2, 3, 1`
 
-- número com range (ex: 1–5)
-- usa: `valorNumero`
+`somatorio_parcial = 2 + 1 + 3 + 0 + 4 + 2 + 1 + 2 + 3 + 1 = 19`
 
-Exemplo:
+No questionário real, o mesmo cálculo é feito com as **63 notas**:
 
-```json
-{
-  "valorNumero": 4
-}
-```
+`scoreTotal = Σ(nota_1 ... nota_63)`
 
----
+### Exemplo de classificação final
 
-## 🔵 MULTIPLA_ESCOLHA
+- Se `scoreTotal = 37` → faixa **31 a 39**
+- Resultado: **Indicativo de existência de hipersensibilidades**
 
-- usa `QuestaoOpcao`
-- apenas 1 escolha
+### Estruturas persistidas no banco
 
-Exemplo:
-
-```json
-{
-  "opcaoId": 2
-}
-```
+- 1 registro em `Avaliacao`
+- 63 registros em `Resposta`
+- 1 `scoreTotal` consolidado para relatórios e histórico
 
 ---
 
-## ☑️ CHECKBOX
+<a id="conclusao"></a>
 
-- usa `QuestaoOpcao`
-- múltiplas escolhas
+## ✅ Conclusão
 
-Exemplo:
+Com essa estrutura, o módulo de questionário fica:
 
-```json
-{
-  "opcoesIds": [1, 3]
-}
-```
-
----
-
-# ⚙️ Versionamento
-
-## 📌 Como funciona
-
-- Cada alteração estrutural cria uma nova versão
-- Versões antigas nunca são alteradas
-
----
-
-## 🔄 O que gera nova versão
-
-- adicionar/remover questão
-- alterar tipo
-- alterar opções
-
----
-
-## ✏️ O que NÃO gera versão
-
-- correção de texto
-- ajuste de título
-
----
-
-## 🧠 Estratégia
-
-- snapshot completo (cópia de módulos, questões e opções)
-
----
-
-# 🌐 Rotas da API (alto nível)
-
-## 📋 Questionário
-
-### Criar
-
-```
-POST /questionarios
-```
-
-- cria questionário + versão inicial
-
----
-
-### Atualização leve (sem versão)
-
-```
-PATCH /questionarios/:id
-```
-
-- altera título, descrição, etc.
-
----
-
-### Atualização estrutural (com versão)
-
-```
-POST /questionarios/:id/versionar
-```
-
-- cria nova versão
-- clona estrutura
-- aplica mudanças
-
----
-
-### Deletar
-
-```
-DELETE /questionarios/:id
-```
-
-- soft delete (`ativo = false`)
-
----
-
-## 📦 Módulos
-
-### Adicionar módulo
-
-```
-POST /modulos
-```
-
-- cria dentro da versão ativa
-
----
-
-## ❓ Questões
-
-### Adicionar questão
-
-```
-POST /questoes
-```
-
-- define tipo
-- cria opções (se necessário)
-
----
-
-## 🔘 Opções
-
-### Adicionar opções
-
-```
-POST /questoes/:id/opcoes
-```
-
----
-
-## 🧾 Respostas
-
-### Responder questionário
-
-```
-POST /respostas
-```
-
-### Exemplo payload:
-
-```json
-{
-  "questionarioVersaoId": "uuid",
-  "pacienteId": "uuid",
-  "respostas": [
-    {
-      "questaoId": "uuid",
-      "valorTexto": "Dor leve"
-    },
-    {
-      "questaoId": "uuid",
-      "valorBooleano": true
-    },
-    {
-      "questaoId": "uuid",
-      "opcoesIds": ["uuid", "uuid"]
-    }
-  ]
-}
-```
-
----
-
-# 🔐 Regras importantes
-
-- Apenas um `valor_*` pode ser preenchido
-- `RespostaItemOpcao` só existe para questões com opções
-- Versões são imutáveis
-- Sempre validar baseado no `tipo`
-
----
-
-# 💬 Conclusão
-
-Esse modelo:
-
-- é escalável
-- suporta múltiplos tipos de pergunta
-- permite versionamento seguro
-- mantém histórico consistente
-- facilita evolução futura
-
----
+- claro para manutenção;
+- consistente com o schema atual;
+- preparado para escalar por clínica, versão e histórico de paciente.
