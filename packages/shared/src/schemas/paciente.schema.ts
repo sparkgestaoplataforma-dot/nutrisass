@@ -1,11 +1,11 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const createPacienteSchema = z.object({
-  nome: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres'),
-  email: z.string().email('E-mail inválido').optional().or(z.literal('')),
+  nome: z.string().min(2, "Nome deve ter no mínimo 2 caracteres"),
+  email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   telefone: z.string().optional(),
   whatsapp: z.string().optional(),
-  sexo: z.enum(['MASCULINO', 'FEMININO']).optional(),
+  sexo: z.enum(["MASCULINO", "FEMININO"]).optional(),
   dataNascimento: z.string().optional(),
   identidade: z.string().optional(),
   ufIdentidade: z.string().max(2).optional(),
@@ -29,3 +29,16 @@ export type CreatePacienteInput = z.infer<typeof createPacienteSchema>;
 export const updatePacienteSchema = createPacienteSchema.partial();
 
 export type UpdatePacienteInput = z.infer<typeof updatePacienteSchema>;
+
+export const CreatePacienteQuestionarioAvaliacaoSchema = z.object({
+  pacienteId: z.string().uuid(),
+  respostas: z.array(
+    z.object({
+      perguntaId: z.string().uuid(),
+      nota: z
+        .number()
+        .min(0, "A nota deve ser entre 0 e 4")
+        .max(4, "A nota deve ser entre 0 e 4"),
+    }),
+  ),
+});
