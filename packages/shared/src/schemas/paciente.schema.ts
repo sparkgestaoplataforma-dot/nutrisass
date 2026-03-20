@@ -42,3 +42,10 @@ export const CreatePacienteQuestionarioAvaliacaoSchema = z.object({
     }),
   ),
 });
+
+export const UpdatePacienteQuestionarioAvaliacaoSchema =
+  CreatePacienteQuestionarioAvaliacaoSchema.partial();
+
+export type CreatePacienteQuestionarioAvaliacaoInput = z.infer<
+  typeof CreatePacienteQuestionarioAvaliacaoSchema
+>;
