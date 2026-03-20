@@ -31,7 +31,7 @@ export const updatePacienteSchema = createPacienteSchema.partial();
 export type UpdatePacienteInput = z.infer<typeof updatePacienteSchema>;
 
 export const createPacienteQuestionarioAvaliacaoSchema = z.object({
-  pacienteId: z.string().uuid(),
+  id: z.string().uuid(),
   respostas: z.array(
     z.object({
       perguntaId: z.string().uuid(),
