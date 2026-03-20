@@ -1,0 +1,39 @@
+import { Router } from "express";
+import { validate } from "../../../shared/middlewares/validate.js";
+import { authMiddleware, roleGuard } from "../../../shared/middlewares/auth.js";
+import * as controller from "./questionarios.controller";
+import {
+  createQuestionarioSchema,
+  createQuestionarioModuloSchema,
+  createQuestionarioRegrasInterpretacaoSchema,
+} from "@nutricao/shared";
+
+const router = Router();
+
+router.use(authMiddleware);
+
+// router.get("/", controller.listar);
+// router.get("/:id", controller.buscarPorId);
+router.post(
+  "/",
+  roleGuard("ADMIN", "NUTRICIONISTA"),
+  validate(createQuestionarioSchema),
+  controller.criar,
+);
+router.post(
+  "/:questionarioId/modulos",
+  roleGuard("ADMIN", "NUTRICIONISTA"),
+  validate(createQuestionarioModuloSchema),
+  controller.adicionarModulo,
+);
+router.post(
+  "/:questionarioId/regras",
+  roleGuard("ADMIN", "NUTRICIONISTA"),
+  validate(createQuestionarioRegrasInterpretacaoSchema),
+  controller.adicionarRegra,
+);
+
+// router.put("/:id", validate(updateQuestionarioSchema), controller.editar);
+// router.delete("/:id", controller.excluir);
+
+export { router as questionariosRoutes };
