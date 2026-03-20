@@ -32,6 +32,7 @@ export type UpdatePacienteInput = z.infer<typeof updatePacienteSchema>;
 
 export const createPacienteQuestionarioAvaliacaoSchema = z.object({
   id: z.string().uuid(),
+  questionarioId: z.string().uuid(),
   respostas: z.array(
     z.object({
       perguntaId: z.string().uuid(),
