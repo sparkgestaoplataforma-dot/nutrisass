@@ -1,7 +1,11 @@
 import { Router } from "express";
 import { validate } from "../../../shared/middlewares/validate.js";
 import { authMiddleware, roleGuard } from "../../../shared/middlewares/auth.js";
-import { createModuloPerguntaSchema } from "@nutricao/shared";
+import {
+  createModuloPerguntaSchema,
+  updateModuloPerguntaSchema,
+  updateQuestionarioModuloSchema,
+} from "@nutricao/shared";
 import * as controller from "./modulos.controller.js";
 
 const router = Router();
@@ -13,6 +17,32 @@ router.post(
   roleGuard("ADMIN", "NUTRICIONISTA"),
   validate(createModuloPerguntaSchema),
   controller.criarPergunta,
+);
+
+router.put(
+  "/:moduloId",
+  roleGuard("ADMIN", "NUTRICIONISTA"),
+  validate(updateQuestionarioModuloSchema),
+  controller.editarModulo,
+);
+
+router.delete(
+  "/:moduloId",
+  roleGuard("ADMIN", "NUTRICIONISTA"),
+  controller.excluirModulo,
+);
+
+router.put(
+  "/:moduloId/perguntas/:perguntaId",
+  roleGuard("ADMIN", "NUTRICIONISTA"),
+  validate(updateModuloPerguntaSchema),
+  controller.editarPergunta,
+);
+
+router.delete(
+  "/:moduloId/perguntas/:perguntaId",
+  roleGuard("ADMIN", "NUTRICIONISTA"),
+  controller.excluirPergunta,
 );
 
 export { router as modulosRoutes };

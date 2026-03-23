@@ -6,19 +6,25 @@ import {
   createQuestionarioSchema,
   createQuestionarioModuloSchema,
   createQuestionarioRegrasInterpretacaoSchema,
+  updateQuestionarioSchema,
 } from "@nutricao/shared";
 
 const router = Router();
 
 router.use(authMiddleware);
 
-// router.get("/", controller.listar);
-// router.get("/:id", controller.buscarPorId);
+router.get("/", controller.listar);
+router.get("/:id", controller.buscarPorId);
 router.post(
   "/",
   roleGuard("ADMIN", "NUTRICIONISTA"),
   validate(createQuestionarioSchema),
   controller.criar,
+);
+router.post(
+  "/default",
+  roleGuard("ADMIN", "NUTRICIONISTA"),
+  controller.criarDefault,
 );
 router.post(
   "/:questionarioId/modulos",
@@ -32,8 +38,12 @@ router.post(
   validate(createQuestionarioRegrasInterpretacaoSchema),
   controller.adicionarRegra,
 );
-
-// router.put("/:id", validate(updateQuestionarioSchema), controller.editar);
-// router.delete("/:id", controller.excluir);
+router.put(
+  "/:id",
+  roleGuard("ADMIN", "NUTRICIONISTA"),
+  validate(updateQuestionarioSchema),
+  controller.editar,
+);
+router.delete("/:id", roleGuard("ADMIN", "NUTRICIONISTA"), controller.excluir);
 
 export { router as questionariosRoutes };

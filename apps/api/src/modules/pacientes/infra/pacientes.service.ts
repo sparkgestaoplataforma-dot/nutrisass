@@ -25,6 +25,13 @@ export async function criarAvaliacao(
     throw new AppError("Questionário não encontrado", 404);
   }
 
+  if (!questionario.ativo) {
+    throw new AppError(
+      "Questionário inativo. Utilize a versão ativa mais recente",
+      400,
+    );
+  }
+
   const scoreTotal = respostas.reduce((acc, r) => acc + r.nota, 0);
 
   const avaliacao = await prisma.avaliacao.create({
