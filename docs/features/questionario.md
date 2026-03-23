@@ -2,270 +2,344 @@
 
 ## 📑 Sumário
 
-1. [🧠 Visão Geral](#1-visao-geral)
-2. [🧱 Estrutura do Banco](#2-estrutura-do-banco)
-3. [🔗 Relacionamentos (Resumo)](#3-relacionamentos-resumo)
-4. [🧪 Como Funciona (63 Sintomas)](#4-como-funciona-63-sintomas)
-5. [🎯 Regras de Pontuação](#5-regras-de-pontuacao)
-6. [📈 Interpretação do Resultado](#6-interpretacao-do-resultado)
-7. [🔄 Fluxo Operacional (Passo a Passo)](#7-fluxo-operacional-passo-a-passo)
-8. [💡 Exemplo Completo de Execução](#8-exemplo-completo-de-execucao)
-9. [✅ Conclusão](#conclusao)
+1. [Visão Geral](#1-visao-geral)
+2. [Modelo de Dados](#2-modelo-de-dados)
+3. [Regras de Versionamento](#3-regras-de-versionamento)
+4. [CRUDs e Endpoints](#4-cruds-e-endpoints)
+5. [Ordem Recomendada de Uso](#5-ordem-recomendada-de-uso)
+6. [Validações e Regras de Negócio](#6-validacoes-e-regras-de-negocio)
+7. [Exemplo de Fluxo Completo](#7-exemplo-de-fluxo-completo)
 
 ---
 
 <a id="1-visao-geral"></a>
 
-## 1. 🧠 Visão Geral
+## 1. Visão Geral
 
-O sistema de questionários clínicos foi modelado para separar:
+Este módulo separa:
 
-- **Estrutura (imutável):** o que será perguntado.
-- **Execução (dinâmico):** respostas dos pacientes.
+- **Estrutura do questionário:** questionário, módulos, perguntas e regras.
+- **Execução clínica:** avaliação e respostas por paciente.
 
-Com isso, o módulo entrega:
+Objetivo principal implementado:
 
-- histórico auditável por paciente;
-- versionamento controlado por clínica;
-- interpretação automática por faixas de pontuação;
-- base preparada para novos questionários clínicos.
-
----
-
-<a id="2-estrutura-do-banco"></a>
-
-## 2. 🧱 Estrutura do Banco
-
-### 📋 Questionário
-
-Define o instrumento clínico (ex.: rastreamento de hipersensibilidade).
-
-**Campos:**
-
-- `id`
-- `clinicaId`
-- `nome`
-- `versao`
-- `ativo`
-
-**Relacionamentos:**
-
-- N questionários → 1 clínica
-- 1 questionário → N módulos
-- 1 questionário → N regras
-- 1 questionário → N avaliações
-
-### 🧩 Módulo (Categoria)
-
-Agrupa perguntas por contexto corporal.
-
-**Campos:**
-
-- `id`
-- `nome`
-- `ordem`
-- `questionarioId`
-
-**Relacionamento:**
-
-- 1 módulo → N perguntas
-
-### ❓ Pergunta (Sintoma)
-
-Cada sintoma é uma pergunta.
-
-**Campos:**
-
-- `id`
-- `descricao`
-- `ordem`
-- `moduloId`
-
-**Relacionamento:**
-
-- 1 pergunta → N respostas
-
-### 📊 RegraInterpretacao
-
-Define como interpretar o score final.
-
-**Campos:**
-
-- `id`
-- `pontuacaoMin`
-- `pontuacaoMax`
-- `classificacao`
-- `questionarioId`
-
-### 🧾 Avaliacao
-
-Representa uma aplicação completa do questionário para um paciente.
-
-**Campos:**
-
-- `id`
-- `dataRealizacao`
-- `scoreTotal`
-- `pacienteId`
-- `questionarioId`
-
-**Relacionamento:**
-
-- 1 avaliação → N respostas
-
-### 📝 Resposta
-
-Resposta de uma pergunta dentro de uma avaliação.
-
-**Campos:**
-
-- `id`
-- `nota` (0 a 4)
-- `avaliacaoId`
-- `perguntaId`
-- `pacienteId`
-
-> Observação: `pacienteId` em `Resposta` permite rastreio direto por paciente, mesmo sem navegar pela `Avaliacao`.
+- manter histórico de avaliações íntegro;
+- aplicar **versionamento automático apenas em mudanças estruturais** quando já existe avaliação;
+- impedir novas respostas em versões inativas.
 
 ---
 
-<a id="3-relacionamentos-resumo"></a>
+<a id="2-modelo-de-dados"></a>
 
-## 3. 🔗 Relacionamentos (Resumo)
+## 2. Modelo de Dados
 
-- Clinica → Questionario (1:N)
-- Paciente → Avaliacao (1:N)
-- Questionario → Modulo (1:N)
-- Modulo → Pergunta (1:N)
-- Pergunta → Resposta (1:N)
-- Avaliacao → Resposta (1:N)
-- Questionario → RegraInterpretacao (1:N)
-- Paciente → Resposta (1:N)
+### Entidades principais
 
----
+- `Questionario`: `id`, `clinicaId`, `nome`, `versao`, `ativo`
+- `Modulo`: `id`, `questionarioId`, `nome`, `ordem`
+- `Pergunta`: `id`, `moduloId`, `descricao`, `ordem`
+- `RegraInterpretacao`: `id`, `questionarioId`, `pontuacaoMin`, `pontuacaoMax`, `classificacao`
+- `Avaliacao`: `id`, `pacienteId`, `questionarioId`, `scoreTotal`, `dataRealizacao`
+- `Resposta`: `id`, `avaliacaoId`, `perguntaId`, `pacienteId`, `nota`
 
-<a id="4-como-funciona-63-sintomas"></a>
+### Restrições relevantes
 
-## 4. 🧪 Como Funciona (63 Sintomas)
-
-O questionário de hipersensibilidade é composto por **63 sintomas**, organizados por categoria corporal.
-
-| Categoria | Sintomas |
-| --- | --- |
-| Cabeça | dor de cabeça, desmaio, tonturas, insônia |
-| Olhos | coceira, inchaço, olheiras, visão borrada |
-| Ouvidos | coceira, dores, fluido, zumbido |
-| Nariz | entupido, sinusite, ataques de espirro |
-| Boca/Garganta | muco, tosse, dor de garganta, língua/lábios, aftas |
-| Pele | acne, pele seca, cabelo, vermelhidão, suor excessivo |
-| Coração | batimento falhando/rápido, dor no peito, congestão |
-| Pulmão | asma, falta de fôlego, dificuldade respiratória |
-| Trato Digestivo | náuseas, diarreia, constipação, distensão, arrotos, azia, dor estomacal |
-| Articulações/Músculos | dor articular, artrite, rigidez, dolorido, fraqueza |
-| Energia/Atividade | fadiga, apatia, hiperatividade, dificuldade de relaxar |
-| Mente | memória, confusão, concentração, coordenação motora, decisão, repetições, pronúncia, aprendizagem |
-| Emocional | humor, ansiedade, raiva, depressão |
-| Outros | doença frequente, urgência urinária, corrimento, edema |
+- `Questionario`: `@@unique([clinicaId, nome, versao])`
+- `Modulo`: `@@unique([questionarioId, ordem])`
+- `Pergunta`: `@@unique([moduloId, ordem])`
 
 ---
 
-<a id="5-regras-de-pontuacao"></a>
+<a id="3-regras-de-versionamento"></a>
 
-## 5. 🎯 Regras de Pontuação
+## 3. Regras de Versionamento
 
-Cada sintoma recebe nota de **0 a 4**:
+### Quando versiona
 
-- **0** = nunca/quase nunca
-- **1** = ocasionalmente
-- **2** = frequentemente
-- **3** = com frequência
-- **4** = sempre/quase sempre
+Versiona automaticamente (clona estrutura, incrementa `versao`, desativa anterior) quando houver **mudança estrutural** em questionário que já possui pelo menos 1 avaliação:
 
-Ao final, o backend calcula:
+- adicionar módulo;
+- adicionar regra;
+- adicionar pergunta;
+- deletar módulo;
+- deletar pergunta.
 
-`somatorio = Σ(nota de todas as respostas)`
+### Quando não versiona
 
-Esse valor é salvo em `Avaliacao.scoreTotal`.
+- `PUT /questionarios/:id` (metadata do questionário);
+- `PUT /modulos/:moduloId`;
+- `PUT /modulos/:moduloId/perguntas/:perguntaId`.
 
----
+### Regra de ativação
 
-<a id="6-interpretacao-do-resultado"></a>
+- só uma versão ativa por questionário (mesmo `nome`) por clínica;
+- ao versionar, versões ativas anteriores daquele nome são inativadas.
 
-## 6. 📈 Interpretação do Resultado
+### Avaliação em versão inativa
 
-| Somatório | Classificação |
-| --- | --- |
-| <= 30 | Pessoa mais saudável, menores chances de hipersensibilidades |
-| 31 a 39 | Indicativo de existência de hipersensibilidades |
-| 40 a 99 | Absoluta certeza de existência de hipersensibilidade |
-| >= 100 | Saúde muito ruim — alta dificuldade para tarefas diárias, possível associação com doenças crônicas e degenerativas |
+- criação de avaliação em questionário inativo retorna erro `400`.
 
 ---
 
-<a id="7-fluxo-operacional-passo-a-passo"></a>
+<a id="4-cruds-e-endpoints"></a>
 
-## 7. 🔄 Fluxo Operacional (Passo a Passo)
+## 4. CRUDs e Endpoints
 
-1. **Configuração da clínica**
-   - Cadastra `Questionario` (nome, versão, ativo) vinculado à `Clinica`.
-   - Cadastra `Modulo` (categorias) e `Pergunta` (sintomas).
-   - Cadastra `RegraInterpretacao` com faixas de score.
+> Prefixos de rota: `/questionarios` e `/modulos`.
+>
+> Autenticação: todas as rotas usam `authMiddleware`.
+>
+> Permissão de escrita: `roleGuard("ADMIN", "NUTRICIONISTA")`.
 
-2. **Aplicação para o paciente**
-   - Cria uma `Avaliacao` para `pacienteId` + `questionarioId`.
-   - Para cada pergunta, grava uma `Resposta` com `nota`.
+## 4.1 Questionário
 
-3. **Cálculo e persistência**
-   - Soma todas as notas das respostas da avaliação.
-   - Atualiza `Avaliacao.scoreTotal` com o resultado.
+### `GET /questionarios`
 
-4. **Classificação automática**
-   - Busca a regra onde `pontuacaoMin <= scoreTotal <= pontuacaoMax`.
-   - Retorna a classificação correspondente.
+Lista questionários com resumo por módulo.
 
-5. **Consumo no sistema**
-   - Exibe score final, categoria de risco e histórico de avaliações.
+**Query params:**
+
+- `page` (opcional, padrão `1`)
+- `limit` (opcional, padrão `20`)
+- `incluirDeletados` (opcional, `true|false`, padrão `false`)
+
+**Retorno (200):**
+
+- paginação: `total`, `page`, `limit`, `totalPages`
+- `data[]` com:
+  - `id`, `nome`, `versao`, `ativo`
+  - `totalModulos`
+  - `modulos[]` com `id`, `nome`, `ordem`, `totalPerguntas`
+
+### `GET /questionarios/:id`
+
+Detalha questionário com módulos e perguntas.
+
+**Query params:**
+
+- `incluirDeletados` (opcional, `true|false`, padrão `false`)
+
+**Retorno (200):**
+
+- `id`, `nome`, `versao`, `ativo`
+- `modulos[]` ordenados por `ordem`
+- `modulos.perguntas[]` ordenadas por `ordem`
+
+### `POST /questionarios`
+
+Cria questionário.
+
+**Body:**
+
+- `nome` (obrigatório, min 3)
+- `versao` (opcional, inteiro positivo)
+- `ativo` (opcional)
+
+**Retorno:** `201` com questionário criado.
+
+### `POST /questionarios/default`
+
+Cria (seed) o questionário padrão de hipersensibilidades para a clínica autenticada.
+
+**Body:**
+
+- sem body
+
+**Comportamento:**
+
+- se o questionário padrão (`nome` padrão, `versao = 1`) ainda não existir para a clínica, cria:
+  - questionário;
+  - módulos padrão;
+  - perguntas padrão;
+  - regras padrão.
+- se já existir, retorna o registro existente (não duplica).
+
+**Retorno:** `201` com o questionário padrão criado/encontrado.
+
+> Observação: o endpoint implementado no backend é `POST /questionarios/default`.
+
+### `PUT /questionarios/:id`
+
+Atualiza **somente metadata** do questionário.
+
+**Body:**
+
+- `nome` (opcional no schema, mas obrigatório na regra de negócio para efetivar alteração)
+
+**Retorno:**
+
+- `200` com questionário atualizado
+- `400` se payload sem alteração de metadata
+
+### `DELETE /questionarios/:id`
+
+Exclusão lógica por inativação (`ativo=false`).
+
+**Retorno:**
+
+- `200` com mensagem de sucesso
+- `404` se questionário não existir para a clínica
+
+## 4.2 Módulo
+
+### `POST /questionarios/:questionarioId/modulos`
+
+Cria módulo no questionário.
+
+**Body:**
+
+- `nome` (obrigatório, min 3)
+- `ordem` (obrigatório, inteiro positivo)
+
+**Regra de ordem:** desloca (`+1`) módulos com `ordem >= novaOrdem`.
+
+**Versionamento:** sim, se já houver avaliação.
+
+### `PUT /modulos/:moduloId`
+
+Edita metadata/ordem do módulo.
+
+**Body:**
+
+- `nome` (opcional)
+- `ordem` (opcional)
+
+**Regras:**
+
+- não versiona;
+- se alterar ordem, reordena os demais módulos do questionário;
+- `ordem` é normalizada para faixa válida.
+
+### `DELETE /modulos/:moduloId`
+
+Remove módulo e reordena os demais.
+
+**Regras:**
+
+- versiona se já houver avaliação;
+- depois da exclusão, módulos com ordem maior sofrem `-1`.
+
+## 4.3 Pergunta
+
+### `POST /modulos/:moduloId/perguntas`
+
+Cria pergunta no módulo.
+
+**Body:**
+
+- `descricao` (obrigatório, min 3)
+- `ordem` (obrigatório, inteiro positivo)
+
+**Regras:**
+
+- desloca (`+1`) perguntas com `ordem >= novaOrdem`;
+- versiona se já houver avaliação.
+
+### `PUT /modulos/:moduloId/perguntas/:perguntaId`
+
+Edita metadata/ordem da pergunta.
+
+**Body:**
+
+- `descricao` (opcional)
+- `ordem` (opcional)
+
+**Regras:**
+
+- não versiona;
+- se alterar ordem, reordena perguntas do módulo;
+- `ordem` é normalizada para faixa válida.
+
+### `DELETE /modulos/:moduloId/perguntas/:perguntaId`
+
+Remove pergunta e reordena as perguntas restantes do módulo.
+
+**Regras:**
+
+- versiona se já houver avaliação;
+- após exclusão, perguntas com ordem maior sofrem `-1`.
+
+## 4.4 Regras de interpretação
+
+### `POST /questionarios/:questionarioId/regras`
+
+Cria regra de interpretação.
+
+**Body:**
+
+- `pontuacaoMin` (obrigatório, numérico não-negativo)
+- `pontuacaoMax` (obrigatório, numérico não-negativo)
+- `classificacao` (obrigatório, min 3)
+
+**Regras:**
+
+- versiona se já houver avaliação;
+- `pontuacaoMin <= pontuacaoMax`;
+- impede sobreposição de faixas no mesmo questionário.
+
+## 4.5 Avaliação de paciente
+
+### `POST /pacientes/:id/questionarios/:questionarioId/avaliacoes`
+
+Cria avaliação e respostas.
+
+**Regras adicionais implementadas:**
+
+- calcula `scoreTotal` pela soma das notas;
+- bloqueia criação se `questionario.ativo = false`.
 
 ---
 
-<a id="8-exemplo-completo-de-execucao"></a>
+<a id="5-ordem-recomendada-de-uso"></a>
 
-## 8. 💡 Exemplo Completo de Execução
+## 5. Ordem Recomendada de Uso
 
-### Cenário
-
-- Paciente responde 63 sintomas.
-- O backend grava todas as respostas com notas de 0 a 4.
-
-### Exemplo simplificado (10 respostas)
-
-Notas respondidas: `2, 1, 3, 0, 4, 2, 1, 2, 3, 1`
-
-`somatorio_parcial = 2 + 1 + 3 + 0 + 4 + 2 + 1 + 2 + 3 + 1 = 19`
-
-No questionário real, o mesmo cálculo é feito com as **63 notas**:
-
-`scoreTotal = Σ(nota_1 ... nota_63)`
-
-### Exemplo de classificação final
-
-- Se `scoreTotal = 37` → faixa **31 a 39**
-- Resultado: **Indicativo de existência de hipersensibilidades**
-
-### Estruturas persistidas no banco
-
-- 1 registro em `Avaliacao`
-- 63 registros em `Resposta`
-- 1 `scoreTotal` consolidado para relatórios e histórico
+1. Criar questionário (`POST /questionarios`) ou gerar padrão (`POST /questionarios/default`).
+2. Criar módulos (`POST /questionarios/:questionarioId/modulos`).
+3. Criar perguntas (`POST /modulos/:moduloId/perguntas`).
+4. Criar regras de interpretação (`POST /questionarios/:questionarioId/regras`).
+5. Consultar estrutura para aplicação (`GET /questionarios/:id`).
+6. Registrar respostas do paciente (`POST /pacientes/:id/questionarios/:questionarioId/avaliacoes`).
+7. Para manutenção estrutural em produção, preferir operações de create/delete com versionamento automático.
 
 ---
 
-<a id="conclusao"></a>
+<a id="6-validacoes-e-regras-de-negocio"></a>
 
-## ✅ Conclusão
+## 6. Validações e Regras de Negócio
 
-Com essa estrutura, o módulo de questionário fica:
+### Segurança e escopo
 
-- claro para manutenção;
-- consistente com o schema atual;
-- preparado para escalar por clínica, versão e histórico de paciente.
+- todas as consultas/mutações são escopadas por `clinicaId` extraído do token;
+- apenas perfis `ADMIN` e `NUTRICIONISTA` alteram estrutura.
+
+### Integridade
+
+- não permite intervalo de regra inválido (`min > max`);
+- não permite sobreposição de faixas de regra;
+- mantém ordenação consistente de módulos e perguntas;
+- em deletes, reordena para evitar “buracos”.
+
+### Atualização de metadata
+
+- `PUT /questionarios/:id` foi restringido a metadata (`nome`), sem update de `versao` ou `ativo`.
+
+### Soft delete
+
+- questionário não é removido fisicamente no delete: é inativado.
+
+---
+
+<a id="7-exemplo-de-fluxo-completo"></a>
+
+## 7. Exemplo de Fluxo Completo
+
+1. Clínica cria `Questionario A` versão `1` (ativo).
+2. Pacientes respondem e geram avaliações.
+3. Nutricionista precisa remover uma pergunta.
+4. Sistema detecta avaliações existentes e:
+   - clona estrutura para versão `2`;
+   - inativa versão `1`;
+   - aplica remoção na versão `2`;
+   - mantém histórico das avaliações antigas apontando para versão `1`.
+5. Novas avaliações passam a usar a versão `2` ativa.
