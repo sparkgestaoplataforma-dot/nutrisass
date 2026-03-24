@@ -99,7 +99,10 @@ export function ProntuarioPage() {
       try {
         const response = await getAvaliacoesPorPacienteId(id!);
         setAvaliacoes(response.data || []);
-        console.log("Avaliações carregadas:", response.data);
+
+        if (response.data && response.data.length > 0) {
+          setAvaliacaoSelecionadaId(response.data[0].id);
+        }
       } catch (error) {
         console.error("Erro ao buscar avaliações:", error);
       }
@@ -133,10 +136,10 @@ export function ProntuarioPage() {
   }, [avaliacaoSelecionadaId]);
 
   const classificacao = avaliacaoSelecionada?.regrasInterpretacao?.find(
-    (regra) =>
-      avaliacaoSelecionada.scoreTotal >= regra.pontuacaoMin &&
-      avaliacaoSelecionada.scoreTotal <= regra.pontuacaoMax,
-  )?.classificacao;
+  (regra) =>
+    avaliacaoSelecionada.scoreTotal >= regra.pontuacaoMin &&
+    avaliacaoSelecionada.scoreTotal <= regra.pontuacaoMax
+)?.classificacao;
 
   const { data: paciente, isLoading } = useQuery({
     queryKey: ["paciente", id],
