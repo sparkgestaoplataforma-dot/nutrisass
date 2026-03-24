@@ -11,10 +11,11 @@ import {
 
 const router = Router();
 
+router.get("/:id", controller.buscarPorId);
+
 router.use(authMiddleware);
 
 router.get("/", controller.listar);
-router.get("/:id", controller.buscarPorId);
 router.post(
   "/",
   roleGuard("ADMIN", "NUTRICIONISTA"),
