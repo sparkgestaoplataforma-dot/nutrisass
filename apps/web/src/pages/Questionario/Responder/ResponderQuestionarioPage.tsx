@@ -188,14 +188,14 @@ export function ResponderQuestionarioPage() {
           </div>
           <p className={styles.avisoFab}>
             💡 <strong>Dica:</strong> Se esquecer as notas durante o
-            preenchimento, basta clicar no botão{" "}
+            preenchimento, basta clicar no botão no canto da tela
             <button
               className={styles.fabButton}
               style={{ width: "30px", height: "30px", fontSize: "16px" }}
             >
               ?
             </button>{" "}
-            verde no canto da tela.
+            {/* verde no canto da tela. */}
           </p>
         </section>
 
