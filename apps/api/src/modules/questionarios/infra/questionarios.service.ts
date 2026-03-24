@@ -220,14 +220,12 @@ export async function listar(
 }
 
 export async function listarModulosComPerguntas(
-  clinicaId: string,
   questionarioId: string,
   params: ListarQuestionarioCompletoParams,
 ) {
   const questionario = await prisma.questionario.findFirst({
     where: {
       id: questionarioId,
-      clinicaId,
       ...(params.incluirDeletados ? {} : { ativo: true }),
     },
     include: {
