@@ -1,0 +1,9 @@
+import { Response, Request } from "express";
+import * as service from "./avaliacoes.service.js";
+export async function buscarPorId(req: Request<{ id: string }>, res: Response) {
+  const id = req.params.id;
+
+  const avaliacao = await service.pegarAvaliacaoPorId(id);
+
+  return res.json({ success: true, data: avaliacao });
+}

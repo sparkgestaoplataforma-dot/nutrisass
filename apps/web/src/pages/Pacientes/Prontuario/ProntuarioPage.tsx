@@ -21,9 +21,6 @@ import {
   PlayCircleIcon,
   StopCircleIcon,
   Clock01Icon,
-  CalculatorIcon,
-  Calculator01FreeIcons,
-  Calculator,
   Calculator01Icon,
   DocumentCodeFreeIcons,
 } from "@hugeicons/core-free-icons";
@@ -33,6 +30,8 @@ import { EstadoClinicoTimeline } from "./components/EstadoClinicoTimeline";
 import { MedidasTab } from "./components/MedidasTab";
 import { ExamesTab } from "./components/ExamesTab";
 import styles from "./ProntuarioPage.module.scss";
+import { Avaliacoes, getAvaliacoesPorPacienteId } from "@/services/pacientes";
+import { Avaliacao, getAvaliacoesPorId } from "@/services/avaliacao";
 
 type View = "atendimento" | "medidas" | "exames";
 
@@ -67,7 +66,14 @@ export function ProntuarioPage() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const [view, setView] = useState<View>("atendimento");
-
+  const [avaliacoes, setAvaliacoes] = useState<Avaliacoes[]>([]);
+  const [avaliacaoSelecionadaId, setAvaliacaoSelecionadaId] = useState<
+    string | null
+  >(null);
+  const [avaliacaoSelecionada, setAvaliacaoSelecionada] = useState<
+    Avaliacao | undefined
+  >();
+  // const [classificacao, setClassificacao] = useState<string>("");
   // Timer state
   const [timerActive, setTimerActive] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
@@ -89,6 +95,20 @@ export function ProntuarioPage() {
   }, []);
 
   useEffect(() => {
+    const fetchAvaliacoes = async () => {
+      try {
+        const response = await getAvaliacoesPorPacienteId(id!);
+        setAvaliacoes(response.data || []);
+
+        if (response.data && response.data.length > 0) {
+          setAvaliacaoSelecionadaId(response.data[0].id);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar avaliações:", error);
+      }
+    };
+
+    fetchAvaliacoes();
     if (timerActive) {
       intervalRef.current = setInterval(() => {
         setTimerSeconds((s) => s + 1);
@@ -97,7 +117,29 @@ export function ProntuarioPage() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [timerActive]);
+  }, [id]);
+
+  useEffect(() => {
+    const fetchAvaliacao = async () => {
+      if (!avaliacaoSelecionadaId) return;
+
+      try {
+        const response = await getAvaliacoesPorId(avaliacaoSelecionadaId);
+        setAvaliacaoSelecionada(response.data || undefined);
+        console.log("Avaliação selecionada:", response.data);
+      } catch (error) {
+        console.error("Erro ao buscar avaliação:", error);
+      }
+    };
+
+    fetchAvaliacao();
+  }, [avaliacaoSelecionadaId]);
+
+  const classificacao = avaliacaoSelecionada?.regrasInterpretacao?.find(
+  (regra) =>
+    avaliacaoSelecionada.scoreTotal >= regra.pontuacaoMin &&
+    avaliacaoSelecionada.scoreTotal <= regra.pontuacaoMax
+)?.classificacao;
 
   const { data: paciente, isLoading } = useQuery({
     queryKey: ["paciente", id],
@@ -431,70 +473,90 @@ export function ProntuarioPage() {
         <aside className={styles.sidebarRight}>
           <div className={styles.rightCard}>
             <h4 className={styles.rightTitle}>Resultados de Questionários</h4>
-            <select className={styles.rightSelect}>
-              <option>Selecione um questionário</option>
+            <select
+              className={styles.rightSelect}
+              value={avaliacaoSelecionadaId || ""}
+              onChange={(e) => setAvaliacaoSelecionadaId(e.target.value)}
+            >
+              {avaliacoes.length > 0 ? (
+                avaliacoes.map((av) => (
+                  <option key={av.id} value={av.id}>
+                    {new Date(av.dataRealizacao).toLocaleDateString("pt-BR")}
+                  </option>
+                ))
+              ) : (
+                <option value="">Selecione um questionário</option>
+              )}
             </select>
-            
-              <div className={styles.sideNavTopic}>
-                <div className={styles.sideNavIcon}>
-                  <HugeiconsIcon
-                    icon={Calendar01Icon}
-                    size={16}
-                    strokeWidth={1.8}
-                  />
-                </div>
-                <div className={styles.TopicContent}>
-                  <div className={styles.topicTitle}>Data</div>
-                  <div className={styles.topicDescription}>10/05/2026</div>
-                </div>
-              </div>
 
-              <div className={styles.sideNavTopic}>
-                <div className={styles.sideNavIcon}>
-                  <HugeiconsIcon
-                    icon={Calculator01Icon}
-                    size={16}
-                    strokeWidth={1.8}
-                  />
-                </div>
-                <div className={styles.TopicContent}>
-                  <div className={styles.topicTitle}>Somatório</div>
-                  <div className={styles.topicDescription}>106</div>
-                </div>
-              </div>
-              <div className={styles.sideNavTopic}>
-                <div className={styles.sideNavIcon}>
-                  <HugeiconsIcon
-                    icon={DocumentCodeFreeIcons}
-                    size={16}
-                    strokeWidth={1.8}
-                  />
-                </div>
-                <div className={styles.TopicContent}>
-                  <div className={styles.topicTitle}>Resultado</div>
-                  <div className={styles.topicDescription}>
-                    Pessoas com saúde muito ruim - alta dificuldade para
-                    executar tarefas diárias.
-                  </div>
-                </div>
-              </div>
-
-              <button className={styles.sideNavItem}>
-                <div className={styles.sideNavIcon}>
-                  <HugeiconsIcon
-                    icon={ClipboardIcon}
-                    size={16}
-                    strokeWidth={1.8}
-                  />
-                </div>
-                <span>Ver resultado</span>
+            <div className={styles.sideNavTopic}>
+              <div className={styles.sideNavIcon}>
                 <HugeiconsIcon
-                  icon={ArrowRight01Icon}
-                  size={12}
-                  strokeWidth={2}
+                  icon={Calendar01Icon}
+                  size={16}
+                  strokeWidth={1.8}
                 />
-              </button>
-            
+              </div>
+              <div className={styles.TopicContent}>
+                <div className={styles.topicTitle}>Data</div>
+                <div className={styles.topicDescription}>
+                  {avaliacaoSelecionada?.dataRealizacao
+                    ? new Date(
+                        avaliacaoSelecionada.dataRealizacao,
+                      ).toLocaleDateString("pt-BR")
+                    : "Nenhuma selecionada"}
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.sideNavTopic}>
+              <div className={styles.sideNavIcon}>
+                <HugeiconsIcon
+                  icon={Calculator01Icon}
+                  size={16}
+                  strokeWidth={1.8}
+                />
+              </div>
+              <div className={styles.TopicContent}>
+                <div className={styles.topicTitle}>Somatório</div>
+                <div className={styles.topicDescription}>
+                  {avaliacaoSelecionada?.scoreTotal !== undefined
+                    ? avaliacaoSelecionada.scoreTotal
+                    : "Nenhuma selecionada"}
+                </div>
+              </div>
+            </div>
+            <div className={styles.sideNavTopic}>
+              <div className={styles.sideNavIcon}>
+                <HugeiconsIcon
+                  icon={DocumentCodeFreeIcons}
+                  size={16}
+                  strokeWidth={1.8}
+                />
+              </div>
+              <div className={styles.TopicContent}>
+                <div className={styles.topicTitle}>Observação</div>
+                <div className={styles.topicDescription}>
+                  {avaliacaoSelecionada ? classificacao : "Nenhuma selecionada"}
+                </div>
+              </div>
+            </div>
+
+            <button className={styles.sideNavItem}>
+              <div className={styles.sideNavIcon}>
+                <HugeiconsIcon
+                  icon={ClipboardIcon}
+                  size={16}
+                  strokeWidth={1.8}
+                />
+              </div>
+              <span>Ver Respostas</span>
+              <HugeiconsIcon
+                icon={ArrowRight01Icon}
+                size={12}
+                strokeWidth={2}
+              />
+            </button>
           </div>
         </aside>
       </div>
