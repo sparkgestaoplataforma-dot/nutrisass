@@ -471,7 +471,7 @@ export function ProntuarioPage() {
                   />
                 </div>
                 <div className={styles.TopicContent}>
-                  <div className={styles.topicTitle}>Resultado</div>
+                  <div className={styles.topicTitle}>Observação</div>
                   <div className={styles.topicDescription}>
                     Pessoas com saúde muito ruim - alta dificuldade para
                     executar tarefas diárias.
@@ -487,7 +487,7 @@ export function ProntuarioPage() {
                     strokeWidth={1.8}
                   />
                 </div>
-                <span>Ver resultado</span>
+                <span>Ver Respostas</span>
                 <HugeiconsIcon
                   icon={ArrowRight01Icon}
                   size={12}

@@ -250,7 +250,6 @@ model Avaliacao {
   paciente       Paciente     @relation(fields: [pacienteId], references: [id])
   questionarioId String       @map("questionario_id")
   questionario   Questionario @relation(fields: [questionarioId], references: [id])
-  respostas      Resposta[]
 
   @@index([pacienteId])
   @@index([questionarioId])
