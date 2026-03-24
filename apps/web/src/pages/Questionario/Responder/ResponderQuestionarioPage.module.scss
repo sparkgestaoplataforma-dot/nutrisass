@@ -20,6 +20,24 @@
   gap: $space-6;
 }
 
+.sucessoCard {
+  @include card;
+  padding: $space-8;
+  text-align: center;
+  border-top: 4px solid $success;
+
+  h1 {
+    @include heading-lg;
+    color: $gray-900;
+    margin-bottom: $space-3;
+  }
+
+  p {
+    color: $gray-700;
+    font-size: $font-size-md;
+  }
+}
+
 .header {
   @include card;
   padding: $space-6;
@@ -114,11 +132,56 @@
   }
 }
 
+.moduloCard {
+  @include card;
+  padding: $space-5;
+  border: 1px solid $gray-100;
+  background: $white;
+
+  h2 {
+    margin: 0 0 $space-4;
+    padding-bottom: $space-3;
+    border-bottom: 1px solid $gray-100;
+    font-size: $font-size-lg;
+    font-weight: 700;
+    color: $gray-900;
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+
+    &::before {
+      content: "";
+      width: 8px;
+      height: 24px;
+      border-radius: $radius-sm;
+      background: $primary;
+      display: inline-block;
+    }
+  }
+}
+
+.perguntas {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
 .perguntaItem {
   @include card;
-  padding: $space-6;
+  padding: $space-5;
   scroll-margin-top: 140px;
-  transition: border 0.2s;
+  border: 1px solid $gray-100;
+  box-shadow: $shadow-sm;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.2s;
+
+  &:hover {
+    border-color: $gray-200;
+    box-shadow: $shadow-md;
+    transform: translateY(-1px);
+  }
 
   &.perguntaIncompleta {
     border: 2px solid #eab308 !important;
@@ -141,6 +204,7 @@
 
 .notaLabel {
   cursor: pointer;
+  position: relative;
   input {
     position: absolute;
     opacity: 0;
@@ -155,12 +219,61 @@
     font-weight: bold;
     color: $gray-600;
     background: white;
+    transition: all 0.2s ease;
   }
+
+  &:hover .circle {
+    border-color: $primary;
+    color: $primary;
+    transform: translateY(-1px);
+  }
+
   input:checked + .circle {
     background: $primary;
     border-color: $primary;
     color: white;
+    box-shadow: $shadow-focus;
   }
+}
+
+.avisoErro {
+  margin-bottom: $space-3;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: $radius-sm;
+  background: $warning-light;
+  border: 1px solid rgba($warning, 0.35);
+  color: $gray-800;
+  font-size: $font-size-xs;
+  font-weight: 600;
+}
+
+.exclamacao {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: $warning;
+  color: $white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.apiError {
+  margin: 0 auto $space-4;
+  max-width: 460px;
+  padding: $space-3 $space-4;
+  border-radius: $radius-md;
+  background: $danger-light;
+  border: 1px solid rgba($danger, 0.3);
+  color: $gray-800;
+  font-size: $font-size-sm;
+  text-align: left;
 }
 
 /* FAB e BALÃO FLUTUANTE */
@@ -254,4 +367,28 @@
   max-width: 400px;
   height: 60px;
   font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .moduloCard {
+    padding: $space-4;
+
+    h2 {
+      font-size: $font-size-md;
+    }
+  }
+
+  .perguntaItem {
+    padding: $space-4;
+  }
+
+  .notasGrid {
+    gap: 6px;
+  }
+
+  .notaLabel .circle {
+    height: 44px;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+  }
 }

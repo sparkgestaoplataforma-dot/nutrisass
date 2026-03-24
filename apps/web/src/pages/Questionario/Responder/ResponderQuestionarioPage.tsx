@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   buscarQuestionario,
   enviarRespostasQuestionario,
@@ -17,7 +17,6 @@ const OPCOES_NOTA: Record<number, string> = {
 };
 
 export function ResponderQuestionarioPage() {
-  const navigate = useNavigate();
   const { questionarioId, pacienteId } = useParams<{
     questionarioId: string;
     pacienteId: string;
@@ -27,6 +26,7 @@ export function ResponderQuestionarioPage() {
   const [erroFormulario, setErroFormulario] = useState<string | null>(null);
   const [tentouEnviar, setTentouEnviar] = useState(false);
   const [exibirLegendaFlutuante, setExibirLegendaFlutuante] = useState(false);
+  const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null);
 
   const {
     data: questionario,
@@ -64,11 +64,11 @@ export function ResponderQuestionarioPage() {
         questionarioId as string,
         payload,
       ),
-    onSuccess: () => {
-      navigate("/login", {
-        replace: true,
-        state: { mensagem: "Questionário enviado com sucesso!" },
-      });
+    onSuccess: (response) => {
+      setErroFormulario(null);
+      setMensagemSucesso(
+        response?.message || "Questionário preenchido com sucesso",
+      );
     },
     onError: (error: any) => {
       setErroFormulario(
@@ -125,6 +125,18 @@ export function ResponderQuestionarioPage() {
       <main className={styles.page}>
         <div className={styles.header}>
           <h1>Erro ao carregar questionário</h1>
+        </div>
+      </main>
+    );
+
+  if (mensagemSucesso)
+    return (
+      <main className={styles.page}>
+        <div className={styles.container}>
+          <section className={styles.sucessoCard}>
+            <h1>{mensagemSucesso}</h1>
+            <p>Você já pode fechar o site.</p>
+          </section>
         </div>
       </main>
     );
