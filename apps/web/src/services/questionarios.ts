@@ -1,5 +1,6 @@
 import axios from "axios";
-import type { ApiResponse } from "@nutricao/shared";
+import type { ApiResponse, PaginatedResponse } from "@nutricao/shared";
+import { api } from "@/services/api";
 
 const publicApi = axios.create({
   baseURL: "/api",
@@ -34,6 +35,14 @@ export interface RespostaPayload {
   nota: number;
 }
 
+export interface QuestionarioListItem {
+  id: string;
+  nome: string;
+  versao: number;
+  ativo: boolean;
+  totalModulos: number;
+}
+
 export async function buscarQuestionario(questionarioId: string) {
   const { data } = await publicApi.get<ApiResponse<QuestionarioDetalhe>>(
     `/questionarios/${questionarioId}`,
@@ -52,6 +61,23 @@ export async function enviarRespostasQuestionario(
     {
       respostas,
     },
+  );
+
+  return data;
+}
+
+export async function listarQuestionarios() {
+  const { data } =
+    await api.get<ApiResponse<PaginatedResponse<QuestionarioListItem>>>(
+      "/questionarios",
+    );
+
+  return data.data?.data ?? [];
+}
+
+export async function criarQuestionarioDefault() {
+  const { data } = await api.post<ApiResponse<unknown>>(
+    "/questionarios/default",
   );
 
   return data;
