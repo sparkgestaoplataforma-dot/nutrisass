@@ -34,11 +34,10 @@ export async function listar(req: Request, res: Response) {
 }
 
 export async function buscarPorId(req: Request<{ id: string }>, res: Response) {
-  const clinicaId = getClinicaId(req);
   const { id } = req.params;
   const incluirDeletados = parseBooleanQuery(req.query.incluirDeletados);
 
-  const questionario = await service.listarModulosComPerguntas(clinicaId, id, {
+  const questionario = await service.listarModulosComPerguntas(id, {
     incluirDeletados,
   });
 

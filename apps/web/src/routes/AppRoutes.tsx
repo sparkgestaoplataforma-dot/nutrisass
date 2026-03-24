@@ -12,6 +12,7 @@ import { RelatoriosPage } from "@/pages/Relatorios/RelatoriosPage";
 import { OnboardingPage } from "@/pages/Onboarding/OnboardingPage";
 import { EsqueciSenhaPage } from "@/pages/RedefinirSenha/EsqueciSenhaPage";
 import { RedefinirSenhaPage } from "@/pages/RedefinirSenha/RedefinirSenhaPage";
+import { ResponderQuestionarioPage } from "@/pages/Questionario/Responder/ResponderQuestionarioPage";
 export function AppRoutes() {
   return (
     <BrowserRouter>
@@ -19,6 +20,10 @@ export function AppRoutes() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/cadastro" element={<OnboardingPage />} />
         <Route path="/esqueci-senha" element={<EsqueciSenhaPage />} />
+        <Route
+          path="/questionarios/:questionarioId/pacientes/:pacienteId/responder"
+          element={<ResponderQuestionarioPage />}
+        />
         <Route
           path="/redefinir-senha"
           element={<Navigate to="/esqueci-senha" replace />}
