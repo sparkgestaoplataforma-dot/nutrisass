@@ -1,9 +1,9 @@
 import { prisma } from "@/shared/providers/prisma";
 import { AppError } from "@/shared/middlewares/errorHandler.js";
 
-export async function pegarAvaliacaoPorId(questionarioId: string) {
+export async function pegarAvaliacaoPorId(id: string) {
   const avaliacao = await prisma.avaliacao.findFirst({
-    where: { questionarioId },
+    where: { id },
   });
 
   if (!avaliacao) {

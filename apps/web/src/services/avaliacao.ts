@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api } from "./api";
 import type { ApiResponse } from "@nutricao/shared";
 
 export interface RegraInterpretacao {
@@ -19,7 +19,7 @@ export interface Avaliacao {
 }
 
 export async function getAvaliacoesPorId(Id: string) {
-  const response = await api.get<ApiResponse<Avaliacao[]>>(
+  const response = await api.get<ApiResponse<Avaliacao>>(
     `/avaliacoes/${Id}/respostas`,
   );
   return response.data;
