@@ -73,8 +73,6 @@ export function ProntuarioPage() {
   const [avaliacaoSelecionada, setAvaliacaoSelecionada] = useState<
     Avaliacao | undefined
   >();
-  // const [classificacao, setClassificacao] = useState<string>("");
-  // Timer state
   const [timerActive, setTimerActive] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerStartedAt, setTimerStartedAt] = useState<Date | null>(null);
@@ -136,10 +134,10 @@ export function ProntuarioPage() {
   }, [avaliacaoSelecionadaId]);
 
   const classificacao = avaliacaoSelecionada?.regrasInterpretacao?.find(
-  (regra) =>
-    avaliacaoSelecionada.scoreTotal >= regra.pontuacaoMin &&
-    avaliacaoSelecionada.scoreTotal <= regra.pontuacaoMax
-)?.classificacao;
+    (regra) =>
+      avaliacaoSelecionada.scoreTotal >= regra.pontuacaoMin &&
+      avaliacaoSelecionada.scoreTotal <= regra.pontuacaoMax,
+  )?.classificacao;
 
   const { data: paciente, isLoading } = useQuery({
     queryKey: ["paciente", id],
@@ -542,7 +540,14 @@ export function ProntuarioPage() {
               </div>
             </div>
 
-            <button className={styles.sideNavItem}>
+            <button
+              className={styles.sideNavItem}
+              onClick={() => {
+                if (avaliacaoSelecionadaId) {
+                  navigate(`/avaliacoes/${avaliacaoSelecionadaId}/${id}`); // Navega para detalhes da avaliação
+                }
+              }}
+            >
               <div className={styles.sideNavIcon}>
                 <HugeiconsIcon
                   icon={ClipboardIcon}
