@@ -315,6 +315,38 @@
   }
 }
 
+.buttoVerResultadoVerde {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: 500;
+  color: $gray-600;
+  background: $green-200;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: $white;
+    color: $gray-900;
+    box-shadow: $shadow-sm;
+
+    .sideNavIcon {
+      background: $primary-light;
+      color: $primary-dark;
+    }
+  }
+
+  span {
+    flex: 1;
+    text-align: left;
+  }
+}
+
 .sideNavIcon {
   width: 32px;
   height: 32px;
@@ -330,6 +362,20 @@
   font-size: 1rem;
   transition: all 0.2s;
 }
+.statusGreen {
+  color: $success;
+}
+.statusYellow {
+  color: $warning;
+}
+
+.statusOrange {
+  color: $orange;
+}
+.statusRed {
+  color: $danger;
+}
+
 .sideNavTopic {
   display: flex;
   align-items: flex-start;

@@ -23,7 +23,16 @@ import {
   Clock01Icon,
   Calculator01Icon,
   DocumentCodeFreeIcons,
+  CircleIcon,
+  Alert02Icon,
 } from "@hugeicons/core-free-icons";
+import {
+  Tick02Icon,
+  CheckUnread03Icon,
+  PlusMinus02Icon,
+  AlertIcon,
+} from "@hugeicons/core-free-icons";
+
 import { api } from "@/services/api";
 import { useAuthStore } from "@/stores/authStore";
 import { EstadoClinicoTimeline } from "./components/EstadoClinicoTimeline";
@@ -133,12 +142,6 @@ export function ProntuarioPage() {
     fetchAvaliacao();
   }, [avaliacaoSelecionadaId]);
 
-  const classificacao = avaliacaoSelecionada?.regrasInterpretacao?.find(
-    (regra) =>
-      avaliacaoSelecionada.scoreTotal >= regra.pontuacaoMin &&
-      avaliacaoSelecionada.scoreTotal <= regra.pontuacaoMax,
-  )?.classificacao;
-
   const { data: paciente, isLoading } = useQuery({
     queryKey: ["paciente", id],
     queryFn: async () => {
@@ -188,7 +191,6 @@ export function ProntuarioPage() {
     );
   }
 
-  // View principal: Atendimento
   const endereco = [
     paciente.endereco,
     paciente.bairro,
@@ -197,6 +199,29 @@ export function ProntuarioPage() {
   ]
     .filter(Boolean)
     .join(", ");
+  const scoreTotal = avaliacaoSelecionada?.scoreTotal ?? 0;
+
+  const classificacao = avaliacaoSelecionada?.regrasInterpretacao?.find(
+    (regra) =>
+      scoreTotal >= regra.pontuacaoMin && scoreTotal <= regra.pontuacaoMax,
+  )?.classificacao;
+  const statusColor =
+    scoreTotal >= 0 && scoreTotal <= 30
+      ? "#10b981"
+      : scoreTotal > 31 && scoreTotal <= 39
+        ? "#f59e0b"
+        : scoreTotal >= 40 && scoreTotal <= 99
+          ? "#f97316"
+          : "#ef4444";
+
+  const statusIcon =
+    scoreTotal >= 0 && scoreTotal <= 30
+      ? Tick02Icon
+      : scoreTotal > 31 && scoreTotal <= 39
+        ? CheckUnread03Icon
+        : scoreTotal >= 40 && scoreTotal <= 99
+          ? PlusMinus02Icon
+          : Alert02Icon;
 
   return (
     <div className={styles.page}>
@@ -556,6 +581,14 @@ export function ProntuarioPage() {
                 />
               </div>
               <span>Ver Respostas</span>
+              <div className={statusColor}>
+                <HugeiconsIcon
+                  icon={statusIcon}
+                  size={20}
+                  strokeWidth={2}
+                  color={statusColor}
+                />
+              </div>
               <HugeiconsIcon
                 icon={ArrowRight01Icon}
                 size={12}
