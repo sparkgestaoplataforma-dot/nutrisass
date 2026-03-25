@@ -1,12 +1,12 @@
 import styles from "../AvaliacaoDetalhesPage.module.scss";
 
 interface MainAvaliacaoDetalhesProps {
-  mockModulos: any;
   InstrucoesItens: { nota: number; descricao: string }[];
+  avaliacao: any;
 }
 export function MainAvaliacaoDetalhes({
-  mockModulos,
   InstrucoesItens,
+  avaliacao,
 }: MainAvaliacaoDetalhesProps) {
   return (
     <>
@@ -26,7 +26,7 @@ export function MainAvaliacaoDetalhes({
         </section>
 
         {/* MÓDULOS */}
-        {mockModulos.map((modulo: any) => (
+        {avaliacao?.questionario?.modulos.map((modulo: any) => (
           <section
             key={modulo.nome}
             className={styles.moduloCard}
@@ -41,14 +41,16 @@ export function MainAvaliacaoDetalhes({
 
                   <div className={styles.notasGrid}>
                     {[0, 1, 2, 3, 4].map((nota) => (
-                      <button
+                      <div
                         key={nota}
                         className={`${styles.notaBox} ${
-                          p.resposta === nota ? styles.notaSelecionada : ""
+                          p.respostas[0]?.nota === nota
+                            ? styles.notaSelecionada
+                            : ""
                         }`}
                       >
                         {nota}
-                      </button>
+                      </div>
                     ))}
                   </div>
                 </article>
@@ -59,4 +61,37 @@ export function MainAvaliacaoDetalhes({
       </div>
     </>
   );
+}
+
+{
+  /* {mockModulos.map((modulo: any) => (
+  <section
+    key={modulo.nome}
+    className={styles.moduloCard}
+    id={`modulo-${modulo.id}`}
+  >
+    <h2>{modulo.nome}</h2>
+
+    <div className={styles.perguntas}>
+      {modulo.perguntas.map((p: any, index: number) => (
+        <article key={index} className={styles.perguntaItem}>
+          <p className={styles.perguntaTexto}>{p.descricao}</p>
+
+          <div className={styles.notasGrid}>
+            {[0, 1, 2, 3, 4].map((nota) => (
+              <button
+                key={nota}
+                className={`${styles.notaBox} ${
+                  p.resposta === nota ? styles.notaSelecionada : ""
+                }`}
+              >
+                {nota}
+              </button>
+            ))}
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+))} */
 }

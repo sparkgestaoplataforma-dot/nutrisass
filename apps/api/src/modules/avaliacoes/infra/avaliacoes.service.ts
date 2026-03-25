@@ -22,3 +22,43 @@ export async function pegarAvaliacaoPorId(id: string) {
     regrasInterpretacao,
   };
 }
+
+export async function pegarAvaliacaoComRespostas(id: string) {
+  const avaliacao = await prisma.avaliacao.findUnique({
+    where: { id },
+    include: {
+      questionario: {
+        include: {
+          modulos: {
+            orderBy: { ordem: "asc" },
+            include: {
+              perguntas: {
+                orderBy: { ordem: "asc" },
+                include: {
+                  respostas: {
+                    where: {
+                      avaliacaoId: id,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+  if (!avaliacao) {
+    throw new AppError("Avaliação não encontrada", 404);
+  }
+  const regrasInterpretacao = await prisma.regraInterpretacao.findMany({
+    where: {
+      questionarioId: avaliacao.questionarioId,
+    },
+    orderBy: { pontuacaoMin: "asc" },
+  });
+  return {
+    ...avaliacao,
+    regrasInterpretacao,
+  };
+}

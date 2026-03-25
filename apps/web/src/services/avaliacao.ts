@@ -19,8 +19,13 @@ export interface Avaliacao {
 }
 
 export async function getAvaliacoesPorId(Id: string) {
+  const response = await api.get<ApiResponse<Avaliacao>>(`/avaliacoes/${Id}`);
+  return response.data;
+}
+
+export async function getAvaliacaoComRespostas(Id: string) {
   const response = await api.get<ApiResponse<Avaliacao>>(
-    `/avaliacoes/${Id}/respostas`,
+    `/avaliacoes/${Id}/questionario/respostas`,
   );
   return response.data;
 }

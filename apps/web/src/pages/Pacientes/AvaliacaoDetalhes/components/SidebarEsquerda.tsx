@@ -2,7 +2,7 @@ import styles from "../AvaliacaoDetalhesPage.module.scss";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 
-export function SidebarEsquerda({ mockModulos }: any) {
+export function SidebarEsquerda({ avaliacao }: any) {
   function scrollToModulo(id: string) {
     const elemento = document.getElementById(`modulo-${id}`);
 
@@ -17,7 +17,7 @@ export function SidebarEsquerda({ mockModulos }: any) {
     <>
       <p className={styles.sidebarLabel}>Módulos</p>
 
-      {mockModulos.map((modulo: any) => (
+      {avaliacao?.questionario?.modulos.map((modulo: any) => (
         <button
           key={modulo.nome}
           className={styles.sideNavItem}
