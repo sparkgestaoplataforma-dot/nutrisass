@@ -4,6 +4,7 @@ import {
   CreateQuestionarioInput,
   CreateQuestionarioModuloInput,
   CreateQuestionarioRegrasInterpretacaoInput,
+  LabelEscolhaItemInput,
   UpdateQuestionarioInput,
 } from "@nutricao/shared";
 import { criarQuestionarioPadraoParaClinica } from "../seed/default-questionario";
@@ -23,6 +24,28 @@ type ListarQuestionarioCompletoParams = {
   incluirDeletados?: boolean;
 };
 
+function mapLabelEscolha(item: { id: string; nota: number; label: string }) {
+  return {
+    id: item.id,
+    nota: item.nota,
+    label: item.label,
+  };
+}
+
+async function buscarQuestionarioDaClinica(
+  clinicaId: string,
+  questionarioId: string,
+) {
+  const questionario = await prisma.questionario.findFirst({
+    where: { id: questionarioId, clinicaId },
+    select: { id: true },
+  });
+
+  if (!questionario) {
+    throw new AppError("Questionário não encontrado para a clínica", 404);
+  }
+}
+
 async function clonarQuestionarioParaNovaVersao(
   clinicaId: string,
   questionarioId: string,
@@ -30,6 +53,9 @@ async function clonarQuestionarioParaNovaVersao(
   const original = await prisma.questionario.findFirst({
     where: { id: questionarioId, clinicaId },
     include: {
+      labelEscolha: {
+        orderBy: { nota: "asc" },
+      },
       modulos: {
         orderBy: { ordem: "asc" },
         include: {
@@ -72,6 +98,12 @@ async function clonarQuestionarioParaNovaVersao(
         nome: original.nome,
         versao: novaVersao,
         ativo: true,
+        labelEscolha: {
+          create: original.labelEscolha.map((labelEscolha) => ({
+            label: labelEscolha.label,
+            nota: labelEscolha.nota,
+          })),
+        },
         modulos: {
           create: original.modulos.map((modulo) => ({
             nome: modulo.nome,
@@ -229,6 +261,9 @@ export async function listarModulosComPerguntas(
       ...(params.incluirDeletados ? {} : { ativo: true }),
     },
     include: {
+      labelEscolha: {
+        orderBy: { nota: "asc" },
+      },
       modulos: {
         orderBy: { ordem: "asc" },
         include: {
@@ -244,7 +279,98 @@ export async function listarModulosComPerguntas(
     throw new AppError("Questionário não encontrado para a clínica", 404);
   }
 
-  return questionario;
+  return {
+    ...questionario,
+    labelEscolha: questionario.labelEscolha.map(mapLabelEscolha),
+  };
+}
+
+export async function listarTitulosEscolha(
+  clinicaId: string,
+  questionarioId: string,
+) {
+  await buscarQuestionarioDaClinica(clinicaId, questionarioId);
+
+  const titulos = await prisma.labelEscolha.findMany({
+    where: { questionarioId },
+    orderBy: { nota: "asc" },
+  });
+
+  return titulos.map(mapLabelEscolha);
+}
+
+export async function upsertTitulosEscolha(
+  clinicaId: string,
+  questionarioId: string,
+  itens: LabelEscolhaItemInput[],
+) {
+  await buscarQuestionarioDaClinica(clinicaId, questionarioId);
+
+  const titulos = await prisma.$transaction(
+    itens.map((item) =>
+      prisma.labelEscolha.upsert({
+        where: {
+          questionarioId_nota: {
+            questionarioId,
+            nota: item.nota,
+          },
+        },
+        update: {
+          label: item.label,
+        },
+        create: {
+          questionarioId,
+          nota: item.nota,
+          label: item.label,
+        },
+      }),
+    ),
+  );
+
+  return titulos.sort((a, b) => a.nota - b.nota).map(mapLabelEscolha);
+}
+
+export async function atualizarTituloEscolha(
+  clinicaId: string,
+  questionarioId: string,
+  nota: number,
+  label: string,
+) {
+  await buscarQuestionarioDaClinica(clinicaId, questionarioId);
+
+  const titulo = await prisma.labelEscolha.upsert({
+    where: {
+      questionarioId_nota: {
+        questionarioId,
+        nota,
+      },
+    },
+    update: {
+      label: label,
+    },
+    create: {
+      questionarioId,
+      nota,
+      label: label,
+    },
+  });
+
+  return mapLabelEscolha(titulo);
+}
+
+export async function excluirTituloEscolha(
+  clinicaId: string,
+  questionarioId: string,
+  nota: number,
+) {
+  await buscarQuestionarioDaClinica(clinicaId, questionarioId);
+
+  await prisma.labelEscolha.deleteMany({
+    where: {
+      questionarioId,
+      nota,
+    },
+  });
 }
 
 export async function editar(

@@ -196,6 +196,7 @@ model Questionario {
   versao       Int                  @default(1)
   ativo        Boolean              @default(true)
   modulos      Modulo[]
+  labelEscolha LabelEscolha[]
   regras       RegraInterpretacao[]
   avaliacoes   Avaliacao[]
 
@@ -228,6 +229,18 @@ model Pergunta {
   @@index([moduloId])
   @@unique([moduloId, ordem])
   @@map("questionarios_questoes")
+}
+
+model LabelEscolha {
+  id             String       @id @default(uuid())
+  questionarioId String       @map("questionario_id")
+  questionario   Questionario @relation(fields: [questionarioId], references: [id], onDelete: Cascade)
+  label         String
+  nota           Int
+
+  @@index([questionarioId])
+  @@unique([questionarioId, nota])
+  @@map("questionarios_titulos_escolha")
 }
 
 model RegraInterpretacao {

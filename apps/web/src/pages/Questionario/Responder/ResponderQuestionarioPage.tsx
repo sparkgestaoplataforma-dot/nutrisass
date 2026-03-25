@@ -52,6 +52,30 @@ export function ResponderQuestionarioPage() {
       );
   }, [questionario]);
 
+  const opcoesNota = useMemo(() => {
+    const labelsDinamicos = questionario?.labelEscolha
+      ?.slice()
+      .sort((a, b) => a.nota - b.nota)
+      .reduce<Record<number, string>>((acc, item) => {
+        acc[item.nota] = item.label;
+        return acc;
+      }, {});
+
+    if (!labelsDinamicos || Object.keys(labelsDinamicos).length === 0) {
+      return OPCOES_NOTA;
+    }
+
+    return labelsDinamicos;
+  }, [questionario?.labelEscolha]);
+
+  const notasDisponiveis = useMemo(
+    () =>
+      Object.keys(opcoesNota)
+        .map(Number)
+        .sort((a, b) => a - b),
+    [opcoesNota],
+  );
+
   const totalPerguntas = perguntas.length;
   const totalRespondidas = Object.keys(respostas).length;
   const progressoPorcentagem =
@@ -151,7 +175,7 @@ export function ResponderQuestionarioPage() {
           <div className={styles.popover}>
             <h4>Significado das Notas:</h4>
             <ul>
-              {Object.entries(OPCOES_NOTA).map(([n, t]) => (
+              {Object.entries(opcoesNota).map(([n, t]) => (
                 <li key={n}>
                   <strong>{n}:</strong> {t}
                 </li>
@@ -179,7 +203,7 @@ export function ResponderQuestionarioPage() {
         <section className={styles.instrucoes}>
           <h3>Instruções de Preenchimento</h3>
           <div className={styles.legendaGrid}>
-            {Object.entries(OPCOES_NOTA).map(([nota, texto]) => (
+            {Object.entries(opcoesNota).map(([nota, texto]) => (
               <div key={nota} className={styles.legendaItem}>
                 <strong>{nota}</strong>
                 <span>{texto}</span>
@@ -239,8 +263,7 @@ export function ResponderQuestionarioPage() {
                         </p>
 
                         <div className={styles.notasGrid}>
-                          {Object.keys(OPCOES_NOTA).map((v) => {
-                            const nota = Number(v);
+                          {notasDisponiveis.map((nota) => {
                             return (
                               <label
                                 key={`${pergunta.id}-${nota}`}

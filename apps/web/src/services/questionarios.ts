@@ -21,6 +21,12 @@ export interface QuestionarioModulo {
   perguntas: QuestionarioPergunta[];
 }
 
+export interface QuestionarioLabelEscolha {
+  id: string;
+  nota: number;
+  label: string;
+}
+
 export interface QuestionarioDetalhe {
   id: string;
   clinicaId: string;
@@ -28,6 +34,7 @@ export interface QuestionarioDetalhe {
   versao: number;
   ativo: boolean;
   modulos: QuestionarioModulo[];
+  labelEscolha?: QuestionarioLabelEscolha[];
 }
 
 export interface RespostaPayload {
