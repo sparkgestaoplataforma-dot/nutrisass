@@ -1,12 +1,15 @@
 import { Request, Response } from "express";
 import * as service from "./questionarios.service";
 import { getClinicaId } from "../../../shared/middlewares/auth.js";
+import { AppError } from "../../../shared/middlewares/errorHandler.js";
 
 import {
   CreateQuestionarioInput,
   CreateQuestionarioModuloInput,
   CreateQuestionarioRegrasInterpretacaoInput,
+  UpsertLabelEscolhaInput,
   UpdateQuestionarioInput,
+  UpdateLabelEscolhaInput,
 } from "@nutricao/shared";
 
 function parseBooleanQuery(value: unknown) {
@@ -16,6 +19,16 @@ function parseBooleanQuery(value: unknown) {
 function parseNumberQuery(value: unknown, fallback: number) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function parseNotaParam(value: string) {
+  const nota = Number(value);
+
+  if (!Number.isInteger(nota) || nota < 0 || nota > 4) {
+    throw new AppError("Nota inválida. Informe um inteiro entre 0 e 4.", 400);
+  }
+
+  return nota;
 }
 
 export async function listar(req: Request, res: Response) {
@@ -42,6 +55,63 @@ export async function buscarPorId(req: Request<{ id: string }>, res: Response) {
   });
 
   return res.json({ success: true, data: questionario });
+}
+
+export async function listarTitulosEscolha(
+  req: Request<{ id: string }>,
+  res: Response,
+) {
+  const clinicaId = getClinicaId(req);
+  const { id } = req.params;
+
+  const titulos = await service.listarTitulosEscolha(clinicaId, id);
+
+  return res.json({ success: true, data: titulos });
+}
+
+export async function upsertTitulosEscolha(
+  req: Request<{ id: string }>,
+  res: Response,
+) {
+  const clinicaId = getClinicaId(req);
+  const { id } = req.params;
+  const payload = req.body as UpsertLabelEscolhaInput;
+
+  const titulos = await service.upsertTitulosEscolha(clinicaId, id, payload);
+
+  return res.status(201).json({ success: true, data: titulos });
+}
+
+export async function atualizarTituloEscolha(
+  req: Request<{ id: string; nota: string }>,
+  res: Response,
+) {
+  const clinicaId = getClinicaId(req);
+  const { id, nota: notaParam } = req.params;
+  const { label } = req.body as UpdateLabelEscolhaInput;
+  const nota = parseNotaParam(notaParam);
+
+  const titulo = await service.atualizarTituloEscolha(
+    clinicaId,
+    id,
+    nota,
+    label,
+  );
+
+  return res.json({ success: true, data: titulo });
+}
+
+export async function excluirTituloEscolha(
+  req: Request<{ id: string; nota: string }>,
+  res: Response,
+) {
+  const clinicaId = getClinicaId(req);
+  const { id, nota: notaParam } = req.params;
+  const nota = parseNotaParam(notaParam);
+
+  await service.excluirTituloEscolha(clinicaId, id, nota);
+
+  return res.json({ success: true, message: "Título de escolha excluído" });
 }
 
 export async function criar(req: Request, res: Response) {
