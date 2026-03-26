@@ -4,12 +4,36 @@ import {
   Calendar01Icon,
   Calculator01Icon,
   DocumentCodeFreeIcons,
+  Delete02Icon,
 } from "@hugeicons/core-free-icons";
+import { ExcluirAvaliacaoModal } from "@/pages/Pacientes/AvaliacaoDetalhes/components/ExcluirAvaliacaoModal";
+import { useState } from "react";
+interface SidebarDireitaProps {
+  avaliacao: any;
+  handleDeleteAvaliacao: () => void;
+}
+export function SidebarDireita({
+  avaliacao,
+  handleDeleteAvaliacao,
+}: SidebarDireitaProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-export function SidebarDireita({ avaliacao }: any) {
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
   return (
     <>
       <div className={styles.rightCard}>
+        {isModalOpen && (
+          <ExcluirAvaliacaoModal
+            closeModal={closeModal}
+            handleDeleteAvaliacao={handleDeleteAvaliacao}
+          />
+        )}
         <h4 className={styles.rightTitle}>Resumo da avaliação</h4>
 
         <div className={styles.sideNavTopic}>
@@ -49,6 +73,12 @@ export function SidebarDireita({ avaliacao }: any) {
             </div>
           </div>
         </div>
+        <button className={styles.sideNavItem} onClick={openModal}>
+          <div className={styles.sideNavIcon}>
+            <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={1.8} />
+          </div>
+          <span>Excluir Avaliação</span>
+        </button>
       </div>
     </>
   );

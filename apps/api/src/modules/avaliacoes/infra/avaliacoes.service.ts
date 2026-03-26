@@ -71,3 +71,13 @@ export async function pegarAvaliacaoComRespostas(id: string) {
     )?.classificacao,
   };
 }
+
+export async function DeleteAvaliacao(id: string) {
+  const avaliacaoDeletada = await prisma.avaliacao.delete({
+    where: { id },
+  });
+
+  if (!avaliacaoDeletada) {
+    throw new AppError("Avaliação não encontrada", 404);
+  }
+}

@@ -41,3 +41,8 @@ export async function getAvaliacaoComRespostas(Id: string) {
   );
   return response.data;
 }
+
+export async function DeleteAvaliacao(Id: string) {
+  const response = await api.delete(`/avaliacoes/${Id}`);
+  return response;
+}

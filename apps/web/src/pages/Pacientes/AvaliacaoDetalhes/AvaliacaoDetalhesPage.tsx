@@ -7,11 +7,14 @@ import { HeaderAvaliacaoDetalhes } from "./components/HeaderAvaliacaoDetalhes";
 import {
   AvaliacaoComRespostas,
   getAvaliacaoComRespostas,
+  DeleteAvaliacao,
 } from "@/services/avaliacao";
 import { getPacientePorId } from "@/services/pacientes";
 import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export function AvaliacaoDetalhesPage() {
+  const navigate = useNavigate();
   const { avaliacaoId, pacienteId } = useParams();
   const [avaliacao, setAvaliacao] = useState<AvaliacaoComRespostas | null>(
     null,
@@ -32,6 +35,10 @@ export function AvaliacaoDetalhesPage() {
     fetchAvaliacaoComRespostas();
   }, [avaliacaoId]);
 
+  const handleDeleteAvaliacao = () => {
+    DeleteAvaliacao(avaliacaoId!);
+    navigate(`/pacientes/${pacienteId}`);
+  };
   return (
     <div className={styles.page}>
       <HeaderAvaliacaoDetalhes paciente={paciente} />
@@ -46,7 +53,10 @@ export function AvaliacaoDetalhesPage() {
         </main>
 
         <aside className={styles.sidebarRight}>
-          <SidebarDireita avaliacao={avaliacao} />
+          <SidebarDireita
+            handleDeleteAvaliacao={handleDeleteAvaliacao}
+            avaliacao={avaliacao}
+          />
         </aside>
       </div>
     </div>

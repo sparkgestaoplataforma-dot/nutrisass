@@ -18,3 +18,9 @@ export async function buscarComRespostas(
 
   return res.json({ success: true, data: avaliacao });
 }
+
+export async function Exluir(req:Request<{id: string}>, res: Response){
+  const id = req.params.id
+
+  await service.DeleteAvaliacao(id)
+}
