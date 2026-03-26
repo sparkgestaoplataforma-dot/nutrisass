@@ -7,6 +7,6 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get("/:id", controller.buscarPorId);
-router.get("/:id/questionario/respostas", controller.buscarComRespostas);
+router.get("/:id/questionario", controller.buscarComRespostas);
 
 export { router as avaliacoesRoutes };

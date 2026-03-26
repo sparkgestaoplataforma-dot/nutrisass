@@ -26,8 +26,6 @@ export function AvaliacaoDetalhesPage() {
     const fetchAvaliacaoComRespostas = async () => {
       const avaliacaoData = await getAvaliacaoComRespostas(avaliacaoId!);
       setAvaliacao(avaliacaoData.data || null);
-
-      console.log("Avaliação com respostas obtida:", avaliacaoData);
       setAvaliacao(avaliacaoData.data || null);
     };
     fetchPaciente();

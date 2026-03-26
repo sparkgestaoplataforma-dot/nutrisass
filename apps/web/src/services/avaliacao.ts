@@ -15,7 +15,6 @@ export interface Avaliacao {
   scoreTotal: number;
   pacienteId: string;
   questionarioId: string;
-  regrasInterpretacao: RegraInterpretacao[];
 }
 
 export type AvaliacaoComRespostas = Avaliacao & {
@@ -31,13 +30,15 @@ export type AvaliacaoComRespostas = Avaliacao & {
 };
 
 export async function getAvaliacoesPorId(Id: string) {
-  const response = await api.get<ApiResponse<Avaliacao>>(`/avaliacoes/${Id}`);
+  const response = await api.get<ApiResponse<AvaliacaoComRespostas>>(
+    `/avaliacoes/${Id}`,
+  );
   return response.data;
 }
 
 export async function getAvaliacaoComRespostas(Id: string) {
   const response = await api.get<ApiResponse<AvaliacaoComRespostas>>(
-    `/avaliacoes/${Id}/questionario/respostas`,
+    `/avaliacoes/${Id}/questionario`,
   );
   return response.data;
 }

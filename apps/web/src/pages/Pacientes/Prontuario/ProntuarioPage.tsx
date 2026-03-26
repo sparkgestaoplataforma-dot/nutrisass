@@ -23,16 +23,7 @@ import {
   Clock01Icon,
   Calculator01Icon,
   DocumentCodeFreeIcons,
-  CircleIcon,
-  Alert02Icon,
 } from "@hugeicons/core-free-icons";
-import {
-  Tick02Icon,
-  CheckUnread03Icon,
-  PlusMinus02Icon,
-  AlertIcon,
-} from "@hugeicons/core-free-icons";
-
 import { api } from "@/services/api";
 import { useAuthStore } from "@/stores/authStore";
 import { EstadoClinicoTimeline } from "./components/EstadoClinicoTimeline";
@@ -40,7 +31,10 @@ import { MedidasTab } from "./components/MedidasTab";
 import { ExamesTab } from "./components/ExamesTab";
 import styles from "./ProntuarioPage.module.scss";
 import { Avaliacoes, getAvaliacoesPorPacienteId } from "@/services/pacientes";
-import { Avaliacao, getAvaliacoesPorId } from "@/services/avaliacao";
+import {
+  AvaliacaoComRespostas,
+  getAvaliacoesPorId,
+} from "@/services/avaliacao";
 
 type View = "atendimento" | "medidas" | "exames";
 
@@ -80,7 +74,7 @@ export function ProntuarioPage() {
     string | null
   >(null);
   const [avaliacaoSelecionada, setAvaliacaoSelecionada] = useState<
-    Avaliacao | undefined
+    AvaliacaoComRespostas | undefined
   >();
   const [timerActive, setTimerActive] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
@@ -133,7 +127,6 @@ export function ProntuarioPage() {
       try {
         const response = await getAvaliacoesPorId(avaliacaoSelecionadaId);
         setAvaliacaoSelecionada(response.data || undefined);
-        console.log("Avaliação selecionada:", response.data);
       } catch (error) {
         console.error("Erro ao buscar avaliação:", error);
       }
@@ -201,7 +194,7 @@ export function ProntuarioPage() {
     .join(", ");
   const scoreTotal = avaliacaoSelecionada?.scoreTotal ?? 0;
 
-  const classificacao = avaliacaoSelecionada?.regrasInterpretacao?.find(
+  const classificacao = avaliacaoSelecionada?.questionario?.regras?.find(
     (regra) =>
       scoreTotal >= regra.pontuacaoMin && scoreTotal <= regra.pontuacaoMax,
   )?.classificacao;
@@ -551,7 +544,7 @@ export function ProntuarioPage() {
               className={styles.sideNavItem}
               onClick={() => {
                 if (avaliacaoSelecionadaId) {
-                  navigate(`/avaliacoes/${avaliacaoSelecionadaId}/${id}`); // Navega para detalhes da avaliação
+                  navigate(`/avaliacoes/${avaliacaoSelecionadaId}/${id}`);
                 }
               }}
             >
