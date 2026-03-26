@@ -31,11 +31,6 @@ export function AvaliacaoDetalhesPage() {
     fetchPaciente();
     fetchAvaliacaoComRespostas();
   }, [avaliacaoId]);
-  const classificacao = avaliacao?.questionario?.regras?.find(
-    (regra) =>
-      avaliacao.scoreTotal >= regra.pontuacaoMin &&
-      avaliacao.scoreTotal <= regra.pontuacaoMax,
-  )?.classificacao;
 
   return (
     <div className={styles.page}>
@@ -51,7 +46,7 @@ export function AvaliacaoDetalhesPage() {
         </main>
 
         <aside className={styles.sidebarRight}>
-          <SidebarDireita avaliacao={avaliacao} classificacao={classificacao} />
+          <SidebarDireita avaliacao={avaliacao} />
         </aside>
       </div>
     </div>

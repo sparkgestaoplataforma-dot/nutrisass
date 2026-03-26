@@ -6,7 +6,7 @@ import {
   DocumentCodeFreeIcons,
 } from "@hugeicons/core-free-icons";
 
-export function SidebarDireita({ avaliacao, classificacao }: any) {
+export function SidebarDireita({ avaliacao }: any) {
   return (
     <>
       <div className={styles.rightCard}>
@@ -45,7 +45,7 @@ export function SidebarDireita({ avaliacao, classificacao }: any) {
           <div className={styles.topicContent}>
             <div className={styles.topicTitle}>Observação</div>
             <div className={styles.topicDescription}>
-              {classificacao ?? "Nenhuma selecionada"}
+              {avaliacao?.regraInterpretacao ?? "Nenhuma selecionada"}
             </div>
           </div>
         </div>

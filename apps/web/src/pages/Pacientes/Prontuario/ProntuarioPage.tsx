@@ -32,6 +32,7 @@ import { ExamesTab } from "./components/ExamesTab";
 import styles from "./ProntuarioPage.module.scss";
 import { Avaliacoes, getAvaliacoesPorPacienteId } from "@/services/pacientes";
 import {
+  Avaliacao,
   AvaliacaoComRespostas,
   getAvaliacoesPorId,
 } from "@/services/avaliacao";
@@ -74,7 +75,7 @@ export function ProntuarioPage() {
     string | null
   >(null);
   const [avaliacaoSelecionada, setAvaliacaoSelecionada] = useState<
-    AvaliacaoComRespostas | undefined
+    Avaliacao | undefined
   >();
   const [timerActive, setTimerActive] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
@@ -193,11 +194,6 @@ export function ProntuarioPage() {
     .filter(Boolean)
     .join(", ");
   const scoreTotal = avaliacaoSelecionada?.scoreTotal ?? 0;
-
-  const classificacao = avaliacaoSelecionada?.questionario?.regras?.find(
-    (regra) =>
-      scoreTotal >= regra.pontuacaoMin && scoreTotal <= regra.pontuacaoMax,
-  )?.classificacao;
   return (
     <div className={styles.page}>
       {/* Breadcrumb */}
@@ -535,7 +531,7 @@ export function ProntuarioPage() {
               <div className={styles.TopicContent}>
                 <div className={styles.topicTitle}>Observação</div>
                 <div className={styles.topicDescription}>
-                  {avaliacaoSelecionada ? classificacao : "Nenhuma selecionada"}
+                  {avaliacaoSelecionada ? avaliacaoSelecionada?.regraInterpretacao?.classificacao : "Nenhuma selecionada"}
                 </div>
               </div>
             </div>

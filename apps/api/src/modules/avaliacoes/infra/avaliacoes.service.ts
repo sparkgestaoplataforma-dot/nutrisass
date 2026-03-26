@@ -4,22 +4,27 @@ import { AppError } from "@/shared/middlewares/errorHandler.js";
 export async function pegarAvaliacaoPorId(id: string) {
   const avaliacao = await prisma.avaliacao.findFirst({
     where: { id },
-    include: {
-      questionario: {
-        include: {
-          regras: {
-            orderBy: { pontuacaoMin: "asc" },
-          },
-        },
-      },
-    },
   });
 
   if (!avaliacao) {
     throw new AppError("Avaliação não encontrada", 404);
   }
+  const regraInterpretacao = await prisma.regraInterpretacao.findFirst({
+    select: {
+      classificacao: true,
+    },
+    where: {
+      questionarioId: avaliacao.questionarioId,
+      pontuacaoMin: {
+        lte: avaliacao.scoreTotal,
+      },
+      pontuacaoMax: {
+        gte: avaliacao.scoreTotal,
+      },
+    },
+  });
 
-  return avaliacao;
+  return { ...avaliacao, regraInterpretacao };
 }
 
 export async function pegarAvaliacaoComRespostas(id: string) {
@@ -56,5 +61,13 @@ export async function pegarAvaliacaoComRespostas(id: string) {
   if (!avaliacao) {
     throw new AppError("Avaliação não encontrada", 404);
   }
-  return avaliacao;
+
+  return {
+    ...avaliacao,
+    regraInterpretacao: avaliacao.questionario.regras.find(
+      (regra) =>
+        avaliacao.scoreTotal >= regra.pontuacaoMin &&
+        avaliacao.scoreTotal <= regra.pontuacaoMax,
+    )?.classificacao,
+  };
 }

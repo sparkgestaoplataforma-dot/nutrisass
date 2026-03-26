@@ -15,6 +15,7 @@ export interface Avaliacao {
   scoreTotal: number;
   pacienteId: string;
   questionarioId: string;
+  regraInterpretacao?: RegraInterpretacao;
 }
 
 export type AvaliacaoComRespostas = Avaliacao & {
@@ -30,9 +31,7 @@ export type AvaliacaoComRespostas = Avaliacao & {
 };
 
 export async function getAvaliacoesPorId(Id: string) {
-  const response = await api.get<ApiResponse<AvaliacaoComRespostas>>(
-    `/avaliacoes/${Id}`,
-  );
+  const response = await api.get<ApiResponse<Avaliacao>>(`/avaliacoes/${Id}`);
   return response.data;
 }
 
