@@ -205,24 +205,6 @@ export function ProntuarioPage() {
     (regra) =>
       scoreTotal >= regra.pontuacaoMin && scoreTotal <= regra.pontuacaoMax,
   )?.classificacao;
-  const statusColor =
-    scoreTotal >= 0 && scoreTotal <= 30
-      ? "#10b981"
-      : scoreTotal > 31 && scoreTotal <= 39
-        ? "#f59e0b"
-        : scoreTotal >= 40 && scoreTotal <= 99
-          ? "#f97316"
-          : "#ef4444";
-
-  const statusIcon =
-    scoreTotal >= 0 && scoreTotal <= 30
-      ? Tick02Icon
-      : scoreTotal > 31 && scoreTotal <= 39
-        ? CheckUnread03Icon
-        : scoreTotal >= 40 && scoreTotal <= 99
-          ? PlusMinus02Icon
-          : Alert02Icon;
-
   return (
     <div className={styles.page}>
       {/* Breadcrumb */}
@@ -581,14 +563,6 @@ export function ProntuarioPage() {
                 />
               </div>
               <span>Ver Respostas</span>
-              <div className={statusColor}>
-                <HugeiconsIcon
-                  icon={statusIcon}
-                  size={20}
-                  strokeWidth={2}
-                  color={statusColor}
-                />
-              </div>
               <HugeiconsIcon
                 icon={ArrowRight01Icon}
                 size={12}
