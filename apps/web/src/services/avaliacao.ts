@@ -18,13 +18,25 @@ export interface Avaliacao {
   regrasInterpretacao: RegraInterpretacao[];
 }
 
+export type AvaliacaoComRespostas = Avaliacao & {
+  questionario: {
+    regras: {
+      pontuacaoMin: number;
+      pontuacaoMax: number;
+      classificacao: string;
+    }[];
+    modulos: any[];
+    labelEscolha: any[];
+  };
+};
+
 export async function getAvaliacoesPorId(Id: string) {
   const response = await api.get<ApiResponse<Avaliacao>>(`/avaliacoes/${Id}`);
   return response.data;
 }
 
 export async function getAvaliacaoComRespostas(Id: string) {
-  const response = await api.get<ApiResponse<Avaliacao>>(
+  const response = await api.get<ApiResponse<AvaliacaoComRespostas>>(
     `/avaliacoes/${Id}/questionario/respostas`,
   );
   return response.data;

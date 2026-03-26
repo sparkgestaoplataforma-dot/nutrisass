@@ -1,11 +1,10 @@
+import { AvaliacaoComRespostas } from "@/services/avaliacao";
 import styles from "../AvaliacaoDetalhesPage.module.scss";
 
 interface MainAvaliacaoDetalhesProps {
-  InstrucoesItens: { nota: number; descricao: string }[];
-  avaliacao: any;
+  avaliacao: AvaliacaoComRespostas | null;
 }
 export function MainAvaliacaoDetalhes({
-  InstrucoesItens,
   avaliacao,
 }: MainAvaliacaoDetalhesProps) {
   return (
@@ -16,10 +15,10 @@ export function MainAvaliacaoDetalhes({
           <h3>Instruções de Interpretação</h3>
 
           <div className={styles.legendaGrid}>
-            {InstrucoesItens.map((item) => (
+            {avaliacao?.questionario?.labelEscolha.map((item) => (
               <div key={item.nota} className={styles.legendaItem}>
                 <strong>{item.nota}</strong>
-                <span>{item.descricao}</span>
+                <span>{item.label}</span>
               </div>
             ))}
           </div>

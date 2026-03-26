@@ -4,21 +4,18 @@ import { SidebarEsquerda } from "@/pages/Pacientes/AvaliacaoDetalhes/components/
 import { SidebarDireita } from "@/pages/Pacientes/AvaliacaoDetalhes/components/SideBarDireita";
 import { MainAvaliacaoDetalhes } from "./components/MainAvaliacaoDetalhes";
 import { HeaderAvaliacaoDetalhes } from "./components/HeaderAvaliacaoDetalhes";
-import { Avaliacao, getAvaliacaoComRespostas } from "@/services/avaliacao";
+import {
+  AvaliacaoComRespostas,
+  getAvaliacaoComRespostas,
+} from "@/services/avaliacao";
 import { getPacientePorId } from "@/services/pacientes";
 import { useParams } from "react-router-dom";
 
-const InstrucoesItens = [
-  { nota: 0, descricao: "Nunca ou quase nunca teve esse sintoma" },
-  { nota: 1, descricao: "Ocasionalmente teve, mas não foi severo" },
-  { nota: 2, descricao: "Ocasionalmente teve, efeito severo" },
-  { nota: 3, descricao: "Frequentemente teve, efeito não severo" },
-  { nota: 4, descricao: "Frequentemente teve, efeito foi severo" },
-];
-
 export function AvaliacaoDetalhesPage() {
   const { avaliacaoId, pacienteId } = useParams();
-  const [avaliacao, setAvaliacao] = useState<Avaliacao | null>(null);
+  const [avaliacao, setAvaliacao] = useState<AvaliacaoComRespostas | null>(
+    null,
+  );
   const [paciente, setPaciente] = useState<any>(null);
   useEffect(() => {
     const fetchPaciente = async () => {
@@ -36,11 +33,12 @@ export function AvaliacaoDetalhesPage() {
     fetchPaciente();
     fetchAvaliacaoComRespostas();
   }, [avaliacaoId]);
-  const classificacao = avaliacao?.regrasInterpretacao?.find(
+  const classificacao = avaliacao?.questionario?.regras?.find(
     (regra) =>
       avaliacao.scoreTotal >= regra.pontuacaoMin &&
       avaliacao.scoreTotal <= regra.pontuacaoMax,
   )?.classificacao;
+
   return (
     <div className={styles.page}>
       <HeaderAvaliacaoDetalhes paciente={paciente} />
@@ -51,10 +49,7 @@ export function AvaliacaoDetalhesPage() {
         </aside>
 
         <main>
-          <MainAvaliacaoDetalhes
-            InstrucoesItens={InstrucoesItens}
-            avaliacao={avaliacao}
-          />
+          <MainAvaliacaoDetalhes avaliacao={avaliacao} />
         </main>
 
         <aside className={styles.sidebarRight}>

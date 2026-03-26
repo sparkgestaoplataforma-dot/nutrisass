@@ -29,6 +29,12 @@ export async function pegarAvaliacaoComRespostas(id: string) {
     include: {
       questionario: {
         include: {
+          labelEscolha: {
+            orderBy: { nota: "asc" },
+          },
+          regras: {
+            orderBy: { pontuacaoMin: "asc" },
+          },
           modulos: {
             orderBy: { ordem: "asc" },
             include: {
@@ -51,14 +57,5 @@ export async function pegarAvaliacaoComRespostas(id: string) {
   if (!avaliacao) {
     throw new AppError("Avaliação não encontrada", 404);
   }
-  const regrasInterpretacao = await prisma.regraInterpretacao.findMany({
-    where: {
-      questionarioId: avaliacao.questionarioId,
-    },
-    orderBy: { pontuacaoMin: "asc" },
-  });
-  return {
-    ...avaliacao,
-    regrasInterpretacao,
-  };
+  return avaliacao;
 }
