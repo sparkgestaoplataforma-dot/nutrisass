@@ -31,7 +31,11 @@ import { MedidasTab } from "./components/MedidasTab";
 import { ExamesTab } from "./components/ExamesTab";
 import styles from "./ProntuarioPage.module.scss";
 import { Avaliacoes, getAvaliacoesPorPacienteId } from "@/services/pacientes";
-import { Avaliacao, getAvaliacoesPorId } from "@/services/avaliacao";
+import {
+  Avaliacao,
+  AvaliacaoComRespostas,
+  getAvaliacoesPorId,
+} from "@/services/avaliacao";
 
 type View = "atendimento" | "medidas" | "exames";
 
@@ -73,8 +77,6 @@ export function ProntuarioPage() {
   const [avaliacaoSelecionada, setAvaliacaoSelecionada] = useState<
     Avaliacao | undefined
   >();
-  // const [classificacao, setClassificacao] = useState<string>("");
-  // Timer state
   const [timerActive, setTimerActive] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerStartedAt, setTimerStartedAt] = useState<Date | null>(null);
@@ -126,7 +128,6 @@ export function ProntuarioPage() {
       try {
         const response = await getAvaliacoesPorId(avaliacaoSelecionadaId);
         setAvaliacaoSelecionada(response.data || undefined);
-        console.log("Avaliação selecionada:", response.data);
       } catch (error) {
         console.error("Erro ao buscar avaliação:", error);
       }
@@ -134,12 +135,6 @@ export function ProntuarioPage() {
 
     fetchAvaliacao();
   }, [avaliacaoSelecionadaId]);
-
-  const classificacao = avaliacaoSelecionada?.regrasInterpretacao?.find(
-  (regra) =>
-    avaliacaoSelecionada.scoreTotal >= regra.pontuacaoMin &&
-    avaliacaoSelecionada.scoreTotal <= regra.pontuacaoMax
-)?.classificacao;
 
   const { data: paciente, isLoading } = useQuery({
     queryKey: ["paciente", id],
@@ -190,7 +185,6 @@ export function ProntuarioPage() {
     );
   }
 
-  // View principal: Atendimento
   const endereco = [
     paciente.endereco,
     paciente.bairro,
@@ -199,7 +193,7 @@ export function ProntuarioPage() {
   ]
     .filter(Boolean)
     .join(", ");
-
+  const scoreTotal = avaliacaoSelecionada?.scoreTotal ?? 0;
   return (
     <div className={styles.page}>
       {/* Breadcrumb */}
@@ -537,12 +531,19 @@ export function ProntuarioPage() {
               <div className={styles.TopicContent}>
                 <div className={styles.topicTitle}>Observação</div>
                 <div className={styles.topicDescription}>
-                  {avaliacaoSelecionada ? classificacao : "Nenhuma selecionada"}
+                  {avaliacaoSelecionada ? avaliacaoSelecionada?.regraInterpretacao?.classificacao : "Nenhuma selecionada"}
                 </div>
               </div>
             </div>
 
-            <button className={styles.sideNavItem}>
+            <button
+              className={styles.sideNavItem}
+              onClick={() => {
+                if (avaliacaoSelecionadaId) {
+                  navigate(`/avaliacoes/${avaliacaoSelecionadaId}/${id}`);
+                }
+              }}
+            >
               <div className={styles.sideNavIcon}>
                 <HugeiconsIcon
                   icon={ClipboardIcon}

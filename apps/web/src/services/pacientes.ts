@@ -24,6 +24,10 @@ export async function listarPacientes(busca?: string) {
   return res.data!;
 }
 
+export async function getPacientePorId(id: string) {
+  const { data } = await api.get(`/pacientes/${id}`);
+  return data.data;
+}
 export async function getAvaliacoesPorPacienteId(pacienteId: string) {
   const response = await api.get<ApiResponse<Avaliacoes[]>>(
     `/pacientes/${pacienteId}/avaliacoes`,
