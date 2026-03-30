@@ -1,7 +1,11 @@
 import { z } from "zod";
 
 export const createQuestionarioSchema = z.object({
-  nome: z.string().min(3, "Nome deve conter pelo menos 3 caracteres"),
+  nome: z
+    .string()
+    .trim()
+    .min(3, "Nome deve conter pelo menos 3 caracteres")
+    .max(120, "Nome deve ter no máximo 120 caracteres"),
   versao: z
     .number({ message: "A Versão deve ser um número" })
     .int({ message: "A Versão deve ser um número inteiro" })
@@ -13,7 +17,9 @@ export const createQuestionarioSchema = z.object({
 export const updateQuestionarioSchema = z.object({
   nome: z
     .string()
+    .trim()
     .min(3, "Nome deve conter pelo menos 3 caracteres")
+    .max(120, "Nome deve ter no máximo 120 caracteres")
     .optional(),
 });
 
@@ -22,7 +28,11 @@ export type UpdateQuestionarioInput = z.infer<typeof updateQuestionarioSchema>;
 
 export const createQuestionarioModuloSchema = z.object({
   //   questionarioId: z.string().uuid(),
-  nome: z.string().min(3, "Nome deve conter pelo menos 3 caracteres"),
+  nome: z
+    .string()
+    .trim()
+    .min(3, "Nome deve conter pelo menos 3 caracteres")
+    .max(120, "Nome deve ter no máximo 120 caracteres"),
   ordem: z
     .number({ message: "A Ordem deve ser um número" })
     .int({ message: "A Ordem deve ser um número inteiro" })
@@ -36,7 +46,9 @@ export type CreateQuestionarioModuloInput = z.infer<
 export const updateQuestionarioModuloSchema = z.object({
   nome: z
     .string()
+    .trim()
     .min(3, "Nome deve conter pelo menos 3 caracteres")
+    .max(120, "Nome deve ter no máximo 120 caracteres")
     .optional(),
   ordem: z
     .number({ message: "A Ordem deve ser um número" })
@@ -51,7 +63,11 @@ export type UpdateQuestionarioModuloInput = z.infer<
 
 export const createModuloPerguntaSchema = z.object({
   //   moduloId: z.string().uuid(),
-  descricao: z.string().min(3, "Descrição deve conter pelo menos 3 caracteres"),
+  descricao: z
+    .string()
+    .trim()
+    .min(3, "Descrição deve conter pelo menos 3 caracteres")
+    .max(500, "Descrição deve ter no máximo 500 caracteres"),
   ordem: z
     .number({ message: "A Ordem deve ser um número" })
     .int({ message: "A Ordem deve ser um número inteiro" })
@@ -65,7 +81,9 @@ export type CreateModuloPerguntaInput = z.infer<
 export const updateModuloPerguntaSchema = z.object({
   descricao: z
     .string()
+    .trim()
     .min(3, "Descrição deve conter pelo menos 3 caracteres")
+    .max(500, "Descrição deve ter no máximo 500 caracteres")
     .optional(),
   ordem: z
     .number({ message: "A Ordem deve ser um número" })
@@ -88,7 +106,9 @@ export const createQuestionarioRegrasInterpretacaoSchema = z.object({
     .nonnegative({ message: "A Pontuação Máxima deve ser um número positivo" }),
   classificacao: z
     .string()
-    .min(3, "Classificação deve conter pelo menos 3 caracteres"),
+    .trim()
+    .min(3, "Classificação deve conter pelo menos 3 caracteres")
+    .max(500, "Classificação deve ter no máximo 500 caracteres"),
 });
 
 export type CreateQuestionarioRegrasInterpretacaoInput = z.infer<
@@ -101,7 +121,11 @@ export const labelEscolhaItemSchema = z.object({
     .int({ message: "A Nota deve ser um número inteiro" })
     .min(0, "A Nota deve estar entre 0 e 4")
     .max(4, "A Nota deve estar entre 0 e 4"),
-  label: z.string().min(1, "O Label é obrigatório"),
+  label: z
+    .string()
+    .trim()
+    .min(1, "O Label é obrigatório")
+    .max(120, "O Label deve ter no máximo 120 caracteres"),
 });
 
 export const upsertLabelEscolhaSchema = z
@@ -109,7 +133,11 @@ export const upsertLabelEscolhaSchema = z
   .min(1, "Informe ao menos um item");
 
 export const updateLabelEscolhaSchema = z.object({
-  label: z.string().min(1, "O Label é obrigatório"),
+  label: z
+    .string()
+    .trim()
+    .min(1, "O Label é obrigatório")
+    .max(120, "O Label deve ter no máximo 120 caracteres"),
 });
 
 export type LabelEscolhaItemInput = z.infer<typeof labelEscolhaItemSchema>;
