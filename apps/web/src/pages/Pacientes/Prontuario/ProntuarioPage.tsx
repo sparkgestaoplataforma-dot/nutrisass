@@ -29,13 +29,10 @@ import { useAuthStore } from "@/stores/authStore";
 import { EstadoClinicoTimeline } from "./components/EstadoClinicoTimeline";
 import { MedidasTab } from "./components/MedidasTab";
 import { ExamesTab } from "./components/ExamesTab";
+import { AplicarQuestionarioModal } from "../components/AplicarQuestionarioModal";
 import styles from "./ProntuarioPage.module.scss";
 import { Avaliacoes, getAvaliacoesPorPacienteId } from "@/services/pacientes";
-import {
-  Avaliacao,
-  AvaliacaoComRespostas,
-  getAvaliacoesPorId,
-} from "@/services/avaliacao";
+import { Avaliacao, getAvaliacoesPorId } from "@/services/avaliacao";
 
 type View = "atendimento" | "medidas" | "exames";
 
@@ -80,6 +77,8 @@ export function ProntuarioPage() {
   const [timerActive, setTimerActive] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerStartedAt, setTimerStartedAt] = useState<Date | null>(null);
+  const [modalQuestionariosAberto, setModalQuestionariosAberto] =
+    useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const startTimer = useCallback(() => {
@@ -430,6 +429,17 @@ export function ProntuarioPage() {
               <p className={styles.actionGroupLabel}>Questionários</p>
               <div className={styles.actionBtns}>
                 <button
+                  className={`${styles.actionBtn} ${styles.actionBlue}`}
+                  onClick={() => setModalQuestionariosAberto(true)}
+                >
+                  <HugeiconsIcon
+                    icon={ClipboardIcon}
+                    size={13}
+                    strokeWidth={2}
+                  />
+                  Aplicar
+                </button>
+                <button
                   className={`${styles.actionBtn} ${styles.actionPurple}`}
                 >
                   <HugeiconsIcon
@@ -531,7 +541,9 @@ export function ProntuarioPage() {
               <div className={styles.TopicContent}>
                 <div className={styles.topicTitle}>Observação</div>
                 <div className={styles.topicDescription}>
-                  {avaliacaoSelecionada ? avaliacaoSelecionada?.regraInterpretacao?.classificacao : "Nenhuma selecionada"}
+                  {avaliacaoSelecionada
+                    ? avaliacaoSelecionada?.regraInterpretacao?.classificacao
+                    : "Nenhuma selecionada"}
                 </div>
               </div>
             </div>
@@ -561,6 +573,12 @@ export function ProntuarioPage() {
           </div>
         </aside>
       </div>
+
+      <AplicarQuestionarioModal
+        isOpen={modalQuestionariosAberto}
+        paciente={{ id: paciente.id, nome: paciente.nome }}
+        onClose={() => setModalQuestionariosAberto(false)}
+      />
     </div>
   );
 }

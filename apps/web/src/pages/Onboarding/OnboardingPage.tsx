@@ -40,6 +40,7 @@ export function OnboardingPage() {
       const { data } = await api.get<ApiResponse<TokenPayload>>("/auth/me");
       setUser(data.data!);
 
+      await api.post("/questionarios/default");
       navigate("/");
     },
   });
