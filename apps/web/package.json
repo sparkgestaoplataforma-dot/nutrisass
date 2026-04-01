@@ -15,7 +15,7 @@
     "@hugeicons/react": "^1.1.6",
     "@nutricao/shared": "*",
     "@tanstack/react-query": "^5",
-    "axios": "^1.7",
+    "axios": "1.13.6",
     "devtools": "^8.42.0",
     "react": "^19",
     "react-dom": "^19",
