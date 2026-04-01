@@ -146,14 +146,3 @@ export async function criarAvaliacao(req: Request, res: Response) {
     message: "Questionário preenchido com sucesso",
   });
 }
-
-export async function listarAvaliacoesPorPacienteId(
-  req: Request<{ id: string }>,
-  res: Response,
-) {
-  const { id } = req.params;
-
-  const avaliacoes = await service.pegarAvaliacoesPorPacienteId(id);
-
-  return res.json({ success: true, data: avaliacoes });
-}
