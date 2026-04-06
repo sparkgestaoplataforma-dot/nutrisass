@@ -1,5 +1,5 @@
-@use '../../../styles/variables' as *;
-@use '../../../styles/mixins' as *;
+@use "../../../styles/variables" as *;
+@use "../../../styles/mixins" as *;
 
 .container {
   @include card;
@@ -73,6 +73,7 @@
 .actions {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .actionBtn {
@@ -90,6 +91,17 @@
   &.danger:hover {
     background: #fee2e2;
     color: $danger;
+  }
+}
+
+.shortcutBtn {
+  font-size: $font-size-xs;
+  padding: 0.32rem 0.7rem;
+  font-weight: $font-weight-semibold;
+
+  &:hover {
+    color: $primary-dark;
+    background: $primary-50;
   }
 }
 
