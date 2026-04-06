@@ -51,3 +51,16 @@ export async function criarAvaliacao(
 
   return avaliacao;
 }
+
+export async function buscarNomePorId(id: string) {
+  const paciente = await prisma.paciente.findUnique({
+    where: { id },
+    select: { nome: true },
+  });
+
+  if (!paciente) {
+    throw new AppError("Paciente não encontrado", 404);
+  }
+
+  return paciente.nome;
+}
