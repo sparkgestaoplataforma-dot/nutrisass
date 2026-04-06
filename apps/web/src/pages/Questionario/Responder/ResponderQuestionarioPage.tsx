@@ -1,11 +1,14 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { UserGroupIcon } from "@hugeicons/core-free-icons";
 import {
   buscarQuestionario,
   enviarRespostasQuestionario,
   type RespostaPayload,
 } from "@/services/questionarios";
+import { buscarNomePacientePublico } from "@/services/pacientes";
 import styles from "./ResponderQuestionarioPage.module.scss";
 
 const OPCOES_NOTA: Record<number, string> = {
@@ -36,6 +39,12 @@ export function ResponderQuestionarioPage() {
     queryKey: ["questionario-publico", questionarioId],
     queryFn: () => buscarQuestionario(questionarioId as string),
     enabled: !!questionarioId,
+  });
+
+  const { data: nomePaciente, isLoading: isLoadingNomePaciente } = useQuery({
+    queryKey: ["paciente-nome-publico", pacienteId],
+    queryFn: () => buscarNomePacientePublico(pacienteId as string),
+    enabled: !!pacienteId,
   });
 
   const perguntas = useMemo(() => {
@@ -193,10 +202,33 @@ export function ResponderQuestionarioPage() {
 
       <div className={styles.container}>
         <header className={styles.header}>
-          <h1>{questionario?.nome}</h1>
-          <p>
-            Avaliação de Hipersensibilidades - Versão {questionario?.versao}
-          </p>
+          <div className={styles.headerGrid}>
+            <div className={styles.headerMain}>
+              <span className={styles.headerTag}>Questionário</span>
+              <h1>{questionario?.nome}</h1>
+              <p>
+                Avaliação de Hipersensibilidades - Versão {questionario?.versao}
+              </p>
+            </div>
+
+            <div className={styles.pacienteCard}>
+              <span className={styles.pacienteCardIcon}>
+                <HugeiconsIcon
+                  icon={UserGroupIcon}
+                  size={16}
+                  strokeWidth={1.9}
+                />
+              </span>
+              <div className={styles.pacienteCardText}>
+                <span className={styles.pacienteCardLabel}>Paciente</span>
+                <strong className={styles.pacienteCardName}>
+                  {isLoadingNomePaciente
+                    ? "Carregando paciente..."
+                    : nomePaciente || "Paciente não identificado"}
+                </strong>
+              </div>
+            </div>
+          </div>
         </header>
 
         {/* SUMÁRIO ESTÁTICO RESTAURADO */}
