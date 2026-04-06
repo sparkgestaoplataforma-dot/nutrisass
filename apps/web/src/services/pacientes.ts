@@ -1,5 +1,10 @@
+import axios from "axios";
 import { api } from "./api";
 import type { ApiResponse, PaginatedResponse } from "@nutricao/shared";
+
+const publicApi = axios.create({
+  baseURL: "/api",
+});
 
 export interface PacienteListItem {
   id: string;
@@ -49,7 +54,6 @@ export type Paciente = {
   agendamentos: Agendamento[];
 };
 
-
 export async function listarPacientes(busca?: string) {
   const { data: res } = await api.get<
     ApiResponse<PaginatedResponse<PacienteListItem>>
@@ -60,4 +64,12 @@ export async function listarPacientes(busca?: string) {
 export async function getPacientePorId(id: string) {
   const { data } = await api.get<ApiResponse<Paciente>>(`/pacientes/${id}`);
   return data.data;
+}
+
+export async function buscarNomePacientePublico(id: string) {
+  const { data } = await publicApi.get<ApiResponse<{ nome: string }>>(
+    `/pacientes/${id}/nome`,
+  );
+
+  return data.data?.nome ?? "";
 }

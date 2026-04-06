@@ -41,13 +41,111 @@
 .header {
   @include card;
   padding: $space-6;
-  text-align: center;
   border-top: 4px solid $primary;
+  background: $white;
+}
+
+.headerGrid {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: $space-5;
+}
+
+.headerMain {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $space-2;
 
   h1 {
     @include heading-lg;
+    margin: 0;
     color: $gray-900;
-    margin-bottom: $space-2;
+  }
+
+  p {
+    margin: 0;
+    color: $gray-600;
+  }
+}
+
+.headerTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba($primary, 0.3);
+  background: rgba($white, 0.75);
+  color: $primary-dark;
+  font-size: $font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pacienteCard {
+  width: 100%;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-3;
+  padding: 0.7rem 0.9rem;
+  border-radius: $radius-lg;
+  background: rgba($white, 0.96);
+}
+
+.pacienteCardIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba($primary, 0.16);
+  color: $primary-dark;
+  flex-shrink: 0;
+}
+
+.pacienteCardText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.pacienteCardLabel {
+  font-size: $font-size-xs;
+  color: $gray-500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.pacienteCardName {
+  font-size: $font-size-sm;
+  color: $gray-900;
+  font-weight: 700;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 769px) {
+  .headerGrid {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .pacienteCard {
+    width: auto;
+    min-width: max-content;
+  }
+
+  .pacienteCardName {
+    max-width: 260px;
   }
 }
 
@@ -370,6 +468,14 @@
 }
 
 @media (max-width: 768px) {
+  .header {
+    padding: $space-5;
+  }
+
+  .headerMain {
+    text-align: left;
+  }
+
   .moduloCard {
     padding: $space-4;
 
