@@ -248,6 +248,7 @@
   - Tabela compacta: Data, Somatório, Resultado, link "Ver Resultado"
   - Clique em "Ver Resultado" abre modal com detalhes
   - **Aceite:** sidebar funcional, exibe histórico de resultados do paciente
+  
 
 - [ ] **2.2.23 — Componente: Comparativo de Questionários**
   - Botão "Ver Comparativo" abre modal ou página

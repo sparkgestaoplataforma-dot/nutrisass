@@ -66,6 +66,9 @@ export function LoginPage() {
           <p className={styles.cadastroLink}>
             Não tem conta? <Link to="/cadastro">Cadastre sua clínica</Link>
           </p>
+            <p className={styles.cadastroLink}>
+              <Link to="/esqueci-senha">Esqueci minha senha</Link>
+            </p>
         </form>
       </div>
     </div>

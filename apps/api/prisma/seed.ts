@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "../src/shared/providers/prisma";
+import { criarQuestionarioPadraoParaClinica } from "../src/modules/questionarios/seed/default-questionario";
 
 async function main() {
   const senhaHash = await bcrypt.hash("123456", 10);
@@ -168,6 +169,8 @@ async function main() {
       },
     });
   }
+
+  await criarQuestionarioPadraoParaClinica(clinica.id);
 
   console.log("Seed executado com sucesso!");
   console.log(`Clínica: ${clinica.nome} (${clinica.id})`);

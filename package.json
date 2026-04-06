@@ -19,5 +19,8 @@
   "devDependencies": {
     "turbo": "^2"
   },
-  "packageManager": "npm@10.9.2"
+  "packageManager": "npm@10.9.2",
+  "dependencies": {
+    "recharts": "^3.8.1"
+  }
 }
