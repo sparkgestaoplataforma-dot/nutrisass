@@ -24,3 +24,14 @@ export async function Exluir(req:Request<{id: string}>, res: Response){
 
   await service.DeleteAvaliacao(id)
 }
+
+export async function listarAvaliacoesPorPacienteId(
+  req: Request<{ id: string }>,
+  res: Response,
+) {
+  const { id } = req.params;
+
+  const avaliacoes = await service.pegarAvaliacoesPorPacienteId(id);
+
+  return res.json({ success: true, data: avaliacoes });
+}

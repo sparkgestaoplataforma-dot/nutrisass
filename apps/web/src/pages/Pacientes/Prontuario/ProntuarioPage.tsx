@@ -30,11 +30,12 @@ import { EstadoClinicoTimeline } from "./components/EstadoClinicoTimeline";
 import { MedidasTab } from "./components/MedidasTab";
 import { ExamesTab } from "./components/ExamesTab";
 import styles from "./ProntuarioPage.module.scss";
-import { Avaliacoes, getAvaliacoesPorPacienteId } from "@/services/pacientes";
 import {
+  Avaliacoes,
   Avaliacao,
   AvaliacaoComRespostas,
   getAvaliacoesPorId,
+  getAvaliacoesPorPacienteId,
 } from "@/services/avaliacao";
 
 type View = "atendimento" | "medidas" | "exames";
@@ -127,6 +128,7 @@ export function ProntuarioPage() {
 
       try {
         const response = await getAvaliacoesPorId(avaliacaoSelecionadaId);
+        console.log(response.data);
         setAvaliacaoSelecionada(response.data || undefined);
       } catch (error) {
         console.error("Erro ao buscar avaliação:", error);
@@ -439,7 +441,10 @@ export function ProntuarioPage() {
                   />
                   Ver Todos
                 </button>
-                <button className={`${styles.actionBtn} ${styles.actionTeal}`}>
+                <button
+                  className={`${styles.actionBtn} ${styles.actionTeal}`}
+                  onClick={() => navigate(`/pacientes/${id!}/comparativo`)}
+                >
                   <HugeiconsIcon
                     icon={GitCompareIcon}
                     size={13}
@@ -531,7 +536,9 @@ export function ProntuarioPage() {
               <div className={styles.TopicContent}>
                 <div className={styles.topicTitle}>Observação</div>
                 <div className={styles.topicDescription}>
-                  {avaliacaoSelecionada ? avaliacaoSelecionada?.regraInterpretacao?.classificacao : "Nenhuma selecionada"}
+                  {avaliacaoSelecionada
+                    ? avaliacaoSelecionada?.regraInterpretacao
+                    : "Nenhuma selecionada"}
                 </div>
               </div>
             </div>

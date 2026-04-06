@@ -15,7 +15,7 @@ export interface Avaliacao {
   scoreTotal: number;
   pacienteId: string;
   questionarioId: string;
-  regraInterpretacao?: RegraInterpretacao;
+  regraInterpretacao?: string|null;
 }
 
 export type AvaliacaoComRespostas = Avaliacao & {
@@ -30,6 +30,14 @@ export type AvaliacaoComRespostas = Avaliacao & {
   };
 };
 
+export interface Avaliacoes {
+  id: string;
+  dataRealizacao: string;
+  scoreTotal: number;
+  pacienteId: string;
+  questionarioId: string;
+}
+
 export async function getAvaliacoesPorId(Id: string) {
   const response = await api.get<ApiResponse<Avaliacao>>(`/avaliacoes/${Id}`);
   return response.data;
@@ -38,6 +46,13 @@ export async function getAvaliacoesPorId(Id: string) {
 export async function getAvaliacaoComRespostas(Id: string) {
   const response = await api.get<ApiResponse<AvaliacaoComRespostas>>(
     `/avaliacoes/${Id}/questionario`,
+  );
+  return response.data;
+}
+
+export async function getAvaliacoesPorPacienteId(PacienteId: string) {
+  const response = await api.get<ApiResponse<Avaliacao[]>>(
+    `/avaliacoes/paciente/${PacienteId}`,
   );
   return response.data;
 }
