@@ -394,15 +394,15 @@
   gap: 0.5rem;
 }
 
-.chartLegendDot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: #29f172;
+.chartLegendIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: $success;
 }
 
 .chartLegendLabel {
-  color: $gray-900;
+  color: $success;
   font-size: $font-size-lg;
   font-weight: $font-weight-semibold;
 }

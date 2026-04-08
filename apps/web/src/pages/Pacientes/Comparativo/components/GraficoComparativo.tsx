@@ -8,6 +8,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { AnalyticsUpIcon } from "@hugeicons/core-free-icons";
 import styles from "./../ComparativoPage.module.scss";
 
 interface graficoData {
@@ -56,7 +58,13 @@ export function GraficoComparativo({
             content={() => (
               <div className={styles.chartLegend}>
                 <div className={styles.chartLegendLeft}>
-                  <span className={styles.chartLegendDot} />
+                  <span className={styles.chartLegendIcon}>
+                    <HugeiconsIcon
+                      icon={AnalyticsUpIcon}
+                      size={18}
+                      strokeWidth={2}
+                    />
+                  </span>
                   <span className={styles.chartLegendLabel}>Evolução</span>
                 </div>
 
