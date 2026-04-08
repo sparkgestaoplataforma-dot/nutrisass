@@ -4,27 +4,29 @@ import { AppError } from "@/shared/middlewares/errorHandler.js";
 export async function pegarAvaliacaoPorId(id: string) {
   const avaliacao = await prisma.avaliacao.findFirst({
     where: { id },
+    include: {
+      questionario: {
+        include: {
+          regras: {
+            orderBy: { pontuacaoMin: "asc" },
+          },
+        },
+      },
+    },
   });
 
   if (!avaliacao) {
     throw new AppError("Avaliação não encontrada", 404);
   }
-  const regraInterpretacao = await prisma.regraInterpretacao.findFirst({
-    select: {
-      classificacao: true,
-    },
-    where: {
-      questionarioId: avaliacao.questionarioId,
-      pontuacaoMin: {
-        lte: avaliacao.scoreTotal,
-      },
-      pontuacaoMax: {
-        gte: avaliacao.scoreTotal,
-      },
-    },
-  });
 
-  return { ...avaliacao, regraInterpretacao };
+  return {
+    ...avaliacao,
+    regraInterpretacao: avaliacao.questionario.regras.find(
+      (regra) =>
+        avaliacao.scoreTotal >= regra.pontuacaoMin &&
+        avaliacao.scoreTotal <= regra.pontuacaoMax,
+    )?.classificacao,
+  };
 }
 
 export async function pegarAvaliacaoComRespostas(id: string) {
@@ -70,6 +72,37 @@ export async function pegarAvaliacaoComRespostas(id: string) {
         avaliacao.scoreTotal <= regra.pontuacaoMax,
     )?.classificacao,
   };
+}
+
+export async function pegarAvaliacoesPorPacienteId(pacienteId: string) {
+  const avaliacoes = await prisma.avaliacao.findMany({
+    where: { pacienteId },
+    orderBy: { dataRealizacao: "desc" },
+    include: {
+      questionario: {
+        include: {
+          regras: {
+            orderBy: { pontuacaoMin: "asc" },
+          },
+        },
+      },
+    },
+  });
+
+  const avaliacoesComInterpretacao = avaliacoes.map((avaliacao) => {
+    const regra = avaliacao.questionario.regras.find(
+      (regra) =>
+        avaliacao.scoreTotal >= regra.pontuacaoMin &&
+        avaliacao.scoreTotal <= regra.pontuacaoMax,
+    );
+
+    return {
+      ...avaliacao,
+      regraInterpretacao: regra?.classificacao ?? null,
+    };
+  });
+
+  return avaliacoesComInterpretacao;
 }
 
 export async function DeleteAvaliacao(id: string) {

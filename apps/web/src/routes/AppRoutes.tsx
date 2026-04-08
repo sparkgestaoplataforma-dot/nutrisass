@@ -15,6 +15,7 @@ import { EsqueciSenhaPage } from '@/pages/RedefinirSenha/EsqueciSenhaPage';
 import { RedefinirSenhaPage } from '@/pages/RedefinirSenha/RedefinirSenhaPage';
 import { ResponderQuestionarioPage } from '@/pages/Questionario/Responder/ResponderQuestionarioPage';
 import { AvaliacaoDetalhesPage } from '@/pages/Pacientes/AvaliacaoDetalhes/AvaliacaoDetalhesPage';
+import { ComparativoPage } from '@/pages/Pacientes/Comparativo/ComparativoPage';
 
 export function AppRoutes() {
   return (
@@ -39,6 +40,7 @@ export function AppRoutes() {
             <Route path="/pacientes/novo" element={<PacienteFormPage />} />
             <Route path="/pacientes/:id" element={<ProntuarioPage />} />
             <Route path="/pacientes/:id/editar" element={<PacienteFormPage />} />
+            <Route path="/pacientes/:pacienteId/comparativo" element={<ComparativoPage />} />
             <Route path="/exames" element={<ExamesPage />} />
             <Route path="/relatorios" element={<RelatoriosPage />} />
             <Route path="/configuracoes" element={<ConfigPage />} />
