@@ -109,6 +109,35 @@ const REGRAS_PADRAO = [
   },
 ];
 
+const LABELS_ESCOLHA_PADRAO = {
+  0: "Nunca ou quase nunca teve esse sintoma",
+  1: "Ocasionalmente teve, mas não foi severo",
+  2: "Ocasionalmente teve, efeito severo",
+  3: "Frequentemente teve, efeito não severo",
+  4: "Frequentemente teve, efeito foi severo",
+} as const;
+
+async function upsertLabelsEscolhaPadrao(questionarioId: string) {
+  await Promise.all(
+    Object.entries(LABELS_ESCOLHA_PADRAO).map(([nota, label]) =>
+      prisma.labelEscolha.upsert({
+        where: {
+          questionarioId_nota: {
+            questionarioId,
+            nota: Number(nota),
+          },
+        },
+        update: { label: label },
+        create: {
+          questionarioId,
+          nota: Number(nota),
+          label: label,
+        },
+      }),
+    ),
+  );
+}
+
 export function getQuestionarioPadraoNome() {
   return QUESTIONARIO_PADRAO_NOME;
 }
@@ -123,6 +152,7 @@ export async function criarQuestionarioPadraoParaClinica(clinicaId: string) {
   });
 
   if (existente) {
+    await upsertLabelsEscolhaPadrao(existente.id);
     return existente;
   }
 
@@ -132,6 +162,12 @@ export async function criarQuestionarioPadraoParaClinica(clinicaId: string) {
       nome: QUESTIONARIO_PADRAO_NOME,
       versao: QUESTIONARIO_PADRAO_VERSAO,
       ativo: true,
+      labelEscolha: {
+        create: Object.entries(LABELS_ESCOLHA_PADRAO).map(([nota, label]) => ({
+          nota: Number(nota),
+          label: label,
+        })),
+      },
       modulos: {
         create: CATEGORIAS_SINTOMAS.map((categoria, indiceModulo) => ({
           nome: categoria.categoria,

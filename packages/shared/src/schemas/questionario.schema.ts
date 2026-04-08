@@ -94,3 +94,24 @@ export const createQuestionarioRegrasInterpretacaoSchema = z.object({
 export type CreateQuestionarioRegrasInterpretacaoInput = z.infer<
   typeof createQuestionarioRegrasInterpretacaoSchema
 >;
+
+export const labelEscolhaItemSchema = z.object({
+  nota: z
+    .number({ message: "A Nota deve ser um número" })
+    .int({ message: "A Nota deve ser um número inteiro" })
+    .min(0, "A Nota deve estar entre 0 e 4")
+    .max(4, "A Nota deve estar entre 0 e 4"),
+  label: z.string().min(1, "O Label é obrigatório"),
+});
+
+export const upsertLabelEscolhaSchema = z
+  .array(labelEscolhaItemSchema)
+  .min(1, "Informe ao menos um item");
+
+export const updateLabelEscolhaSchema = z.object({
+  label: z.string().min(1, "O Label é obrigatório"),
+});
+
+export type LabelEscolhaItemInput = z.infer<typeof labelEscolhaItemSchema>;
+export type UpsertLabelEscolhaInput = z.infer<typeof upsertLabelEscolhaSchema>;
+export type UpdateLabelEscolhaInput = z.infer<typeof updateLabelEscolhaSchema>;

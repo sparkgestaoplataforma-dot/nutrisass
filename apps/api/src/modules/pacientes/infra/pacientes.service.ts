@@ -51,3 +51,12 @@ export async function criarAvaliacao(
 
   return avaliacao;
 }
+
+export async function pegarAvaliacoesPorPacienteId(pacienteId: string) {
+  const avaliacoes = await prisma.avaliacao.findMany({
+    where: { pacienteId },
+    orderBy: { dataRealizacao: "desc" },
+  });
+
+  return avaliacoes;
+}

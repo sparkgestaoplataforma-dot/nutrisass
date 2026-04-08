@@ -6,15 +6,18 @@ import {
   createQuestionarioSchema,
   createQuestionarioModuloSchema,
   createQuestionarioRegrasInterpretacaoSchema,
+  upsertLabelEscolhaSchema,
   updateQuestionarioSchema,
+  updateLabelEscolhaSchema,
 } from "@nutricao/shared";
 
 const router = Router();
 
+router.get("/:id", controller.buscarPorId);
+
 router.use(authMiddleware);
 
 router.get("/", controller.listar);
-router.get("/:id", controller.buscarPorId);
 router.post(
   "/",
   roleGuard("ADMIN", "NUTRICIONISTA"),
@@ -37,6 +40,28 @@ router.post(
   roleGuard("ADMIN", "NUTRICIONISTA"),
   validate(createQuestionarioRegrasInterpretacaoSchema),
   controller.adicionarRegra,
+);
+router.get(
+  "/:id/titulos-escolha",
+  roleGuard("ADMIN", "NUTRICIONISTA"),
+  controller.listarTitulosEscolha,
+);
+router.post(
+  "/:id/titulos-escolha",
+  roleGuard("ADMIN", "NUTRICIONISTA"),
+  validate(upsertLabelEscolhaSchema),
+  controller.upsertTitulosEscolha,
+);
+router.put(
+  "/:id/titulos-escolha/:nota",
+  roleGuard("ADMIN", "NUTRICIONISTA"),
+  validate(updateLabelEscolhaSchema),
+  controller.atualizarTituloEscolha,
+);
+router.delete(
+  "/:id/titulos-escolha/:nota",
+  roleGuard("ADMIN", "NUTRICIONISTA"),
+  controller.excluirTituloEscolha,
 );
 router.put(
   "/:id",
