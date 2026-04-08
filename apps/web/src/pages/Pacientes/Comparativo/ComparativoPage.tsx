@@ -2,55 +2,38 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./ComparativoPage.module.scss";
 import { HeaderComparativo } from "./components/HeaderComparativo";
-import { getPacientePorId } from "@/services/pacientes";
+import { buscarNomePacientePublico } from "@/services/pacientes";
 import {
   getAvaliacoesPorPacienteId,
   DeleteAvaliacao,
 } from "@/services/avaliacao";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  criarQuestionarioDefault,
-  listarQuestionarios,
-} from "@/services/questionarios";
-import { useAuthStore } from "@/stores/authStore";
 import { GraficoComparativo } from "./components/GraficoComparativo";
 import { FilterComparativo } from "./components/FilterComparativo";
 import { TabelaComparativo } from "./components/TabelaComparativo";
-import { ModalResponderExameComparativo } from "./components/ModalResponderExameComparativo";
 import { ModalRangeDataComparativo } from "./components/ModalRangeDataComparativo";
-
-type PacienteSelecionado = {
-  id: string;
-  nome: string;
-};
 
 export function ComparativoPage() {
   const navigate = useNavigate();
   const { pacienteId } = useParams();
-  const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
 
-  const [busca, setBusca] = useState<string>("");
+  const [filtroData, setFiltroData] = useState<string>("");
   const [dataInicio, setDataInicio] = useState<string>("");
   const [dataFim, setDataFim] = useState<string>("");
 
-  const [modalQuestionariosAberto, setModalQuestionariosAberto] =
-    useState(false);
   const [modalRangeDataAberto, setModalRangeDataAberto] = useState(false);
+  const [modalInfoPontuacaoAberto, setModalInfoPontuacaoAberto] =
+    useState(false);
 
-  const [pacienteSelecionado, setPacienteSelecionado] =
-    useState<PacienteSelecionado | null>(null);
-  const [questionarioCopiadoId, setQuestionarioCopiadoId] = useState<
-    string | null
-  >(null);
-
-  const { data: pacienteResponse } = useQuery({
-    queryKey: ["paciente", pacienteId],
-    queryFn: () => getPacientePorId(pacienteId!),
+  const { data: nomePaciente } = useQuery({
+    queryKey: ["paciente-nome-publico", pacienteId],
+    queryFn: () => buscarNomePacientePublico(pacienteId!),
     enabled: !!pacienteId,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
+
   const { data: avaliacoesResponse } = useQuery({
     queryKey: ["avaliacoes", pacienteId],
     queryFn: () => getAvaliacoesPorPacienteId(pacienteId!),
@@ -59,28 +42,7 @@ export function ComparativoPage() {
     refetchOnWindowFocus: true,
   });
 
-  const cadastrarDefaultMutation = useMutation({
-    mutationFn: criarQuestionarioDefault,
-    onSuccess: async () => {
-      await refetchQuestionarios();
-    },
-  });
-
-  const {
-    data: questionarios = [],
-    isLoading: isLoadingQuestionarios,
-    refetch: refetchQuestionarios,
-  } = useQuery({
-    queryKey: ["questionarios-modal"],
-    queryFn: listarQuestionarios,
-    enabled: modalQuestionariosAberto,
-  });
-
   const avaliacoes = avaliacoesResponse?.data || [];
-  const paciente = pacienteResponse;
-  const perfil = (user?.perfil || "").toUpperCase();
-  const podeCadastrarDefault = perfil === "ADMIN" || perfil === "NUTRICIONISTA";
-  const isSecretaria = perfil === "SECRETARIA";
 
   function formatarData(dataISO: string) {
     const data = new Date(dataISO);
@@ -97,21 +59,28 @@ export function ComparativoPage() {
     return new Date(year, month - 1, day);
   }
 
-  function handleAbrirQuestionarios(paciente: PacienteSelecionado) {
-    setPacienteSelecionado(paciente);
-    setModalQuestionariosAberto(true);
+  function isSameDay(firstDate: Date, secondDate: Date) {
+    return (
+      firstDate.getFullYear() === secondDate.getFullYear() &&
+      firstDate.getMonth() === secondDate.getMonth() &&
+      firstDate.getDate() === secondDate.getDate()
+    );
   }
 
-  function handleFecharModalQuestionarios() {
-    setModalQuestionariosAberto(false);
-    setPacienteSelecionado(null);
-    setQuestionarioCopiadoId(null);
-  }
   function handleAbrirRangeData() {
     setModalRangeDataAberto(true);
   }
 
+  function handleAbrirModalInfoPontuacao() {
+    setModalInfoPontuacaoAberto(true);
+  }
+
+  function handleFecharModalInfoPontuacao() {
+    setModalInfoPontuacaoAberto(false);
+  }
+
   function handleLimparFiltro() {
+    setFiltroData("");
     setDataInicio("");
     setDataFim("");
     setModalRangeDataAberto(false);
@@ -121,31 +90,14 @@ export function ComparativoPage() {
     setModalRangeDataAberto(false);
   }
 
-  async function handleCopiarUrl(questionarioId: string) {
-    if (!pacienteSelecionado) return;
-
-    const url = `${window.location.origin}/questionarios/${questionarioId}/pacientes/${pacienteSelecionado.id}/responder`;
-
-    try {
-      await navigator.clipboard.writeText(url);
-      setQuestionarioCopiadoId(questionarioId);
-      setTimeout(() => {
-        setQuestionarioCopiadoId((current) =>
-          current === questionarioId ? null : current,
-        );
-      }, 1600);
-    } catch {
-      alert("Não foi possível copiar a URL.");
-    }
-  }
-
   const deleteMutation = useMutation({
     mutationFn: (id: string) => DeleteAvaliacao(id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ["avaliacoes", pacienteId] });
-      const previousData = queryClient.getQueriesData<any>({
-        queryKey: ["avaliacoes", pacienteId],
-      });
+      const previousData = queryClient.getQueryData<any>([
+        "avaliacoes",
+        pacienteId,
+      ]);
 
       queryClient.setQueryData(["avaliacoes", pacienteId], (old: any) => {
         if (!old) return old;
@@ -170,10 +122,9 @@ export function ComparativoPage() {
 
   const resultadosFiltrados = avaliacoes.filter((item) => {
     const dataAvaliacao = new Date(item.dataRealizacao);
-
-    const pesquisa = formatarData(item.dataRealizacao)
-      .toLowerCase()
-      .includes(busca.toLowerCase());
+    const pesquisa = filtroData
+      ? isSameDay(dataAvaliacao, parseDateInput(filtroData))
+      : true;
 
     let rangeData = true;
 
@@ -205,17 +156,20 @@ export function ComparativoPage() {
 
   return (
     <div>
-      <HeaderComparativo paciente={paciente} />
+      <HeaderComparativo nomePaciente={nomePaciente} />
       <div className={styles.chartContainer}>
-        <GraficoComparativo graficoDados={graficoDados} />
+        <div className={styles.chartGraphic}>
+          <GraficoComparativo
+            graficoDados={graficoDados}
+            onInfoClick={handleAbrirModalInfoPontuacao}
+          />
+        </div>
       </div>
 
       <div className={styles.header}>
         <FilterComparativo
-          paciente={paciente!}
-          busca={busca}
-          setBusca={setBusca}
-          handleAbrirQuestionarios={handleAbrirQuestionarios}
+          filtroData={filtroData}
+          setFiltroData={setFiltroData}
           handleAbrirRangeData={handleAbrirRangeData}
         />
       </div>
@@ -233,18 +187,40 @@ export function ComparativoPage() {
           />
         )}
       </div>
-      {modalQuestionariosAberto && pacienteSelecionado && (
-        <ModalResponderExameComparativo
-          handleFecharModalQuestionarios={handleFecharModalQuestionarios}
-          pacienteSelecionado={pacienteSelecionado}
-          questionarios={questionarios}
-          podeCadastrarDefault={podeCadastrarDefault}
-          cadastrarDefaultMutation={cadastrarDefaultMutation}
-          questionarioCopiadoId={questionarioCopiadoId}
-          handleCopiarUrl={handleCopiarUrl}
-          isSecretaria={isSecretaria}
-          isLoadingQuestionarios={isLoadingQuestionarios}
-        />
+
+      {modalInfoPontuacaoAberto && (
+        <div
+          className={styles.overlay}
+          onClick={handleFecharModalInfoPontuacao}
+        >
+          <div
+            className={styles.infoModal}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.modalHeader}>
+              <h3>Como funciona a evolução</h3>
+              <button
+                className={styles.closeBtn}
+                onClick={handleFecharModalInfoPontuacao}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+              <p className={styles.modalSubtitulo}>
+                Quanto menor a nota, melhor.
+              </p>
+
+              <div className={styles.modalInfoText}>
+                <p>Quanto mais se somam as notas, pior a saúde do paciente.</p>
+                <p>
+                  Então quanto menor a pontuação total, melhor a evolução dele.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {modalRangeDataAberto && (
