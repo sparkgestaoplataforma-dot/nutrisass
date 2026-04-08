@@ -133,6 +133,17 @@ async function main() {
     });
   }
 
+  // Buscar pacientes pelo CPF para garantir que temos os IDs
+  const isabela = await prisma.paciente.findFirst({
+    where: { clinicaId: clinica.id, cpf: "11111111111" },
+  });
+  const olimpia = await prisma.paciente.findFirst({
+    where: { clinicaId: clinica.id, cpf: "22222222222" },
+  });
+  const carlos = await prisma.paciente.findFirst({
+    where: { clinicaId: clinica.id, cpf: "33333333333" },
+  });
+
   // Evoluções clínicas para Isabela
   if (paciente1Id) {
     await prisma.evolucaoClinica.create({
@@ -169,12 +180,452 @@ async function main() {
     });
   }
 
+  // ===== Questionário de Rastreamento Metabólico (QRM) =====
+  const perguntasQRM = [
+    {
+      modulo: "Cabeça",
+      ordem: 1,
+      perguntas: [
+        { id: 1, descricao: "Dores de cabeça", ordem: 1 },
+        { id: 2, descricao: "Desmaio", ordem: 2 },
+        { id: 3, descricao: "Tonturas", ordem: 3 },
+        { id: 4, descricao: "Insônia", ordem: 4 },
+      ],
+    },
+    {
+      modulo: "Olhos",
+      ordem: 2,
+      perguntas: [
+        { id: 5, descricao: "Lacrimejantes ou coçando", ordem: 1 },
+        { id: 6, descricao: "Pálpebras inchadas/vermelhas", ordem: 2 },
+        { id: 7, descricao: "Olheiras", ordem: 3 },
+        { id: 8, descricao: "Visão borrada ou em túnel", ordem: 4 },
+      ],
+    },
+    {
+      modulo: "Ouvidos",
+      ordem: 3,
+      perguntas: [
+        { id: 9, descricao: "Coceira", ordem: 1 },
+        { id: 10, descricao: "Dores de ouvido ou infecções", ordem: 2 },
+        { id: 11, descricao: "Fluido/secreção", ordem: 3 },
+        { id: 12, descricao: "Zumbido ou perda de audição", ordem: 4 },
+      ],
+    },
+    {
+      modulo: "Nariz",
+      ordem: 4,
+      perguntas: [
+        { id: 13, descricao: "Congestão nasal", ordem: 1 },
+        { id: 14, descricao: "Problemas de sinusite", ordem: 2 },
+        { id: 15, descricao: "Ataques de espirro", ordem: 3 },
+        { id: 16, descricao: "Formação excessiva de muco", ordem: 4 },
+      ],
+    },
+    {
+      modulo: "Boca/Garganta",
+      ordem: 5,
+      perguntas: [
+        { id: 17, descricao: "Tosse crônica", ordem: 1 },
+        { id: 18, descricao: "Necessidade freq. de limpeza da garganta", ordem: 2 },
+        { id: 19, descricao: "Dor de garganta ou rouquidão", ordem: 3 },
+        { id: 20, descricao: "Língua/lábios/gengiva inchados", ordem: 4 },
+        { id: 21, descricao: "Aftas", ordem: 5 },
+      ],
+    },
+    {
+      modulo: "Pele",
+      ordem: 6,
+      perguntas: [
+        { id: 22, descricao: "Acne", ordem: 1 },
+        { id: 23, descricao: "Urticária/erupções/pele seca", ordem: 2 },
+        { id: 24, descricao: "Cabelo quebradiço ou perda", ordem: 3 },
+        { id: 25, descricao: "Vermelhidão/calorões", ordem: 4 },
+        { id: 26, descricao: "Suor excessivo", ordem: 5 },
+      ],
+    },
+    {
+      modulo: "Coração",
+      ordem: 7,
+      perguntas: [
+        { id: 27, descricao: "Batimento irregular ou falhando", ordem: 1 },
+        { id: 28, descricao: "Batimento rápido/acelerado", ordem: 2 },
+        { id: 29, descricao: "Dor no peito", ordem: 3 },
+        { id: 30, descricao: "Congestão no peito", ordem: 4 },
+      ],
+    },
+    {
+      modulo: "Pulmão",
+      ordem: 8,
+      perguntas: [
+        { id: 31, descricao: "Asma ou bronquite", ordem: 1 },
+        { id: 32, descricao: "Falta de fôlego", ordem: 2 },
+        { id: 33, descricao: "Dificuldade para respirar", ordem: 3 },
+        { id: 34, descricao: "Tosse persistente", ordem: 4 },
+      ],
+    },
+    {
+      modulo: "Trato Digestivo",
+      ordem: 9,
+      perguntas: [
+        { id: 35, descricao: "Náuseas ou vômitos", ordem: 1 },
+        { id: 36, descricao: "Diarreia", ordem: 2 },
+        { id: 37, descricao: "Constipação", ordem: 3 },
+        { id: 38, descricao: "Sensação de estufamento ou distensão abdominal", ordem: 4 },
+        { id: 39, descricao: "Arrotos ou gases", ordem: 5 },
+        { id: 40, descricao: "Azia", ordem: 6 },
+        { id: 41, descricao: "Dor estomacal ou intestinal", ordem: 7 },
+      ],
+    },
+    {
+      modulo: "Articulações/Músculos",
+      ordem: 10,
+      perguntas: [
+        { id: 42, descricao: "Dor ou rigidez articular", ordem: 1 },
+        { id: 43, descricao: "Artrite", ordem: 2 },
+        { id: 44, descricao: "Rigidez ou limitação de movimentos", ordem: 3 },
+        { id: 45, descricao: "Sensação de dolorido", ordem: 4 },
+        { id: 46, descricao: "Fraqueza ou cansaço muscular", ordem: 5 },
+      ],
+    },
+    {
+      modulo: "Energia/Atividade",
+      ordem: 11,
+      perguntas: [
+        { id: 47, descricao: "Fadiga/cansaço", ordem: 1 },
+        { id: 48, descricao: "Apatia/letargia", ordem: 2 },
+        { id: 49, descricao: "Hiperatividade", ordem: 3 },
+        { id: 50, descricao: "Dificuldade de relaxar", ordem: 4 },
+      ],
+    },
+    {
+      modulo: "Mente",
+      ordem: 12,
+      perguntas: [
+        { id: 51, descricao: "Memória fraca", ordem: 1 },
+        { id: 52, descricao: "Confusão/compreensão difícil", ordem: 2 },
+        { id: 53, descricao: "Concentração fraca", ordem: 3 },
+        { id: 54, descricao: "Coordenação motora ruim", ordem: 4 },
+        { id: 55, descricao: "Dificuldade p/ tomar decisões", ordem: 5 },
+        { id: 56, descricao: "Fala repetitiva", ordem: 6 },
+        { id: 57, descricao: "Pronúncia ruim das palavras", ordem: 7 },
+        { id: 58, descricao: "Dificuldade de aprendizagem", ordem: 8 },
+      ],
+    },
+    {
+      modulo: "Emocional",
+      ordem: 13,
+      perguntas: [
+        { id: 59, descricao: "Mudanças de humor", ordem: 1 },
+        { id: 60, descricao: "Ansiedade/medo/nervosismo", ordem: 2 },
+        { id: 61, descricao: "Raiva/irritabilidade/agressividade", ordem: 3 },
+        { id: 62, descricao: "Depressão", ordem: 4 },
+      ],
+    },
+    {
+      modulo: "Outros",
+      ordem: 14,
+      perguntas: [
+        { id: 63, descricao: "Doença frequente", ordem: 1 },
+        { id: 64, descricao: "Urgência ou freq. urinária", ordem: 2 },
+        { id: 65, descricao: "Corrimento genital", ordem: 3 },
+        { id: 66, descricao: "Edema/inchaço/retenção de líquidos", ordem: 4 },
+      ],
+    },
+  ];
+
+  // Criar ou buscar questionário QRM
+  const questionarioExistente = await prisma.questionario.findFirst({
+    where: { clinicaId: clinica.id, nome: "Questionário de Rastreamento Metabólico (QRM)" },
+  });
+
+  const questionario = questionarioExistente ?? await prisma.questionario.create({
+    data: {
+      clinicaId: clinica.id,
+      nome: "Questionário de Rastreamento Metabólico (QRM)",
+      perguntas: perguntasQRM,
+    },
+  });
+
+  // Respostas do QRM para os pacientes
+  if (isabela) {
+    const existeResposta = await prisma.respostaQuestionario.findFirst({
+      where: { pacienteId: isabela.id, questionarioId: questionario.id },
+    });
+    if (!existeResposta) {
+      // Isabela: score 72 - alta hipersensibilidade
+      // Foco: Trato Digestivo (3-4), Energia/Atividade (3-4), Emocional (2-3), Pele (2-3)
+      await prisma.respostaQuestionario.create({
+        data: {
+          pacienteId: isabela.id,
+          questionarioId: questionario.id,
+          respostas: {
+            // Cabeça (5)
+            "1": 2, "2": 0, "3": 1, "4": 2,
+            // Olhos (3)
+            "5": 1, "6": 0, "7": 2, "8": 0,
+            // Ouvidos (0)
+            "9": 0, "10": 0, "11": 0, "12": 0,
+            // Nariz (4)
+            "13": 1, "14": 1, "15": 1, "16": 1,
+            // Boca/Garganta (2)
+            "17": 1, "18": 1, "19": 0, "20": 0, "21": 0,
+            // Pele (8)
+            "22": 2, "23": 2, "24": 2, "25": 2, "26": 0,
+            // Coração (1)
+            "27": 0, "28": 1, "29": 0, "30": 0,
+            // Pulmão (1)
+            "31": 0, "32": 1, "33": 0, "34": 0,
+            // Trato Digestivo (21)
+            "35": 3, "36": 2, "37": 3, "38": 4, "39": 3, "40": 3, "41": 3,
+            // Articulações/Músculos (4)
+            "42": 1, "43": 0, "44": 1, "45": 1, "46": 1,
+            // Energia/Atividade (11)
+            "47": 4, "48": 3, "49": 1, "50": 3,
+            // Mente (3)
+            "51": 1, "52": 0, "53": 1, "54": 0, "55": 1, "56": 0, "57": 0, "58": 0,
+            // Emocional (8)
+            "59": 2, "60": 3, "61": 1, "62": 2,
+            // Outros (1)
+            "63": 0, "64": 0, "65": 0, "66": 1,
+          },
+          somatorio: 72,
+          resultado: "Absoluta certeza de existência de hipersensibilidade",
+        },
+      });
+    }
+  }
+
+  if (olimpia) {
+    const existeResposta = await prisma.respostaQuestionario.findFirst({
+      where: { pacienteId: olimpia.id, questionarioId: questionario.id },
+    });
+    if (!existeResposta) {
+      // Olimpia: score 38 - indicativo de hipersensibilidade
+      // Foco: Articulações (2-3), Energia (2), scattered 1s
+      await prisma.respostaQuestionario.create({
+        data: {
+          pacienteId: olimpia.id,
+          questionarioId: questionario.id,
+          respostas: {
+            // Cabeça (2)
+            "1": 1, "2": 0, "3": 0, "4": 1,
+            // Olhos (1)
+            "5": 0, "6": 0, "7": 1, "8": 0,
+            // Ouvidos (1)
+            "9": 0, "10": 0, "11": 0, "12": 1,
+            // Nariz (1)
+            "13": 1, "14": 0, "15": 0, "16": 0,
+            // Boca/Garganta (1)
+            "17": 0, "18": 1, "19": 0, "20": 0, "21": 0,
+            // Pele (2)
+            "22": 0, "23": 1, "24": 1, "25": 0, "26": 0,
+            // Coração (1)
+            "27": 0, "28": 1, "29": 0, "30": 0,
+            // Pulmão (1)
+            "31": 0, "32": 1, "33": 0, "34": 0,
+            // Trato Digestivo (7)
+            "35": 0, "36": 0, "37": 2, "38": 1, "39": 2, "40": 1, "41": 1,
+            // Articulações/Músculos (11)
+            "42": 3, "43": 2, "44": 2, "45": 2, "46": 2,
+            // Energia/Atividade (5)
+            "47": 2, "48": 2, "49": 0, "50": 1,
+            // Mente (2)
+            "51": 1, "52": 0, "53": 1, "54": 0, "55": 0, "56": 0, "57": 0, "58": 0,
+            // Emocional (2)
+            "59": 1, "60": 1, "61": 0, "62": 0,
+            // Outros (1)
+            "63": 0, "64": 1, "65": 0, "66": 0,
+          },
+          somatorio: 38,
+          resultado: "Indicativo de existência de hipersensibilidades",
+        },
+      });
+    }
+  }
+
+  if (carlos) {
+    const existeResposta = await prisma.respostaQuestionario.findFirst({
+      where: { pacienteId: carlos.id, questionarioId: questionario.id },
+    });
+    if (!existeResposta) {
+      // Carlos: score 18 - saudável
+      // Mostly 0s with occasional 1s
+      await prisma.respostaQuestionario.create({
+        data: {
+          pacienteId: carlos.id,
+          questionarioId: questionario.id,
+          respostas: {
+            // Cabeça
+            "1": 1, "2": 0, "3": 0, "4": 1,
+            // Olhos
+            "5": 0, "6": 0, "7": 0, "8": 0,
+            // Ouvidos
+            "9": 0, "10": 0, "11": 0, "12": 0,
+            // Nariz
+            "13": 1, "14": 0, "15": 0, "16": 0,
+            // Boca/Garganta
+            "17": 0, "18": 0, "19": 0, "20": 0, "21": 0,
+            // Pele
+            "22": 1, "23": 0, "24": 0, "25": 0, "26": 1,
+            // Coração
+            "27": 0, "28": 0, "29": 0, "30": 0,
+            // Pulmão
+            "31": 0, "32": 1, "33": 0, "34": 0,
+            // Trato Digestivo
+            "35": 0, "36": 0, "37": 0, "38": 1, "39": 1, "40": 0, "41": 0,
+            // Articulações/Músculos
+            "42": 1, "43": 0, "44": 0, "45": 1, "46": 1,
+            // Energia/Atividade
+            "47": 1, "48": 0, "49": 0, "50": 1,
+            // Mente
+            "51": 1, "52": 0, "53": 1, "54": 0, "55": 0, "56": 0, "57": 0, "58": 0,
+            // Emocional
+            "59": 0, "60": 1, "61": 1, "62": 0,
+            // Outros
+            "63": 0, "64": 1, "65": 0, "66": 0,
+          },
+          somatorio: 18,
+          resultado: "Pessoa mais saudável, menores chances de hipersensibilidades",
+        },
+      });
+    }
+  }
+
+  // ===== Exames Base (85 exames laboratoriais) =====
+  const examesBase = [
+    // HEMOGRAMA
+    { codigo: '40304361', nome: 'Hemograma completo', valorMinimo: null, valorMaximo: null, unidade: null },
+    { codigo: '40304345', nome: 'Hemoglobina', valorMinimo: 12.0, valorMaximo: 17.5, unidade: 'g/dL' },
+    { codigo: '40304337', nome: 'Hematócrito', valorMinimo: 36.0, valorMaximo: 50.0, unidade: '%' },
+    { codigo: '40304370', nome: 'VHS (Hemossedimentação)', valorMinimo: 0, valorMaximo: 20, unidade: 'mm/h' },
+    { codigo: '40304558', nome: 'Reticulócitos', valorMinimo: 0.5, valorMaximo: 2.5, unidade: '%' },
+    // PERFIL GLICÊMICO
+    { codigo: '40302040', nome: 'Glicose de jejum', valorMinimo: 70, valorMaximo: 99, unidade: 'mg/dL' },
+    { codigo: '40302733', nome: 'Hemoglobina glicada (HbA1c)', valorMinimo: 4.0, valorMaximo: 5.6, unidade: '%' },
+    { codigo: '40302075', nome: 'Hemoglobina glicada (A1 total)', valorMinimo: 4.0, valorMaximo: 6.0, unidade: '%' },
+    { codigo: '40316360', nome: 'Insulina basal', valorMinimo: 2.0, valorMaximo: 25.0, unidade: 'uUI/mL' },
+    { codigo: '40302709', nome: 'Teste oral tolerância glicose (TOTG)', valorMinimo: 70, valorMaximo: 140, unidade: 'mg/dL' },
+    { codigo: '40301680', nome: 'Curva glicêmica (4 dosagens)', valorMinimo: null, valorMaximo: null, unidade: 'mg/dL' },
+    { codigo: '40301958', nome: 'Frutosaminas', valorMinimo: 205, valorMaximo: 285, unidade: 'umol/L' },
+    { codigo: '40316394', nome: 'Peptídeo C', valorMinimo: 1.1, valorMaximo: 4.4, unidade: 'ng/mL' },
+    // PERFIL LIPÍDICO
+    { codigo: '40301605', nome: 'Colesterol total', valorMinimo: null, valorMaximo: 190, unidade: 'mg/dL' },
+    { codigo: '40301583', nome: 'Colesterol HDL', valorMinimo: 40, valorMaximo: null, unidade: 'mg/dL' },
+    { codigo: '40301591', nome: 'Colesterol LDL', valorMinimo: null, valorMaximo: 130, unidade: 'mg/dL' },
+    { codigo: '40302695', nome: 'Colesterol VLDL', valorMinimo: null, valorMaximo: 30, unidade: 'mg/dL' },
+    { codigo: '40302547', nome: 'Triglicerídeos', valorMinimo: null, valorMaximo: 150, unidade: 'mg/dL' },
+    { codigo: '40301354', nome: 'Apolipoproteína A (Apo A)', valorMinimo: 120, valorMaximo: 176, unidade: 'mg/dL' },
+    { codigo: '40301362', nome: 'Apolipoproteína B (Apo B)', valorMinimo: 52, valorMaximo: 129, unidade: 'mg/dL' },
+    { codigo: '40302210', nome: 'Lipoproteína (a) - Lp(a)', valorMinimo: null, valorMaximo: 30, unidade: 'mg/dL' },
+    { codigo: '40302113', nome: 'Homocisteína', valorMinimo: 5.0, valorMaximo: 15.0, unidade: 'umol/L' },
+    // FUNÇÃO HEPÁTICA
+    { codigo: '40302504', nome: 'TGO / AST', valorMinimo: 10, valorMaximo: 40, unidade: 'U/L' },
+    { codigo: '40302512', nome: 'TGP / ALT', valorMinimo: 10, valorMaximo: 40, unidade: 'U/L' },
+    { codigo: '40301990', nome: 'Gama GT (GGT)', valorMinimo: 8, valorMaximo: 61, unidade: 'U/L' },
+    { codigo: '40301885', nome: 'Fosfatase alcalina', valorMinimo: 40, valorMaximo: 129, unidade: 'U/L' },
+    { codigo: '40301397', nome: 'Bilirrubinas totais e frações', valorMinimo: 0.1, valorMaximo: 1.2, unidade: 'mg/dL' },
+    { codigo: '40301729', nome: 'Desidrogenase lática (LDH)', valorMinimo: 80, valorMaximo: 225, unidade: 'U/L' },
+    // FUNÇÃO RENAL
+    { codigo: '40302580', nome: 'Ureia', valorMinimo: 15, valorMaximo: 40, unidade: 'mg/dL' },
+    { codigo: '40301630', nome: 'Creatinina', valorMinimo: 0.7, valorMaximo: 1.3, unidade: 'mg/dL' },
+    { codigo: '40301508', nome: 'Clearance de creatinina', valorMinimo: 80, valorMaximo: 120, unidade: 'mL/min' },
+    { codigo: '40301150', nome: 'Ácido úrico', valorMinimo: 3.0, valorMaximo: 7.0, unidade: 'mg/dL' },
+    // PROTEÍNAS
+    { codigo: '40302377', nome: 'Proteínas totais', valorMinimo: 6.0, valorMaximo: 8.0, unidade: 'g/dL' },
+    { codigo: '40301222', nome: 'Albumina', valorMinimo: 3.5, valorMaximo: 5.5, unidade: 'g/dL' },
+    { codigo: '40302326', nome: 'Pré-albumina (Transtiretina)', valorMinimo: 20, valorMaximo: 40, unidade: 'mg/dL' },
+    { codigo: '40302369', nome: 'Proteína ligadora do retinol', valorMinimo: 3.0, valorMaximo: 6.0, unidade: 'mg/dL' },
+    { codigo: '40301761', nome: 'Eletroforese de proteínas', valorMinimo: null, valorMaximo: null, unidade: 'g/dL' },
+    { codigo: '40308391', nome: 'Proteína C reativa (PCR quantitativa)', valorMinimo: null, valorMaximo: 0.5, unidade: 'mg/dL' },
+    // METABOLISMO DO FERRO
+    { codigo: '40301842', nome: 'Ferro sérico', valorMinimo: 50, valorMaximo: 150, unidade: 'ug/dL' },
+    { codigo: '40316270', nome: 'Ferritina', valorMinimo: 12, valorMaximo: 300, unidade: 'ng/mL' },
+    { codigo: '40302520', nome: 'Transferrina', valorMinimo: 200, valorMaximo: 360, unidade: 'mg/dL' },
+    { codigo: '40301427', nome: 'Capacidade total de ligação do ferro (TIBC)', valorMinimo: 250, valorMaximo: 370, unidade: 'ug/dL' },
+    { codigo: '40301087', nome: 'Ácido fólico eritrocitário', valorMinimo: 2.0, valorMaximo: 20.0, unidade: 'ng/mL' },
+    { codigo: '40316572', nome: 'Vitamina B12', valorMinimo: 200, valorMaximo: 900, unidade: 'pg/mL' },
+    // ELETRÓLITOS E MINERAIS
+    { codigo: '40302423', nome: 'Sódio', valorMinimo: 136, valorMaximo: 145, unidade: 'mEq/L' },
+    { codigo: '40302318', nome: 'Potássio', valorMinimo: 3.5, valorMaximo: 5.0, unidade: 'mEq/L' },
+    { codigo: '40301400', nome: 'Cálcio total', valorMinimo: 8.6, valorMaximo: 10.2, unidade: 'mg/dL' },
+    { codigo: '40301419', nome: 'Cálcio iônico', valorMinimo: 4.5, valorMaximo: 5.3, unidade: 'mg/dL' },
+    { codigo: '40301931', nome: 'Fósforo', valorMinimo: 2.5, valorMaximo: 4.5, unidade: 'mg/dL' },
+    { codigo: '40302237', nome: 'Magnésio', valorMinimo: 1.6, valorMaximo: 2.6, unidade: 'mg/dL' },
+    { codigo: '40301559', nome: 'Cloro', valorMinimo: 98, valorMaximo: 106, unidade: 'mEq/L' },
+    { codigo: '40313328', nome: 'Zinco', valorMinimo: 70, valorMaximo: 120, unidade: 'ug/dL' },
+    { codigo: '40313255', nome: 'Selênio', valorMinimo: 46, valorMaximo: 143, unidade: 'ug/L' },
+    { codigo: '40301567', nome: 'Cobre', valorMinimo: 70, valorMaximo: 140, unidade: 'ug/dL' },
+    { codigo: '40301273', nome: 'Alumínio', valorMinimo: null, valorMaximo: 10, unidade: 'ug/L' },
+    { codigo: '40313310', nome: 'Cromo', valorMinimo: 0.1, valorMaximo: 0.5, unidade: 'ug/L' },
+    // VITAMINAS
+    { codigo: '40302830', nome: 'Vitamina D (25-OH D3)', valorMinimo: 30, valorMaximo: 60, unidade: 'ng/mL' },
+    { codigo: '40302822', nome: 'Vitamina D2', valorMinimo: 30, valorMaximo: 100, unidade: 'ng/mL' },
+    { codigo: '40305015', nome: 'Vitamina D (1,25-dihidroxi)', valorMinimo: 15, valorMaximo: 75, unidade: 'pg/mL' },
+    { codigo: '40302601', nome: 'Vitamina A (Retinol)', valorMinimo: 30, valorMaximo: 80, unidade: 'ug/dL' },
+    { codigo: '40301060', nome: 'Vitamina C (Ácido ascórbico)', valorMinimo: 0.4, valorMaximo: 2.0, unidade: 'mg/dL' },
+    { codigo: '40302610', nome: 'Vitamina E (Tocoferol)', valorMinimo: 5.0, valorMaximo: 18.0, unidade: 'mg/L' },
+    { codigo: '40302849', nome: 'Vitamina K', valorMinimo: 0.1, valorMaximo: 2.2, unidade: 'ng/mL' },
+    { codigo: '40302784', nome: 'Vitamina B1 (Tiamina)', valorMinimo: 70, valorMaximo: 180, unidade: 'nmol/L' },
+    { codigo: '40302792', nome: 'Vitamina B2 (Riboflavina)', valorMinimo: 6.2, valorMaximo: 39.0, unidade: 'nmol/L' },
+    { codigo: '40302806', nome: 'Vitamina B3 (Niacina)', valorMinimo: null, valorMaximo: null, unidade: 'ug/L' },
+    { codigo: '40302814', nome: 'Vitamina B6 (Piridoxina)', valorMinimo: 5.0, valorMaximo: 50.0, unidade: 'ug/L' },
+    // FUNÇÃO TIREOIDEANA
+    { codigo: '40316521', nome: 'TSH', valorMinimo: 0.4, valorMaximo: 4.0, unidade: 'uUI/mL' },
+    { codigo: '40316556', nome: 'T3 total (Triiodotironina)', valorMinimo: 80, valorMaximo: 200, unidade: 'ng/dL' },
+    { codigo: '40316467', nome: 'T3 livre', valorMinimo: 2.0, valorMaximo: 4.4, unidade: 'pg/mL' },
+    { codigo: '40316548', nome: 'T4 total (Tiroxina)', valorMinimo: 4.5, valorMaximo: 12.0, unidade: 'ug/dL' },
+    { codigo: '40316491', nome: 'T4 livre', valorMinimo: 0.9, valorMaximo: 1.7, unidade: 'ng/dL' },
+    { codigo: '40316157', nome: 'Anti-TPO', valorMinimo: null, valorMaximo: 35, unidade: 'UI/mL' },
+    { codigo: '40316106', nome: 'Anti-tireoglobulina', valorMinimo: null, valorMaximo: 115, unidade: 'UI/mL' },
+    { codigo: '40316319', nome: 'TBG (Globulina ligadora da tiroxina)', valorMinimo: 12, valorMaximo: 30, unidade: 'ug/mL' },
+    // HORMÔNIOS
+    { codigo: '40316190', nome: 'Cortisol (manhã)', valorMinimo: 5.0, valorMaximo: 23.0, unidade: 'ug/dL' },
+    { codigo: '40305465', nome: 'Paratormônio (PTH)', valorMinimo: 15, valorMaximo: 65, unidade: 'pg/mL' },
+    { codigo: '40316246', nome: 'Estradiol', valorMinimo: null, valorMaximo: null, unidade: 'pg/mL' },
+    { codigo: '40316513', nome: 'Testosterona total', valorMinimo: null, valorMaximo: null, unidade: 'ng/dL' },
+    { codigo: '40316408', nome: 'Progesterona', valorMinimo: null, valorMaximo: null, unidade: 'ng/mL' },
+    { codigo: '40316300', nome: 'SHBG', valorMinimo: null, valorMaximo: null, unidade: 'nmol/L' },
+    // INFLAMATÓRIOS / IMUNOLOGIA
+    { codigo: '40308383', nome: 'PCR qualitativa', valorMinimo: null, valorMaximo: null, unidade: null },
+    { codigo: '40306305', nome: 'Antigliadina IgA (Doença celíaca)', valorMinimo: null, valorMaximo: 20, unidade: 'U/mL' },
+    { codigo: '40306313', nome: 'Antigliadina IgG (Doença celíaca)', valorMinimo: null, valorMaximo: 20, unidade: 'U/mL' },
+    { codigo: '40306259', nome: 'Antiendomísio IgA', valorMinimo: null, valorMaximo: null, unidade: null },
+    { codigo: '40307220', nome: 'IgA total', valorMinimo: 70, valorMaximo: 400, unidade: 'mg/dL' },
+    // URINA / DIGESTIVO
+    { codigo: '40301109', nome: 'Ácido lático (Lactato)', valorMinimo: 4.5, valorMaximo: 19.8, unidade: 'mg/dL' },
+    { codigo: '40301125', nome: 'Ácido oxálico (urina 24h)', valorMinimo: null, valorMaximo: 40, unidade: 'mg/24h' },
+    { codigo: '40301281', nome: 'Amilase', valorMinimo: 25, valorMaximo: 125, unidade: 'U/L' },
+    { codigo: '40302199', nome: 'Lipase', valorMinimo: 10, valorMaximo: 140, unidade: 'U/L' },
+    // COPROLOGIA
+    { codigo: '40303110', nome: 'Parasitológico de fezes', valorMinimo: null, valorMaximo: null, unidade: null },
+    { codigo: '40303136', nome: 'Sangue oculto nas fezes', valorMinimo: null, valorMaximo: null, unidade: null },
+    { codigo: '40303039', nome: 'Coprológico funcional', valorMinimo: null, valorMaximo: null, unidade: null },
+    { codigo: '40303055', nome: 'Gordura fecal', valorMinimo: null, valorMaximo: 7, unidade: 'g/24h' },
+    // GASOMETRIA
+    { codigo: '40302016', nome: 'Gasometria arterial', valorMinimo: null, valorMaximo: null, unidade: null },
+    { codigo: '40302407', nome: 'Reserva alcalina (Bicarbonato)', valorMinimo: 22, valorMaximo: 26, unidade: 'mEq/L' },
+  ];
+
+  for (const exame of examesBase) {
+    const existe = await prisma.exameBase.findFirst({
+      where: { clinicaId: clinica.id, codigo: exame.codigo },
+    });
+    if (!existe) {
+      await prisma.exameBase.create({
+        data: { ...exame, clinicaId: clinica.id, isBase: true },
+      });
+    }
+  }
+  console.log(`Exames base: ${examesBase.length} exames cadastrados`);
+
   console.log("Seed executado com sucesso!");
   console.log(`Clínica: ${clinica.nome} (${clinica.id})`);
   console.log(
     "Usuarios: admin@nutricao.com / nutri@nutricao.com / secretaria@nutricao.com",
   );
   console.log("Senha padrão: 123456");
+  console.log("Questionário QRM criado com respostas para 3 pacientes");
 }
 
 main()
