@@ -14,6 +14,7 @@ import { OnboardingPage } from '@/pages/Onboarding/OnboardingPage';
 import { EsqueciSenhaPage } from '@/pages/RedefinirSenha/EsqueciSenhaPage';
 import { RedefinirSenhaPage } from '@/pages/RedefinirSenha/RedefinirSenhaPage';
 import { ResponderQuestionarioPage } from '@/pages/Questionario/Responder/ResponderQuestionarioPage';
+import { AvaliacaoDetalhesPage } from '@/pages/Pacientes/AvaliacaoDetalhes/AvaliacaoDetalhesPage';
 
 export function AppRoutes() {
   return (
@@ -41,6 +42,10 @@ export function AppRoutes() {
             <Route path="/exames" element={<ExamesPage />} />
             <Route path="/relatorios" element={<RelatoriosPage />} />
             <Route path="/configuracoes" element={<ConfigPage />} />
+            <Route
+              path="/avaliacoes/:avaliacaoId/:pacienteId"
+              element={<AvaliacaoDetalhesPage />}
+            />
           </Route>
         </Route>
 

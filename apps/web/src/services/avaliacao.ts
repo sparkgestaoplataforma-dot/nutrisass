@@ -15,12 +15,34 @@ export interface Avaliacao {
   scoreTotal: number;
   pacienteId: string;
   questionarioId: string;
-  regrasInterpretacao: RegraInterpretacao[];
+  regraInterpretacao?: RegraInterpretacao;
 }
 
+export type AvaliacaoComRespostas = Avaliacao & {
+  questionario: {
+    regras: {
+      pontuacaoMin: number;
+      pontuacaoMax: number;
+      classificacao: string;
+    }[];
+    modulos: any[];
+    labelEscolha: any[];
+  };
+};
+
 export async function getAvaliacoesPorId(Id: string) {
-  const response = await api.get<ApiResponse<Avaliacao>>(
-    `/avaliacoes/${Id}/respostas`,
+  const response = await api.get<ApiResponse<Avaliacao>>(`/avaliacoes/${Id}`);
+  return response.data;
+}
+
+export async function getAvaliacaoComRespostas(Id: string) {
+  const response = await api.get<ApiResponse<AvaliacaoComRespostas>>(
+    `/avaliacoes/${Id}/questionario`,
   );
   return response.data;
+}
+
+export async function DeleteAvaliacao(Id: string) {
+  const response = await api.delete(`/avaliacoes/${Id}`);
+  return response;
 }

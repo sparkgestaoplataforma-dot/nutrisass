@@ -7,3 +7,20 @@ export async function buscarPorId(req: Request<{ id: string }>, res: Response) {
 
   return res.json({ success: true, data: avaliacao });
 }
+
+export async function buscarComRespostas(
+  req: Request<{ id: string }>,
+  res: Response,
+) {
+  const id = req.params.id;
+
+  const avaliacao = await service.pegarAvaliacaoComRespostas(id);
+
+  return res.json({ success: true, data: avaliacao });
+}
+
+export async function Exluir(req:Request<{id: string}>, res: Response){
+  const id = req.params.id
+
+  await service.DeleteAvaliacao(id)
+}
