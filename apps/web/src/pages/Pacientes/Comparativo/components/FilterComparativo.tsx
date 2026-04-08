@@ -1,38 +1,39 @@
-import { HugeiconsIcon } from "@hugeicons/react";
-import { CalendarAdd01FreeIcons } from "@hugeicons/core-free-icons";
 import styles from "./../ComparativoPage.module.scss";
 
 interface FilterComparativoProps {
-  filtroData: string;
-  setFiltroData: React.Dispatch<React.SetStateAction<string>>;
-  handleAbrirRangeData: () => void;
+  dataInicio: string;
+  setDataInicio: React.Dispatch<React.SetStateAction<string>>;
+  dataFim: string;
+  setDataFim: React.Dispatch<React.SetStateAction<string>>;
 }
 export function FilterComparativo({
-  filtroData,
-  setFiltroData,
-  handleAbrirRangeData,
+  dataInicio,
+  setDataInicio,
+  dataFim,
+  setDataFim,
 }: FilterComparativoProps) {
   return (
-    <div className={styles.filterRow}>
-      <button
-        className={styles.rangeBtn}
-        onClick={handleAbrirRangeData}
-        title="Adicionar intervalo"
-      >
-        <span>Filtrar datas</span>
-        <HugeiconsIcon
-          icon={CalendarAdd01FreeIcons}
-          size={14}
-          strokeWidth={2}
-        />
-      </button>
-
+    <div className={styles.filterRangeInline}>
+      <span className={styles.filterTag}>De</span>
       <input
         type="date"
-        className={styles.searchBox}
-        value={filtroData}
-        onChange={(e) => setFiltroData(e.target.value)}
-        aria-label="Filtrar por data exata"
+        lang="pt-BR"
+        className={styles.filterDateInput}
+        value={dataInicio}
+        onChange={(e) => setDataInicio(e.target.value)}
+        aria-label="Filtrar de"
+        title="Data inicial"
+      />
+
+      <span className={styles.filterTag}>Até</span>
+      <input
+        type="date"
+        lang="pt-BR"
+        className={styles.filterDateInput}
+        value={dataFim}
+        onChange={(e) => setDataFim(e.target.value)}
+        aria-label="Filtrar até"
+        title="Data final"
       />
     </div>
   );

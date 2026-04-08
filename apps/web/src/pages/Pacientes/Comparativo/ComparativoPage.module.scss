@@ -616,6 +616,30 @@
   font-size: $font-size-sm;
 }
 
+.filterRangeInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filterTag {
+  color: $gray-700;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+}
+
+.filterDateInput {
+  @include input-base;
+  width: 170px;
+  padding-right: 0.8rem;
+
+  &::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.75;
+  }
+}
+
 @media (max-width: 768px) {
   .header {
     flex-direction: column;
@@ -644,6 +668,17 @@
   .searchBox,
   .rangeBtn {
     max-width: none;
+    width: 100%;
+  }
+
+  .filterRangeInline {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem;
+  }
+
+  .filterDateInput {
     width: 100%;
   }
 

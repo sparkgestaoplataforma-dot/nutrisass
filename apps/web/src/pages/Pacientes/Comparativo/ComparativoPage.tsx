@@ -11,7 +11,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GraficoComparativo } from "./components/GraficoComparativo";
 import { FilterComparativo } from "./components/FilterComparativo";
 import { TabelaComparativo } from "./components/TabelaComparativo";
-import { ModalRangeDataComparativo } from "./components/ModalRangeDataComparativo";
 
 type FaixaScore = {
   pontuacaoMin: number;
@@ -67,16 +66,20 @@ const EXEMPLOS_CALCULO = [
   },
 ];
 
+function getDataAtualInput() {
+  const hoje = new Date();
+  const hojeLocal = new Date(hoje.getTime() - hoje.getTimezoneOffset() * 60000);
+  return hojeLocal.toISOString().slice(0, 10);
+}
+
 export function ComparativoPage() {
   const navigate = useNavigate();
   const { pacienteId } = useParams();
   const queryClient = useQueryClient();
 
-  const [filtroData, setFiltroData] = useState<string>("");
   const [dataInicio, setDataInicio] = useState<string>("");
-  const [dataFim, setDataFim] = useState<string>("");
+  const [dataFim, setDataFim] = useState<string>(() => getDataAtualInput());
 
-  const [modalRangeDataAberto, setModalRangeDataAberto] = useState(false);
   const [modalInfoPontuacaoAberto, setModalInfoPontuacaoAberto] =
     useState(false);
 
@@ -113,18 +116,6 @@ export function ComparativoPage() {
     return new Date(year, month - 1, day);
   }
 
-  function isSameDay(firstDate: Date, secondDate: Date) {
-    return (
-      firstDate.getFullYear() === secondDate.getFullYear() &&
-      firstDate.getMonth() === secondDate.getMonth() &&
-      firstDate.getDate() === secondDate.getDate()
-    );
-  }
-
-  function handleAbrirRangeData() {
-    setModalRangeDataAberto(true);
-  }
-
   function handleAbrirModalInfoPontuacao() {
     setModalInfoPontuacaoAberto(true);
   }
@@ -139,17 +130,6 @@ export function ComparativoPage() {
     );
 
     return faixaEncontrada?.classificacao || "Fora da faixa configurada";
-  }
-
-  function handleLimparFiltro() {
-    setFiltroData("");
-    setDataInicio("");
-    setDataFim("");
-    setModalRangeDataAberto(false);
-  }
-
-  function handleFecharModal() {
-    setModalRangeDataAberto(false);
   }
 
   const deleteMutation = useMutation({
@@ -184,9 +164,6 @@ export function ComparativoPage() {
 
   const resultadosFiltrados = avaliacoes.filter((item) => {
     const dataAvaliacao = new Date(item.dataRealizacao);
-    const pesquisa = filtroData
-      ? isSameDay(dataAvaliacao, parseDateInput(filtroData))
-      : true;
 
     let rangeData = true;
 
@@ -201,7 +178,7 @@ export function ComparativoPage() {
       rangeData = rangeData && dataAvaliacao <= fim;
     }
 
-    return pesquisa && rangeData;
+    return rangeData;
   });
 
   const graficoDados = resultadosFiltrados
@@ -230,9 +207,10 @@ export function ComparativoPage() {
 
       <div className={styles.header}>
         <FilterComparativo
-          filtroData={filtroData}
-          setFiltroData={setFiltroData}
-          handleAbrirRangeData={handleAbrirRangeData}
+          dataInicio={dataInicio}
+          setDataInicio={setDataInicio}
+          dataFim={dataFim}
+          setDataFim={setDataFim}
         />
       </div>
 
@@ -338,17 +316,6 @@ export function ComparativoPage() {
             </div>
           </div>
         </div>
-      )}
-
-      {modalRangeDataAberto && (
-        <ModalRangeDataComparativo
-          handleFecharModal={handleFecharModal}
-          dataInicio={dataInicio}
-          setDataInicio={setDataInicio}
-          dataFim={dataFim}
-          setDataFim={setDataFim}
-          handleLimparFiltro={handleLimparFiltro}
-        />
       )}
     </div>
   );
