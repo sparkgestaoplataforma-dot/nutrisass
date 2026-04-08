@@ -1,35 +1,66 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { PlusSignIcon, PencilEdit01Icon, Delete02Icon } from '@hugeicons/core-free-icons';
-import { listarPacientes } from '@/services/pacientes';
-import { api } from '@/services/api';
-import { useDebounce } from '@/hooks/useDebounce';
-import styles from './PacientesPage.module.scss';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  PlusSignIcon,
+  PencilEdit01Icon,
+  Delete02Icon,
+  CheckListIcon,
+} from "@hugeicons/core-free-icons";
+import { listarPacientes } from "@/services/pacientes";
+import { api } from "@/services/api";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useAuthStore } from "@/stores/authStore";
+import { QuestionarioSelectorModal } from "@/components/QuestionarioSelectorModal/QuestionarioSelectorModal";
+import styles from "./PacientesPage.module.scss";
+
+type PacienteSelecionado = {
+  id: string;
+  nome: string;
+};
 
 export function PacientesPage() {
-  const [busca, setBusca] = useState('');
+  const [busca, setBusca] = useState("");
+  const [modalQuestionariosAberto, setModalQuestionariosAberto] =
+    useState(false);
+  const [pacienteSelecionado, setPacienteSelecionado] =
+    useState<PacienteSelecionado | null>(null);
   const buscaDebounced = useDebounce(busca);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const user = useAuthStore((state) => state.user);
+
+  const perfil = (user?.perfil || "").toUpperCase();
+  const podeCadastrarDefault = perfil === "ADMIN" || perfil === "NUTRICIONISTA";
+  const isSecretaria = perfil === "SECRETARIA";
 
   const { data, isLoading } = useQuery({
-    queryKey: ['pacientes', buscaDebounced],
+    queryKey: ["pacientes", buscaDebounced],
     queryFn: () => listarPacientes(buscaDebounced || undefined),
   });
 
   const excluirMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/pacientes/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pacientes'] });
+      queryClient.invalidateQueries({ queryKey: ["pacientes"] });
     },
   });
 
   function handleDelete(id: string) {
-    if (confirm('Deseja realmente excluir este paciente?')) {
+    if (confirm("Deseja realmente excluir este paciente?")) {
       excluirMutation.mutate(id);
     }
+  }
+
+  function handleAbrirQuestionarios(paciente: PacienteSelecionado) {
+    setPacienteSelecionado(paciente);
+    setModalQuestionariosAberto(true);
+  }
+
+  function handleFecharModalQuestionarios() {
+    setModalQuestionariosAberto(false);
+    setPacienteSelecionado(null);
   }
 
   const pacientes = data?.data || [];
@@ -46,9 +77,10 @@ export function PacientesPage() {
         />
         <button
           className={styles.novoBtn}
-          onClick={() => navigate('/pacientes/novo')}
+          onClick={() => navigate("/pacientes/novo")}
         >
-          <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} /> Novo Paciente
+          <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} /> Novo
+          Paciente
         </button>
       </div>
 
@@ -79,24 +111,46 @@ export function PacientesPage() {
                       {p.nome}
                     </span>
                   </td>
-                  <td>{p.email || '-'}</td>
-                  <td>{p.telefone || '-'}</td>
-                  <td>{p.convenio?.nome || 'Particular'}</td>
+                  <td>{p.email || "-"}</td>
+                  <td>{p.telefone || "-"}</td>
+                  <td>{p.convenio?.nome || "Particular"}</td>
                   <td>
                     <div className={styles.actions}>
+                      <button
+                        className={`${styles.actionBtn} ${styles.shortcutBtn}`}
+                        onClick={() =>
+                          handleAbrirQuestionarios({ id: p.id, nome: p.nome })
+                        }
+                        title="Aplicar questionário"
+                      >
+                        <HugeiconsIcon
+                          icon={CheckListIcon}
+                          size={14}
+                          strokeWidth={2}
+                        />
+                        {/* Questionários */}
+                      </button>
                       <button
                         className={styles.actionBtn}
                         onClick={() => navigate(`/pacientes/${p.id}/editar`)}
                         title="Editar"
                       >
-                        <HugeiconsIcon icon={PencilEdit01Icon} size={16} strokeWidth={2} />
+                        <HugeiconsIcon
+                          icon={PencilEdit01Icon}
+                          size={16}
+                          strokeWidth={2}
+                        />
                       </button>
                       <button
                         className={`${styles.actionBtn} ${styles.danger}`}
                         onClick={() => handleDelete(p.id)}
                         title="Excluir"
                       >
-                        <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={2} />
+                        <HugeiconsIcon
+                          icon={Delete02Icon}
+                          size={16}
+                          strokeWidth={2}
+                        />
                       </button>
                     </div>
                   </td>
@@ -106,6 +160,14 @@ export function PacientesPage() {
           </table>
         )}
       </div>
+
+      <QuestionarioSelectorModal
+        open={modalQuestionariosAberto}
+        paciente={pacienteSelecionado}
+        onClose={handleFecharModalQuestionarios}
+        podeCadastrarDefault={podeCadastrarDefault}
+        isSecretaria={isSecretaria}
+      />
     </div>
   );
 }
