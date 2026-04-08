@@ -1,614 +1,448 @@
-# Questionarios - Analise Tecnica
+# Questionarios - Analise Tecnica e Backlog
 
-> Documento de analise e proposta de arquitetura para o modulo de Questionarios do NutriSaaS.
+> Documento atualizado em 08/04/2026 com o estado real da implementacao apos merge das branches SAASN-15, 20.2, 21, 23 e 128.
 
 ---
 
 ## Sumario
 
-1. [Estado Atual](#1-estado-atual)
-2. [Problemas Identificados](#2-problemas-identificados)
-3. [O que Existe nas Feature Branches](#3-o-que-existe-nas-feature-branches)
-4. [Proposta de Melhoria](#4-proposta-de-melhoria)
-5. [Schema Proposto (Prisma)](#5-schema-proposto-prisma)
-6. [Endpoints Propostos](#6-endpoints-propostos)
-7. [Consideracoes Finais](#7-consideracoes-finais)
+1. [Estado Atual da Implementacao](#1-estado-atual-da-implementacao)
+2. [Engenharia Reversa - O Que Temos Hoje](#2-engenharia-reversa---o-que-temos-hoje)
+3. [Problemas e Debitos Tecnicos](#3-problemas-e-debitos-tecnicos)
+4. [Backlog de Atividades](#4-backlog-de-atividades)
+5. [Detalhamento das Atividades](#5-detalhamento-das-atividades)
+6. [Consideracoes de Arquitetura](#6-consideracoes-de-arquitetura)
 
 ---
 
-## 1. Estado Atual
+## 1. Estado Atual da Implementacao
 
-### 1.1 Schema no Prisma (branch main)
+### 1.1 O Que Ja Funciona
 
-O modulo de questionarios possui duas tabelas no banco:
+| Funcionalidade | Status | Onde |
+|----------------|--------|------|
+| Schema normalizado (Questionario > Modulo > Pergunta) | OK | Prisma schema |
+| Seed do QRM padrao (14 modulos, 63 perguntas, 4 regras) | OK | `default-questionario.ts` |
+| Seed de avaliacoes para 3 pacientes teste | OK | `seed.ts` |
+| CRUD de questionarios (backend) | OK | `questionarios.controller.ts` |
+| Versionamento automatico de questionarios | OK | `questionarios.service.ts` |
+| Labels de escolha dinamicos (LabelEscolha) | OK | Backend + Frontend |
+| Pagina publica de responder questionario | OK | `ResponderQuestionarioPage.tsx` |
+| Detalhes da avaliacao (respostas por modulo) | OK | `AvaliacaoDetalhesPage.tsx` |
+| Comparativo temporal com grafico | OK | `ComparativoPage.tsx` |
+| Card de observacao no prontuario | OK | `ProntuarioPage.tsx` sidebar |
+| Modal de selecao de questionario + copiar link | OK | `QuestionarioSelectorModal.tsx` |
+| Exclusao de avaliacao | OK | Backend + Frontend |
+| Validacao Zod (schemas compartilhados) | OK | `questionario.schema.ts` |
 
-```prisma
-model Questionario {
-  id        String                 @id @default(uuid())
-  clinicaId String                 @map("clinica_id")
-  clinica   Clinica                @relation(fields: [clinicaId], references: [id])
-  nome      String
-  perguntas Json                   // <-- blob JSON sem estrutura definida
-  criadoEm  DateTime               @default(now()) @map("criado_em")
-  respostas RespostaQuestionario[]
+### 1.2 O Que NAO Existe Ainda
 
-  @@index([clinicaId])
-  @@map("questionarios")
-}
+| Funcionalidade | Impacto |
+|----------------|---------|
+| Tela admin de CRUD de questionarios no frontend | Nao da pra criar/editar questionarios pela plataforma |
+| Editor visual de modulos/perguntas | Depende do CRUD acima |
+| Editor de regras de interpretacao | Depende do CRUD acima |
+| Exportacao de avaliacao em PDF | Nutricionista nao consegue imprimir/enviar resultado |
+| Tab de Questionarios no Prontuario | Questionarios ficam isolados na sidebar, sem tab dedicada |
+| Reordenacao de modulos/perguntas (drag & drop) | UX ruim para organizar questionarios |
+| Suporte a escalas flexiveis (1-5, 1-10, sim/nao) | Limitado a escala 0-4 |
+| Testes automatizados | Zero cobertura |
 
-model RespostaQuestionario {
-  id              String       @id @default(uuid())
-  pacienteId      String       @map("paciente_id")
-  paciente        Paciente     @relation(fields: [pacienteId], references: [id])
-  questionarioId  String       @map("questionario_id")
-  questionario    Questionario @relation(fields: [questionarioId], references: [id])
-  respostas       Json         // <-- blob JSON sem estrutura definida
-  somatorio       Int?
-  resultado       String?
-  criadoEm        DateTime     @default(now()) @map("criado_em")
+### 1.3 Mapa de Arquivos
 
-  @@index([pacienteId])
-  @@map("respostas_questionarios")
-}
+```
+Backend (apps/api/src/modules/)
+├── questionarios/
+│   ├── infra/
+│   │   ├── questionarios.controller.ts  (186 linhas)
+│   │   ├── questionarios.routes.ts      (75 linhas)
+│   │   └── questionarios.service.ts     (529 linhas)
+│   └── seed/
+│       └── default-questionario.ts      (191 linhas)
+└── avaliacoes/
+    └── infra/
+        ├── avaliacoes.controller.ts      (37 linhas)
+        ├── avaliacoes.routes.ts          (14 linhas)
+        └── avaliacoes.service.ts         (117 linhas)
+
+Frontend (apps/web/src/)
+├── pages/
+│   ├── Questionario/Responder/
+│   │   └── ResponderQuestionarioPage.tsx (343 linhas)
+│   └── Pacientes/
+│       ├── AvaliacaoDetalhes/
+│       │   └── AvaliacaoDetalhesPage.tsx (65 linhas)
+│       ├── Comparativo/
+│       │   └── ComparativoPage.tsx       (323 linhas)
+│       └── Prontuario/
+│           └── ProntuarioPage.tsx        (sidebar com avaliacoes)
+├── components/
+│   └── QuestionarioSelectorModal/
+│       └── QuestionarioSelectorModal.tsx (200 linhas)
+└── services/
+    ├── questionarios.ts                  (92 linhas)
+    └── avaliacao.ts                      (64 linhas)
+
+Shared (packages/shared/src/schemas/)
+└── questionario.schema.ts               (118 linhas)
 ```
 
-### 1.2 Backend
-
-Nao existe nenhuma implementacao de backend para questionarios:
-
-- Nenhum controller em `apps/api/src/modules/questionarios/`
-- Nenhum arquivo de rotas registrado no router principal (`apps/api/src/routes/index.ts`)
-- Nenhum use-case implementado
-- Nenhum dado de seed para questionarios
-
-### 1.3 Frontend
-
-O frontend nao possui telas funcionais para o modulo. Existe apenas referencia ao modelo no schema Prisma e a relacao no model `Paciente` (`questionarios RespostaQuestionario[]`).
-
-### 1.4 Referencia Legada (PHP)
-
-O arquivo `docs/questionario.php` contem a implementacao original do sistema legado em CodeIgniter. Ele implementa o **QRM (Questionario de Rastreamento Metabolico)** com:
-
-- 63 sintomas distribuidos em 14 categorias corporais
-- Escala de 0 a 4 por sintoma (nunca a frequentemente/sempre)
-- Somatorio total com classificacao automatica
-- Todas as respostas salvas como colunas individuais na tabela (uma coluna por sintoma)
-
 ---
 
-## 2. Problemas Identificados
+## 2. Engenharia Reversa - O Que Temos Hoje
 
-### 2.1 Campo `perguntas Json` -- Blob Sem Estrutura
-
-| Problema | Impacto |
-|----------|---------|
-| Sem validacao no banco | Qualquer JSON pode ser inserido; dados corrompidos passam despercebidos |
-| Sem normalizacao | Impossivel fazer queries SQL eficientes por pergunta individual |
-| Sem tipagem | O frontend e backend precisam "adivinhar" a estrutura do JSON |
-| Sem integridade referencial | Perguntas nao tem FK, nao ha cascade, nao ha constraints |
-| Dificuldade de migracao | Alterar a estrutura de perguntas exige reprocessar todos os JSONs existentes |
-
-### 2.2 Campo `respostas Json` -- Mesmo Problema
-
-As respostas tambem sao um blob JSON, o que impede:
-
-- **Queries analiticas**: nao da para fazer `SELECT AVG(valor) WHERE pergunta = 'insonia'`
-- **Comparacao temporal**: comparar evolucao de um sintoma ao longo de multiplas avaliacoes requer parsing de JSON no app
-- **Relatorios agregados**: impossivel gerar estatisticas por pergunta, por categoria, ou por clinica diretamente no SQL
-
-### 2.3 Sem Versionamento
-
-Se o nutricionista alterar as perguntas de um questionario, todas as respostas antigas perdem o contexto. Nao ha como saber quais perguntas estavam vigentes quando o paciente respondeu.
-
-### 2.4 Sem Backend Implementado
-
-O modulo e um "placeholder" -- existe no schema mas nao tem:
-
-- Rotas na API
-- Validacao com Zod
-- Logica de negocio (use-cases)
-- Calculo de somatorio/classificacao no servidor
-- Testes
-
-### 2.5 Sem Dados de Seed
-
-O QRM (questionario padrao de rastreamento metabolico) nao esta cadastrado como seed. Toda clinica nova comecaria sem nenhum questionario disponivel.
-
-### 2.6 Sem Multi-tenancy na Resposta
-
-O model `RespostaQuestionario` nao tem `clinicaId` direto. Embora seja possivel chegar a clinica via `questionario.clinicaId`, isso dificulta queries de isolamento e auditoria por tenant.
-
----
-
-## 3. O que Existe nas Feature Branches
-
-Nas branches de feature (SAASN-15 e relacionadas), foi iniciado um schema normalizado com as seguintes entidades:
-
-| Entidade | Proposito |
-|----------|-----------|
-| `Questionario` | Cabecalho do questionario (nome, descricao, versao, tipo) |
-| `Modulo` | Secoes/categorias dentro do questionario (ex: "Cabeca", "Olhos") |
-| `Pergunta` | Pergunta individual, vinculada a um modulo, com ordem e labels de opcoes |
-| `RegraInterpretacao` | Faixas de pontuacao e suas classificacoes (ex: <=30 = "saudavel") |
-| `Avaliacao` | Sessao de preenchimento (quando o paciente respondeu) |
-| `Resposta` | Resposta individual por pergunta dentro de uma avaliacao |
-
-Alem disso, as branches introduzem:
-
-- **Versionamento**: campo `versao` no questionario, permitindo criar novas versoes sem quebrar avaliacoes antigas
-- **Soft deletes**: campo `ativo`/`deletadoEm` para desativar sem perder historico
-- **Labels dinamicos**: possibilidade de customizar as opcoes de resposta por questionario (ex: "Nunca/Raramente/Frequentemente/Sempre" vs "Sim/Nao")
-
-Porem, essa implementacao nas branches **nao foi finalizada** -- falta backend (controllers, use-cases, rotas), frontend, seeds e testes.
-
----
-
-## 4. Proposta de Melhoria
-
-### 4.1 Arquitetura de Dados Normalizada
-
-A proposta substitui os campos `Json` por tabelas relacionais completas:
+### 2.1 Schema do Banco (Prisma)
 
 ```
 Questionario (1) ──→ (N) Modulo (1) ──→ (N) Pergunta
      │
      ├──→ (N) RegraInterpretacao
+     ├──→ (N) LabelEscolha
      │
      └──→ (N) Avaliacao (1) ──→ (N) Resposta ──→ Pergunta
                    │
                    └──→ Paciente
 ```
 
-**Beneficios:**
+**Campos-chave:**
+- `Questionario`: id, clinicaId, nome, versao, ativo
+- `Modulo`: id, questionarioId, nome, ordem
+- `Pergunta`: id, moduloId, descricao, ordem
+- `Avaliacao`: id, dataRealizacao, scoreTotal, pacienteId, questionarioId
+- `Resposta`: id, nota (0-4), avaliacaoId, perguntaId, pacienteId
+- `RegraInterpretacao`: id, pontuacaoMin, pontuacaoMax, classificacao, questionarioId
+- `LabelEscolha`: id, questionarioId, nota, label (unique por questionarioId+nota)
 
-- **Integridade referencial**: FKs garantem consistencia; nao ha resposta orfao
-- **Queries SQL nativas**: `SELECT pergunta.texto, AVG(resposta.valor) FROM ...` funciona diretamente
-- **Relatorios por categoria**: agrupar por modulo/secao sem parsing de JSON
-- **Comparacao temporal**: buscar todas as respostas de um paciente para uma pergunta especifica ao longo do tempo
-- **Validacao no banco**: constraints de tipo, NOT NULL, CHECK garantem dados limpos
-- **Performance**: indices em colunas especificas vs scan de JSON
-
-### 4.2 Versionamento de Questionarios
-
-O versionamento e critico para um sistema clinico:
+### 2.2 Fluxo de Responder Questionario
 
 ```
-Questionario v1 (Jan/2026) ──→ Avaliacao do Paciente A (Fev/2026)
-Questionario v2 (Mar/2026) ──→ Avaliacao do Paciente A (Abr/2026)
+1. Nutricionista abre modal de selecao (QuestionarioSelectorModal)
+2. Copia URL publica: /questionarios/:qid/pacientes/:pid/responder
+3. Envia link ao paciente (WhatsApp, email)
+4. Paciente abre URL (sem autenticacao)
+5. ResponderQuestionarioPage carrega questionario com modulos e perguntas
+6. Paciente responde todas as 63 perguntas (0-4 cada)
+7. Frontend envia POST /questionarios/:qid/pacientes/:pid/avaliacoes
+8. Backend calcula scoreTotal e salva Avaliacao + Respostas
+9. No prontuario, nutricionista ve resultado na sidebar
 ```
 
-- Cada avaliacao aponta para a **versao exata** do questionario que foi usada
-- Editar um questionario cria uma **nova versao**, mantendo a anterior intacta
-- Avaliacoes antigas sempre refletem as perguntas que existiam no momento do preenchimento
+### 2.3 Fluxo de Visualizacao
 
-Implementacao sugerida: campo `versao Int` no questionario + campo `questionarioOrigemId` para rastrear a linhagem de versoes.
+```
+Prontuario → Sidebar direita
+  ├── Dropdown (seleciona avaliacao por data)
+  ├── Card Observacao (classificacao + score + cor dinamica)
+  ├── Data da avaliacao
+  ├── Somatorio
+  ├── Botao "Ver Respostas" → AvaliacaoDetalhesPage
+  └── Botao "Comparativo" → ComparativoPage
+```
 
-### 4.3 Seed do QRM (Questionario de Rastreamento Metabolico)
+### 2.4 Versionamento (Backend)
 
-O QRM deve ser registrado como seed padrao para toda nova clinica. Dados extraidos do sistema legado (`docs/questionario.php`):
+O service `resolverQuestionarioParaMutacaoEstrutural()` implementa:
+- Se o questionario NAO tem avaliacoes → edita direto
+- Se o questionario JA tem avaliacoes → clona para nova versao (preserva historico)
+- Clone inclui: modulos, perguntas, regras, labels
 
-**14 Modulos / 63 Perguntas:**
+### 2.5 Regras de Interpretacao (QRM Padrao)
 
-| Modulo | Sintomas |
-|--------|----------|
-| Cabeca | Dores de cabeca, Desmaio, Tonturas, Insonia |
-| Olhos | Cocando, Inchados, Olheiras, Visao borrada |
-| Ouvidos | Coceira, Dores, Fluido/secrecao, Zunido |
-| Nariz | Entupido, Sinusite, Ataques de espirro |
-| Boca/Garganta | Tosse, Muco, Limpar a garganta, Dor de garganta, Lingua/gengivite, Aftas |
-| Pele | Acne, Pele seca, Queda de cabelo, Vermelhidao, Suor excessivo |
-| Coracao | Falhando, Batimento rapido, Dor no peito |
-| Pulmao | Congestao, Asma, Falta de folego, Dificuldade respiratoria |
-| Trato Digestivo | Nauseas, Diarreia, Constipacao, Abdomen destendido, Arrotos/gases, Azia, Dor estomacal |
-| Articulacoes/Musculos | Dor articular, Artrite, Rigidez, Dolorido, Fraqueza |
-| Energia/Atividade | Fadiga, Apatia, Hiperatividade, Dificuldade de relaxar |
-| Mente | Memoria fraca, Confusao, Falta de concentracao, Coordenacao motora, Dificuldade de decisao, Repeticoes, Dificuldade de pronuncia, Dificuldade de aprendizagem |
-| Emocional | Alteracoes de humor, Ansiedade, Raiva, Depressao |
-| Outros | Doente com frequencia, Urgencia para urinar, Corrimento genital, Edema/inchaco |
-
-**Escala de respostas:** 0 (Nunca), 1 (Raramente), 2 (As vezes), 3 (Frequentemente), 4 (Sempre)
-
-**Regras de interpretacao:**
-
-| Faixa | Classificacao |
-|-------|--------------|
-| 0 -- 30 | Pessoas mais saudaveis, com menores chances de ter hipersensibilidades |
+| Faixa de Score | Classificacao |
+|----------------|--------------|
+| 0 -- 30 | Pessoa mais saudavel, menores chances de hipersensibilidades |
 | 31 -- 39 | Indicativo de existencia de hipersensibilidades |
 | 40 -- 99 | Absoluta certeza de existencia de hipersensibilidade |
-| >= 100 | Saude muito ruim -- alta dificuldade para tarefas diarias, possivel associacao com doencas cronicas e degenerativas |
-
-### 4.4 Arquitetura da API
-
-Seguindo o padrao DDD ja estabelecido no projeto:
-
-```
-apps/api/src/modules/questionarios/
-  ├── application/
-  │   ├── criarQuestionario.usecase.ts
-  │   ├── editarQuestionario.usecase.ts
-  │   ├── listarQuestionarios.usecase.ts
-  │   ├── buscarQuestionario.usecase.ts
-  │   ├── aplicarAvaliacao.usecase.ts
-  │   ├── listarAvaliacoes.usecase.ts
-  │   ├── buscarAvaliacao.usecase.ts
-  │   └── compararAvaliacoes.usecase.ts
-  └── infra/
-      ├── questionarios.controller.ts
-      └── questionarios.routes.ts
-```
-
-### 4.5 Arquitetura do Frontend
-
-Telas necessarias:
-
-| Tela | Rota | Descricao |
-|------|------|-----------|
-| Lista de Questionarios | `/configuracoes/questionarios` | CRUD de questionarios (admin/nutri) |
-| Editor de Questionario | `/configuracoes/questionarios/:id` | Edicao de modulos, perguntas, regras |
-| Aplicar Questionario | `/pacientes/:id/questionario/:qid` | Tela de preenchimento pelo paciente ou profissional |
-| Resultado | `/pacientes/:id/avaliacoes/:aid` | Visualizacao do resultado com pontuacao e classificacao |
-| Comparativo | `/pacientes/:id/avaliacoes/comparar` | Grafico comparativo entre avaliacoes ao longo do tempo |
-
-Componentes:
-
-- `QuestionarioForm`: formulario dinamico que renderiza modulos e perguntas a partir dos dados da API
-- `ResultadoCard`: exibe somatorio, classificacao e breakdown por modulo
-- `ComparativoChart`: grafico de linha/radar comparando avaliacoes (usar biblioteca como Recharts)
-- Integracao com a tab de Prontuario do paciente (secao "Questionarios" ao lado de Evolucao, Medidas, Exames)
+| >= 100 | Saude muito ruim -- alta dificuldade para tarefas diarias |
 
 ---
 
-## 5. Schema Proposto (Prisma)
+## 3. Problemas e Debitos Tecnicos
 
-```prisma
-// ─── Enums ───────────────────────────────────────────────
+### 3.1 CRITICO - Seguranca (Multi-tenancy)
 
-enum TipoQuestionario {
-  PADRAO          // Seed do sistema (QRM, etc.) -- readonly para clinica
-  PERSONALIZADO   // Criado pela clinica
-}
+**Problema:** Os endpoints de avaliacao NAO validam `clinicaId`. Qualquer usuario autenticado pode acessar avaliacoes de qualquer clinica.
 
-// ─── Questionario (cabecalho) ────────────────────────────
+**Arquivos afetados:**
+- `avaliacoes.controller.ts` — nenhuma funcao chama `getClinicaId(req)`
+- `avaliacoes.service.ts` — nenhuma query filtra por clinicaId
 
-model Questionario {
-  id                  String               @id @default(uuid())
-  clinicaId           String               @map("clinica_id")
-  clinica             Clinica              @relation(fields: [clinicaId], references: [id])
-  nome                String
-  descricao           String?
-  tipo                TipoQuestionario     @default(PERSONALIZADO)
-  versao              Int                  @default(1)
-  questionarioOrigemId String?             @map("questionario_origem_id")
-  questionarioOrigem  Questionario?        @relation("Versoes", fields: [questionarioOrigemId], references: [id])
-  versoesSeguintes    Questionario[]       @relation("Versoes")
-  ativo               Boolean              @default(true)
-  criadoEm            DateTime             @default(now()) @map("criado_em")
-  atualizadoEm        DateTime             @updatedAt @map("atualizado_em")
+**Endpoints vulneraveis:**
+| Endpoint | Risco |
+|----------|-------|
+| `GET /avaliacoes/:id` | Ler avaliacao de outra clinica |
+| `GET /avaliacoes/:id/questionario` | Ler respostas completas de outra clinica |
+| `GET /avaliacoes/paciente/:id` | Listar avaliacoes de paciente de outra clinica |
+| `DELETE /avaliacoes/:id` | Excluir avaliacao de outra clinica |
 
-  modulos             ModuloQuestionario[]
-  regras              RegraInterpretacao[]
-  avaliacoes          Avaliacao[]
+**Impacto:** Vazamento de dados clinicos entre tenants. Em ambiente SaaS com multiplas clinicas, isso e uma falha grave de privacidade.
 
-  @@index([clinicaId])
-  @@index([questionarioOrigemId])
-  @@map("questionarios")
-}
+**Nota:** O model `Avaliacao` no Prisma nao tem campo `clinicaId` direto. Para validar, hoje seria necessario JOIN via `paciente.clinicaId` ou `questionario.clinicaId`, o que e ineficiente.
 
-// ─── Modulo (secao/categoria de perguntas) ───────────────
+### 3.2 CRITICO - Valores Hardcoded em 3+ Lugares
 
-model ModuloQuestionario {
-  id              String       @id @default(uuid())
-  questionarioId  String       @map("questionario_id")
-  questionario    Questionario @relation(fields: [questionarioId], references: [id], onDelete: Cascade)
-  nome            String
-  descricao       String?
-  ordem           Int
-  criadoEm        DateTime     @default(now()) @map("criado_em")
+As faixas de score estao duplicadas e hardcoded em:
 
-  perguntas       Pergunta[]
+| Lugar | Arquivo | Linhas |
+|-------|---------|--------|
+| Banco de dados | `RegraInterpretacao` | Unico lugar correto |
+| Prontuario (cor do card) | `ProntuarioPage.tsx` | ~471-477 |
+| Comparativo (classificacao) | `ComparativoPage.tsx` | 21-44 |
+| Comparativo (exemplos de calculo) | `ComparativoPage.tsx` | 46-67 |
+| Responder (labels fallback) | `ResponderQuestionarioPage.tsx` | 14-20 |
 
-  @@index([questionarioId])
-  @@map("modulos_questionarios")
-}
+**Risco:** Se um nutricionista criar um questionario com regras diferentes (ex: faixa 0-50 = saudavel), o frontend vai mostrar cores/classificacoes erradas porque usa os thresholds hardcoded do QRM padrao.
 
-// ─── Pergunta ────────────────────────────────────────────
+**Solucao:** Frontend deve consumir as regras da API (`questionario.regras[]`) e aplicar cores/classificacoes dinamicamente.
 
-model Pergunta {
-  id        String             @id @default(uuid())
-  moduloId  String             @map("modulo_id")
-  modulo    ModuloQuestionario @relation(fields: [moduloId], references: [id], onDelete: Cascade)
-  texto     String
-  ordem     Int
-  /// Labels das opcoes em JSON. Ex: ["Nunca","Raramente","As vezes","Frequentemente","Sempre"]
-  labels    Json               @default("[\"Nunca\",\"Raramente\",\"As vezes\",\"Frequentemente\",\"Sempre\"]")
-  /// Valor minimo da escala (geralmente 0)
-  valorMin  Int                @default(0) @map("valor_min")
-  /// Valor maximo da escala (geralmente 4)
-  valorMax  Int                @default(4) @map("valor_max")
-  criadoEm  DateTime           @default(now()) @map("criado_em")
+### 3.3 ALTO - Tipagem Fraca no Frontend
 
-  respostas Resposta[]
+| Arquivo | Problema |
+|---------|----------|
+| `AvaliacaoDetalhesPage.tsx` | `paciente: any` no state |
+| `ComparativoPage.tsx` | `<any>` em queryClient.getQueryData e callbacks |
+| `ResponderQuestionarioPage.tsx` | `error: any` no mutation handler |
+| `avaliacao.ts` (service) | `modulos: any[]`, `labelEscolha: any[]` no tipo `AvaliacaoComRespostas` |
+| Subcomponentes de AvaliacaoDetalhes | Props tipadas como `any` |
 
-  @@index([moduloId])
-  @@map("perguntas")
-}
+**Impacto:** Bugs silenciosos, autocompletion quebrado, dificuldade de manutencao.
 
-// ─── Regra de Interpretacao ──────────────────────────────
-
-model RegraInterpretacao {
-  id              String       @id @default(uuid())
-  questionarioId  String       @map("questionario_id")
-  questionario    Questionario @relation(fields: [questionarioId], references: [id], onDelete: Cascade)
-  pontuacaoMin    Int          @map("pontuacao_min")
-  pontuacaoMax    Int?         @map("pontuacao_max")   // null = sem limite superior
-  classificacao   String
-  descricao       String?
-  cor             String?      // Cor para exibicao no frontend (ex: "#22c55e", "#ef4444")
-  ordem           Int          @default(0)
-
-  @@index([questionarioId])
-  @@map("regras_interpretacao")
-}
-
-// ─── Avaliacao (sessao de preenchimento) ─────────────────
-
-model Avaliacao {
-  id              String       @id @default(uuid())
-  clinicaId       String       @map("clinica_id")
-  questionarioId  String       @map("questionario_id")
-  questionario    Questionario @relation(fields: [questionarioId], references: [id])
-  pacienteId      String       @map("paciente_id")
-  paciente        Paciente     @relation(fields: [pacienteId], references: [id])
-  somatorio       Int
-  classificacao   String
-  observacoes     String?
-  criadoEm        DateTime     @default(now()) @map("criado_em")
-
-  respostas       Resposta[]
-
-  @@index([clinicaId])
-  @@index([pacienteId])
-  @@index([questionarioId])
-  @@index([criadoEm])
-  @@map("avaliacoes")
-}
-
-// ─── Resposta individual ─────────────────────────────────
-
-model Resposta {
-  id          String    @id @default(uuid())
-  avaliacaoId String    @map("avaliacao_id")
-  avaliacao   Avaliacao @relation(fields: [avaliacaoId], references: [id], onDelete: Cascade)
-  perguntaId  String    @map("pergunta_id")
-  pergunta    Pergunta  @relation(fields: [perguntaId], references: [id])
-  valor       Int
-
-  @@index([avaliacaoId])
-  @@index([perguntaId])
-  @@map("respostas")
-}
-```
-
-### 5.1 Relacoes com Models Existentes
-
-Adicionar ao model `Paciente`:
-
-```prisma
-model Paciente {
-  // ... campos existentes ...
-  avaliacoes  Avaliacao[]
-}
-```
-
-Adicionar ao model `Clinica`:
-
-```prisma
-model Clinica {
-  // ... campos existentes ...
-  questionarios Questionario[]  // ja existe
-}
-```
-
-Remover os models antigos:
-
-```prisma
-// REMOVER: RespostaQuestionario (substituido por Avaliacao + Resposta)
-// O campo `questionarios RespostaQuestionario[]` do Paciente vira `avaliacoes Avaliacao[]`
-```
-
-### 5.2 Migracao de Dados
-
-Se houver dados na tabela `respostas_questionarios` em producao, sera necessario um script de migracao:
-
-1. Para cada `RespostaQuestionario` existente, criar uma `Avaliacao`
-2. Parsear o campo `respostas` (JSON) e criar registros individuais em `Resposta`
-3. Manter o `somatorio` e `resultado` originais na `Avaliacao`
-
----
-
-## 6. Endpoints Propostos
-
-### 6.1 Questionarios (CRUD)
-
-| Metodo | Rota | Descricao | Perfis |
-|--------|------|-----------|--------|
-| `GET` | `/questionarios` | Listar questionarios da clinica | ADMIN, NUTRICIONISTA, SECRETARIA |
-| `GET` | `/questionarios/:id` | Buscar questionario completo (com modulos, perguntas e regras) | ADMIN, NUTRICIONISTA, SECRETARIA |
-| `POST` | `/questionarios` | Criar questionario personalizado | ADMIN, NUTRICIONISTA |
-| `PUT` | `/questionarios/:id` | Editar questionario (cria nova versao se ja houver avaliacoes) | ADMIN, NUTRICIONISTA |
-| `DELETE` | `/questionarios/:id` | Desativar questionario (soft delete) | ADMIN |
-
-### 6.2 Avaliacoes
-
-| Metodo | Rota | Descricao | Perfis |
-|--------|------|-----------|--------|
-| `GET` | `/pacientes/:pacienteId/avaliacoes` | Listar avaliacoes do paciente | ADMIN, NUTRICIONISTA, SECRETARIA |
-| `GET` | `/pacientes/:pacienteId/avaliacoes/:id` | Buscar avaliacao completa (respostas + classificacao) | ADMIN, NUTRICIONISTA, SECRETARIA |
-| `POST` | `/pacientes/:pacienteId/avaliacoes` | Aplicar questionario (criar avaliacao com respostas) | ADMIN, NUTRICIONISTA, SECRETARIA |
-| `DELETE` | `/pacientes/:pacienteId/avaliacoes/:id` | Excluir avaliacao | ADMIN, NUTRICIONISTA |
-| `GET` | `/pacientes/:pacienteId/avaliacoes/comparar` | Comparar evolucao entre avaliacoes (query: `ids=uuid1,uuid2`) | ADMIN, NUTRICIONISTA |
-
-### 6.3 Exemplo de Payloads
-
-**POST `/questionarios`** -- Criar questionario:
-
-```json
-{
-  "nome": "Questionario de Rastreamento Metabolico",
-  "descricao": "QRM - Avaliacao de sintomas por categoria corporal",
-  "modulos": [
-    {
-      "nome": "Cabeca",
-      "ordem": 1,
-      "perguntas": [
-        { "texto": "Dores de cabeca", "ordem": 1 },
-        { "texto": "Desmaio", "ordem": 2 },
-        { "texto": "Tonturas", "ordem": 3 },
-        { "texto": "Insonia", "ordem": 4 }
-      ]
-    }
-  ],
-  "regras": [
-    { "pontuacaoMin": 0, "pontuacaoMax": 30, "classificacao": "Saudavel", "cor": "#22c55e" },
-    { "pontuacaoMin": 31, "pontuacaoMax": 39, "classificacao": "Indicativo de hipersensibilidade", "cor": "#eab308" },
-    { "pontuacaoMin": 40, "pontuacaoMax": 99, "classificacao": "Certeza de hipersensibilidade", "cor": "#f97316" },
-    { "pontuacaoMin": 100, "pontuacaoMax": null, "classificacao": "Saude muito ruim", "cor": "#ef4444" }
-  ]
-}
-```
-
-**POST `/pacientes/:pacienteId/avaliacoes`** -- Aplicar questionario:
-
-```json
-{
-  "questionarioId": "uuid-do-questionario",
-  "respostas": [
-    { "perguntaId": "uuid-pergunta-1", "valor": 2 },
-    { "perguntaId": "uuid-pergunta-2", "valor": 0 },
-    { "perguntaId": "uuid-pergunta-3", "valor": 3 }
-  ],
-  "observacoes": "Paciente relata piora nos ultimos 30 dias"
-}
-```
-
-O backend calcula automaticamente:
-- `somatorio`: soma de todos os valores
-- `classificacao`: aplicando as regras de interpretacao do questionario
-
-**GET `/pacientes/:pacienteId/avaliacoes/:id`** -- Resposta:
-
-```json
-{
-  "id": "uuid-avaliacao",
-  "criadoEm": "2026-03-26T14:30:00Z",
-  "somatorio": 47,
-  "classificacao": "Certeza de hipersensibilidade",
-  "observacoes": "Paciente relata piora nos ultimos 30 dias",
-  "questionario": {
-    "id": "uuid-questionario",
-    "nome": "Questionario de Rastreamento Metabolico",
-    "versao": 1
-  },
-  "respostasPorModulo": [
-    {
-      "modulo": "Cabeca",
-      "subtotal": 9,
-      "respostas": [
-        { "pergunta": "Dores de cabeca", "valor": 3 },
-        { "pergunta": "Desmaio", "valor": 0 },
-        { "pergunta": "Tonturas", "valor": 2 },
-        { "pergunta": "Insonia", "valor": 4 }
-      ]
-    }
-  ]
-}
-```
-
-### 6.4 Validacao Zod (packages/shared)
+### 3.4 ALTO - Erro no AvaliacaoDetalhesPage
 
 ```typescript
-// packages/shared/src/schemas/questionarios.ts
-
-import { z } from 'zod';
-
-export const criarQuestionarioSchema = z.object({
-  nome: z.string().min(3).max(200),
-  descricao: z.string().max(500).optional(),
-  modulos: z.array(z.object({
-    nome: z.string().min(1).max(100),
-    ordem: z.number().int().positive(),
-    perguntas: z.array(z.object({
-      texto: z.string().min(1).max(500),
-      ordem: z.number().int().positive(),
-      labels: z.array(z.string()).min(2).max(10).optional(),
-      valorMin: z.number().int().min(0).optional(),
-      valorMax: z.number().int().max(10).optional(),
-    })).min(1),
-  })).min(1),
-  regras: z.array(z.object({
-    pontuacaoMin: z.number().int().min(0),
-    pontuacaoMax: z.number().int().positive().nullable(),
-    classificacao: z.string().min(1).max(200),
-    descricao: z.string().max(500).optional(),
-    cor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
-  })).min(1),
-});
-
-export const aplicarAvaliacaoSchema = z.object({
-  questionarioId: z.string().uuid(),
-  respostas: z.array(z.object({
-    perguntaId: z.string().uuid(),
-    valor: z.number().int().min(0).max(10),
-  })).min(1),
-  observacoes: z.string().max(1000).optional(),
-});
+// Linha 31-32 — chamada duplicada
+setAvaliacao(avaliacaoData.data || null);
+setAvaliacao(avaliacaoData.data || null); // DUPLICADO
 ```
+
+Alem disso:
+- Nao tem loading state
+- Nao tem error handling nos useEffects
+- Delete nao aguarda resposta da API antes de navegar
+
+### 3.5 MEDIO - Escala Fixa 0-4
+
+A escala de respostas e limitada a 0-4 em:
+- `questionario.schema.ts` (Zod: `nota.min(0).max(4)`)
+- `LabelEscolha` (unique constraint por `questionarioId + nota`)
+- Frontend fallback labels (5 opcoes fixas)
+
+Isso impede criar questionarios com escala diferente (1-5, 1-10, sim/nao, likert).
+
+### 3.6 MEDIO - Typo no Controller
+
+```typescript
+// avaliacoes.controller.ts
+export async function Exluir(...) // Deveria ser "Excluir"
+```
+
+### 3.7 BAIXO - Endpoint Publico Sem Rate Limit
+
+`GET /questionarios/:id` e publico (sem auth) — por design, para o paciente acessar. Porem nao tem rate limiting, permitindo enumeracao de questionarios.
 
 ---
 
-## 7. Consideracoes Finais
+## 4. Backlog de Atividades
 
-### 7.1 Multi-tenancy
+### Prioridade CRITICA (Seguranca)
 
-- O model `Questionario` ja possui `clinicaId` para isolamento por clinica
-- O model `Avaliacao` tambem inclui `clinicaId` direto para facilitar queries e auditoria
-- Todos os endpoints devem filtrar por `clinicaId` do usuario autenticado (mesmo padrao usado em agendamentos, pacientes, etc.)
-- Questionarios do tipo `PADRAO` sao criados via seed e replicados para cada clinica no momento do onboarding
+| # | Atividade | Tipo | Estimativa |
+|---|-----------|------|-----------|
+| C1 | Adicionar `clinicaId` ao model Avaliacao e Resposta | Backend | 2h |
+| C2 | Implementar isolamento por clinica nos endpoints de avaliacao | Backend | 3h |
+| C3 | Validar que paciente pertence a clinica ao criar avaliacao | Backend | 1h |
 
-### 7.2 Performance
+### Prioridade ALTA (Qualidade + Features Core)
 
-- **Indices**: todas as FKs e campos de busca frequente possuem indice (`clinicaId`, `pacienteId`, `questionarioId`, `criadoEm`)
-- **Cascade delete**: perguntas e respostas seguem cascade a partir do questionario/avaliacao pai
-- **Paginacao**: listagens devem usar cursor-based pagination (padrao do Prisma) para avaliacoes
-- **Eager loading**: buscar avaliacao completa com `include` de respostas + perguntas + modulos em uma unica query
+| # | Atividade | Tipo | Estimativa |
+|---|-----------|------|-----------|
+| A1 | Eliminar thresholds hardcoded — consumir regras da API | Frontend | 4h |
+| A2 | Tipar corretamente todos os `any` nos componentes de questionario | Frontend | 3h |
+| A3 | Corrigir bugs do AvaliacaoDetalhesPage (duplicate fetch, error handling, loading) | Frontend | 2h |
+| A4 | Criar tela CRUD de questionarios (Configuracoes > Questionarios) | Full-stack | 16h |
+| A5 | Criar editor de modulos e perguntas (nested form) | Frontend | 12h |
+| A6 | Criar editor de regras de interpretacao | Full-stack | 6h |
+| A7 | Criar tab "Questionarios" no Prontuario | Frontend | 4h |
 
-### 7.3 Extensibilidade
+### Prioridade MEDIA (UX + Extensibilidade)
 
-- **Questionarios customizados**: cada clinica pode criar seus proprios questionarios alem do QRM padrao
-- **Tipos de escala flexiveis**: o campo `labels` na pergunta permite diferentes escalas (0-4, sim/nao, likert 1-5, etc.)
-- **Novas regras de interpretacao**: o modelo de regras e generico o suficiente para qualquer questionario pontuado
-- **Exportacao**: a estrutura normalizada facilita exportacao para PDF, CSV e integracao com sistemas externos
+| # | Atividade | Tipo | Estimativa |
+|---|-----------|------|-----------|
+| M1 | Exportar avaliacao como PDF | Full-stack | 8h |
+| M2 | Suporte a escalas flexiveis (1-5, 1-10, sim/nao) | Full-stack | 8h |
+| M3 | Drag & drop para reordenar modulos/perguntas | Frontend | 6h |
+| M4 | Auto-save rascunho na pagina de responder | Frontend | 4h |
+| M5 | Rate limiting no endpoint publico de questionario | Backend | 2h |
+| M6 | Skeleton loading nos componentes de avaliacao | Frontend | 2h |
+| M7 | Paginacao na listagem de avaliacoes (prontuario) | Full-stack | 3h |
 
-### 7.4 Proximos Passos (Ordem de Implementacao)
+### Prioridade BAIXA (Polish)
 
-1. **Migration Prisma**: criar a migration com o schema proposto (remover models antigos, adicionar novos)
-2. **Seed do QRM**: implementar seed com os 14 modulos, 63 perguntas e 4 regras de interpretacao
-3. **Schemas Zod**: adicionar schemas de validacao em `packages/shared`
-4. **Use-cases**: implementar logica de negocio (calculo de somatorio, classificacao, versionamento)
-5. **Controller + Rotas**: expor endpoints REST seguindo padrao existente
-6. **Frontend -- Aplicacao**: tela de preenchimento do questionario
-7. **Frontend -- Resultado**: tela de visualizacao com breakdown por modulo
-8. **Frontend -- Comparativo**: graficos de evolucao temporal
-9. **Frontend -- CRUD**: telas de gestao de questionarios customizados (admin/nutri)
-10. **Testes**: unitarios para use-cases e integracao para endpoints
+| # | Atividade | Tipo | Estimativa |
+|---|-----------|------|-----------|
+| B1 | Corrigir typo "Exluir" → "Excluir" | Backend | 5min |
+| B2 | Mostrar versao do questionario no QuestionarioSelectorModal | Frontend | 30min |
+| B3 | Adicionar timestamps (criadoEm/atualizadoEm) nos models Modulo e Pergunta | Backend | 1h |
+| B4 | Testes unitarios para questionarios.service.ts | Backend | 8h |
+| B5 | Testes unitarios para avaliacoes.service.ts | Backend | 4h |
+| B6 | Testes E2E para fluxo completo de responder questionario | QA | 6h |
 
-### 7.5 Estimativa de Complexidade
+---
 
-| Etapa | Complexidade | Motivo |
-|-------|-------------|--------|
-| Migration + Seed | Media | Muitos dados no seed (63 perguntas), mas schema e direto |
-| Backend (API completa) | Media | Segue padroes ja estabelecidos no projeto |
-| Frontend -- Aplicacao | Alta | Formulario dinamico com multiplos modulos e validacao |
-| Frontend -- Resultado | Media | Renderizacao de dados com classificacao visual |
-| Frontend -- Comparativo | Alta | Graficos interativos, selecao de avaliacoes, layout responsivo |
-| Frontend -- CRUD admin | Media | CRUD padrao com nested forms (modulos > perguntas) |
+## 5. Detalhamento das Atividades
+
+### C1 + C2: Isolamento Multi-tenant nas Avaliacoes
+
+**Contexto:** Hoje o model `Avaliacao` nao tem `clinicaId`. Para saber a clinica, precisamos fazer JOIN via `paciente.clinicaId` ou `questionario.clinicaId`, que e ineficiente e facil de esquecer.
+
+**O que fazer:**
+
+1. Adicionar ao schema Prisma:
+```prisma
+model Avaliacao {
+  // ... campos existentes ...
+  clinicaId  String  @map("clinica_id")
+  clinica    Clinica @relation(fields: [clinicaId], references: [id])
+  @@index([clinicaId])
+}
+```
+
+2. Rodar migration para adicionar coluna (popular com base em `paciente.clinicaId`)
+
+3. Alterar `avaliacoes.controller.ts`:
+```typescript
+export async function listarAvaliacoesPorPacienteId(req, res) {
+  const clinicaId = getClinicaId(req);
+  const { id } = req.params;
+  const avaliacoes = await service.pegarAvaliacoesPorPacienteId(clinicaId, id);
+  return res.json({ success: true, data: avaliacoes });
+}
+```
+
+4. Alterar `avaliacoes.service.ts` — todas as queries devem filtrar por `clinicaId`:
+```typescript
+export async function pegarAvaliacoesPorPacienteId(clinicaId: string, pacienteId: string) {
+  return prisma.avaliacao.findMany({
+    where: { pacienteId, clinicaId }, // <-- filtro por clinica
+    orderBy: { dataRealizacao: 'desc' },
+    include: { questionario: { include: { regras: true } } },
+  });
+}
+```
+
+### A1: Eliminar Thresholds Hardcoded
+
+**Contexto:** `ProntuarioPage.tsx` e `ComparativoPage.tsx` tem as faixas de score (0-30, 31-39, etc.) hardcoded. Se um questionario customizado usar faixas diferentes, as cores e classificacoes ficam erradas.
+
+**O que fazer:**
+
+1. O endpoint `GET /avaliacoes/paciente/:id` ja retorna `questionario.regras[]` no response
+2. Criar helper compartilhado:
+```typescript
+// utils/questionario.ts
+export function getClassificacaoFromRegras(
+  score: number,
+  regras: RegraInterpretacao[]
+): { classificacao: string; nivel: number } {
+  const sorted = [...regras].sort((a, b) => a.pontuacaoMin - b.pontuacaoMin);
+  const idx = sorted.findIndex(r => score >= r.pontuacaoMin && score <= r.pontuacaoMax);
+  return {
+    classificacao: sorted[idx]?.classificacao ?? 'Sem classificacao',
+    nivel: idx, // 0=primeira faixa, 1=segunda, etc.
+  };
+}
+
+// Cores por nivel (nao por threshold)
+const CORES_NIVEL = ['green', 'yellow', 'orange', 'red'];
+export function getCorNivel(nivel: number): string {
+  return CORES_NIVEL[Math.min(nivel, CORES_NIVEL.length - 1)];
+}
+```
+
+3. Substituir os ternarios hardcoded por chamadas a esse helper
+4. Remover `FAIXAS_SCORE` do ComparativoPage
+5. Atualizar exemplos de calculo para serem dinamicos (baseados no numero real de perguntas)
+
+### A4 + A5: CRUD de Questionarios
+
+**Contexto:** Hoje nao existe tela para criar/editar questionarios. O backend ja suporta CRUD completo, mas falta o frontend.
+
+**Rota:** `/configuracoes/questionarios`
+
+**Telas necessarias:**
+
+1. **Listagem** — tabela com nome, versao, status (ativo/inativo), qtd modulos, qtd avaliacoes, acoes (editar, desativar)
+2. **Criar/Editar** — formulario com:
+   - Nome do questionario
+   - Modulos (accordion/lista expansivel)
+     - Cada modulo: nome + lista de perguntas
+     - Cada pergunta: descricao + ordem
+   - Labels de escolha (configurar as opcoes 0-4)
+   - Regras de interpretacao (faixas de pontuacao + classificacao)
+3. **Preview** — visualizacao de como o paciente vai ver o questionario
+
+**Endpoints ja disponiveis:**
+- `GET /questionarios` — listar
+- `POST /questionarios` — criar
+- `PUT /questionarios/:id` — editar (versiona automaticamente se tem avaliacoes)
+- `DELETE /questionarios/:id` — soft delete
+- `POST /questionarios/:id/modulos` — adicionar modulo
+- `POST /questionarios/:id/regras` — adicionar regras
+- CRUD de labels de escolha
+
+**Endpoints que faltam:**
+- `PUT /questionarios/:questionarioId/modulos/:moduloId` — editar modulo
+- `DELETE /questionarios/:questionarioId/modulos/:moduloId` — excluir modulo
+- `PUT /modulos/:moduloId/perguntas/:perguntaId` — editar pergunta
+- `DELETE /modulos/:moduloId/perguntas/:perguntaId` — excluir pergunta
+- `PUT /questionarios/:id/regras/:regraId` — editar regra
+- `DELETE /questionarios/:id/regras/:regraId` — excluir regra
+
+### M1: Exportar Avaliacao como PDF
+
+**Contexto:** Nutricionistas precisam imprimir/enviar resultado da avaliacao para o paciente.
+
+**Proposta:**
+- Botao "Exportar PDF" na AvaliacaoDetalhesPage
+- Gerar PDF no backend usando `@react-pdf/renderer` ou `puppeteer`
+- Incluir: dados do paciente, data, score, classificacao, respostas por modulo, logo da clinica
+
+---
+
+## 6. Consideracoes de Arquitetura
+
+### 6.1 Sobre Escalas Flexiveis (M2)
+
+Hoje a escala e fixada em 0-4 via:
+- Zod schema (`nota.min(0).max(4)`)
+- `LabelEscolha` unique constraint
+- Frontend hardcoded
+
+Para suportar escalas diferentes, seria necessario:
+1. Adicionar `escalaMin Int` e `escalaMax Int` no model `Questionario`
+2. Ajustar Zod para validar `nota` dinamicamente contra a escala do questionario
+3. Ajustar frontend para renderizar N opcoes ao inves de 5 fixas
+4. Ajustar regras de interpretacao para considerar escala variavel
+
+**Recomendacao:** Fazer isso DEPOIS do CRUD estar pronto (A4+A5). Adicionar escala flexivel sem UI de gestao nao agrega valor.
+
+### 6.2 Sobre Versionamento
+
+O sistema de versionamento ja funciona bem no backend (`resolverQuestionarioParaMutacaoEstrutural`). Porem o frontend nao mostra versoes ao usuario. Ao implementar o CRUD (A4), incluir:
+- Indicador visual de versao no editor
+- Aviso antes de editar: "Este questionario ja tem X avaliacoes. Uma nova versao sera criada."
+- Historico de versoes na listagem
+
+### 6.3 Sobre a Tab de Questionarios no Prontuario (A7)
+
+Hoje os questionarios ficam isolados na sidebar direita. Proposta:
+- Adicionar tab "Questionarios" ao lado de "Evolucao", "Medidas", "Exames"
+- Tab mostra: historico de avaliacoes em cards, botao de aplicar novo questionario, link para comparativo
+- Sidebar continua mostrando o resumo (observacao + score) da avaliacao mais recente
+
+### 6.4 Sobre Testes (B4-B6)
+
+Prioridade minima de testes recomendada:
+- `questionarios.service.ts` — testar versionamento, validacao de overlap de regras, clone
+- `avaliacoes.service.ts` — testar calculo de regraInterpretacao, filtro por clinica
+- E2E — fluxo completo: criar questionario → paciente responde → nutricionista ve resultado
