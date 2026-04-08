@@ -9,7 +9,7 @@ import {
   YAxis,
 } from "recharts";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { AnalyticsUpIcon } from "@hugeicons/core-free-icons";
+import { GitCommitHorizontalIcon } from "@hugeicons/core-free-icons";
 import styles from "./../ComparativoPage.module.scss";
 
 interface graficoData {
@@ -60,7 +60,7 @@ export function GraficoComparativo({
                 <div className={styles.chartLegendLeft}>
                   <span className={styles.chartLegendIcon}>
                     <HugeiconsIcon
-                      icon={AnalyticsUpIcon}
+                      icon={GitCommitHorizontalIcon}
                       size={18}
                       strokeWidth={2}
                     />

@@ -445,8 +445,99 @@
 .infoModal {
   @include card;
   width: 100%;
-  max-width: 560px;
+  max-width: 860px;
   border: 1px solid rgba($primary, 0.18);
+}
+
+.scoreSection {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+
+  h4 {
+    margin: 0;
+    color: $gray-900;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+  }
+
+  p {
+    margin: 0;
+    color: $gray-700;
+    font-size: $font-size-xs;
+    line-height: $line-height-normal;
+  }
+}
+
+.scoreFormula {
+  border: 1px solid rgba($primary, 0.22);
+  background: linear-gradient(
+    180deg,
+    rgba($primary, 0.09) 0%,
+    rgba($primary, 0.04) 100%
+  );
+  color: $primary-dark;
+  border-radius: $radius-md;
+  padding: $space-2 $space-3;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+}
+
+.scoreTableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba($primary, 0.18);
+  border-radius: $radius-md;
+}
+
+.scoreTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 680px;
+
+  th {
+    background: rgba($primary, 0.1);
+    color: $primary-dark;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    text-align: left;
+    padding: $space-2 $space-3;
+    border-bottom: 1px solid rgba($primary, 0.2);
+    white-space: nowrap;
+  }
+
+  td {
+    font-size: $font-size-xs;
+    color: $gray-700;
+    padding: $space-2 $space-3;
+    border-bottom: 1px solid $gray-100;
+    vertical-align: top;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.scoreExamplesList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $space-3;
+}
+
+.scoreExampleItem {
+  border: 1px solid rgba($primary, 0.14);
+  background: rgba($primary, 0.03);
+  border-radius: $radius-md;
+  padding: $space-3;
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+
+  strong {
+    color: $primary-dark;
+    font-size: $font-size-xs;
+  }
 }
 
 .novoBtn {
@@ -562,5 +653,9 @@
 
   .chartLegend {
     gap: 0.35rem;
+  }
+
+  .scoreExamplesList {
+    grid-template-columns: 1fr;
   }
 }

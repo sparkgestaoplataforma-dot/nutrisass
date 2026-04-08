@@ -13,6 +13,60 @@ import { FilterComparativo } from "./components/FilterComparativo";
 import { TabelaComparativo } from "./components/TabelaComparativo";
 import { ModalRangeDataComparativo } from "./components/ModalRangeDataComparativo";
 
+type FaixaScore = {
+  pontuacaoMin: number;
+  pontuacaoMax: number;
+  classificacao: string;
+};
+
+const FAIXAS_SCORE: FaixaScore[] = [
+  {
+    pontuacaoMin: 0,
+    pontuacaoMax: 30,
+    classificacao:
+      "Pessoa mais saudável, menores chances de hipersensibilidades",
+  },
+  {
+    pontuacaoMin: 31,
+    pontuacaoMax: 39,
+    classificacao: "Indicativo de existência de hipersensibilidades",
+  },
+  {
+    pontuacaoMin: 40,
+    pontuacaoMax: 99,
+    classificacao: "Absoluta certeza de existência de hipersensibilidade",
+  },
+  {
+    pontuacaoMin: 100,
+    pontuacaoMax: 9999,
+    classificacao:
+      "Saúde muito ruim - alta dificuldade para tarefas diárias, possível associação com doenças crônicas e degenerativas",
+  },
+];
+
+const EXEMPLOS_CALCULO = [
+  {
+    descricao: "Exemplo 1 (baixo score)",
+    formula: "0 + 1 + 2 + 1 + 0 + 1 + 0 + 1 + 2 + 1 = 9",
+    score: 9,
+  },
+  {
+    descricao: "Exemplo 2 (faixa intermediária)",
+    formula: "3 + 4 + 3 + 2 + 4 + 3 + 4 + 3 + 4 + 4 = 34",
+    score: 34,
+  },
+  {
+    descricao: "Exemplo 3 (score elevado)",
+    formula: "4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = 48",
+    score: 48,
+  },
+  {
+    descricao: "Exemplo 4 (score muito alto)",
+    formula: "28 perguntas x nota 4 = 112",
+    score: 112,
+  },
+];
+
 export function ComparativoPage() {
   const navigate = useNavigate();
   const { pacienteId } = useParams();
@@ -77,6 +131,14 @@ export function ComparativoPage() {
 
   function handleFecharModalInfoPontuacao() {
     setModalInfoPontuacaoAberto(false);
+  }
+
+  function getClassificacaoPorScore(score: number) {
+    const faixaEncontrada = FAIXAS_SCORE.find(
+      (faixa) => score >= faixa.pontuacaoMin && score <= faixa.pontuacaoMax,
+    );
+
+    return faixaEncontrada?.classificacao || "Fora da faixa configurada";
   }
 
   function handleLimparFiltro() {
@@ -198,7 +260,7 @@ export function ComparativoPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className={styles.modalHeader}>
-              <h3>Como funciona a evolução</h3>
+              <h3>Como funciona o gráfico de evolução</h3>
               <button
                 className={styles.closeBtn}
                 onClick={handleFecharModalInfoPontuacao}
@@ -209,14 +271,69 @@ export function ComparativoPage() {
 
             <div className={styles.modalBody}>
               <p className={styles.modalSubtitulo}>
-                Quanto menor a nota, melhor.
+                Quanto menor o score total, melhor a evolução do paciente.
               </p>
 
-              <div className={styles.modalInfoText}>
-                <p>Quanto mais se somam as notas, pior a saúde do paciente.</p>
+              <div className={styles.scoreSection}>
+                <h4>Como o score é calculado</h4>
                 <p>
-                  Então quanto menor a pontuação total, melhor a evolução dele.
+                  Cada resposta do questionário recebe uma nota. No fim, todas
+                  as notas são somadas para gerar o score total.
                 </p>
+                <div className={styles.scoreFormula}>
+                  Score total = nota 1 + nota 2 + nota 3 + ... + nota N
+                </div>
+                <p>
+                  Depois da soma, a observação é definida pela faixa de
+                  pontuação.
+                </p>
+              </div>
+
+              <div className={styles.scoreSection}>
+                <h4>Faixas de observação (conforme regra do score)</h4>
+                <div className={styles.scoreTableWrapper}>
+                  <table className={styles.scoreTable}>
+                    <thead>
+                      <tr>
+                        <th>Pontuação mínima</th>
+                        <th>Pontuação máxima</th>
+                        <th>Observação</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {FAIXAS_SCORE.map((faixa) => (
+                        <tr key={`${faixa.pontuacaoMin}-${faixa.pontuacaoMax}`}>
+                          <td>{faixa.pontuacaoMin}</td>
+                          <td>
+                            {faixa.pontuacaoMax === 9999
+                              ? ">100"
+                              : faixa.pontuacaoMax}
+                          </td>
+                          <td>{faixa.classificacao}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className={styles.scoreSection}>
+                <h4>Exemplos de cálculo</h4>
+                <div className={styles.scoreExamplesList}>
+                  {EXEMPLOS_CALCULO.map((exemplo) => (
+                    <div
+                      key={exemplo.descricao}
+                      className={styles.scoreExampleItem}
+                    >
+                      <strong>{exemplo.descricao}</strong>
+                      <p>{exemplo.formula}</p>
+                      <p>
+                        <strong>Score:</strong> {exemplo.score} -{" "}
+                        {getClassificacaoPorScore(exemplo.score)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
