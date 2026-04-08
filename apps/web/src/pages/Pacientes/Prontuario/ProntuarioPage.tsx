@@ -465,6 +465,28 @@ export function ProntuarioPage() {
               )}
             </select>
 
+            {avaliacaoSelecionada?.regraInterpretacao && (
+              <div
+                className={`${styles.observacaoCard} ${
+                  avaliacaoSelecionada.scoreTotal <= 30
+                    ? styles.observacaoGreen
+                    : avaliacaoSelecionada.scoreTotal <= 39
+                      ? styles.observacaoYellow
+                      : avaliacaoSelecionada.scoreTotal <= 99
+                        ? styles.observacaoOrange
+                        : styles.observacaoRed
+                }`}
+              >
+                <span className={styles.observacaoLabel}>Observação</span>
+                <p className={styles.observacaoText}>
+                  {avaliacaoSelecionada.regraInterpretacao}
+                </p>
+                <span className={styles.observacaoScore}>
+                  Score: {avaliacaoSelecionada.scoreTotal}
+                </span>
+              </div>
+            )}
+
             <div className={styles.sideNavTopic}>
               <div className={styles.sideNavIcon}>
                 <HugeiconsIcon
@@ -498,23 +520,6 @@ export function ProntuarioPage() {
                 <div className={styles.topicDescription}>
                   {avaliacaoSelecionada?.scoreTotal !== undefined
                     ? avaliacaoSelecionada.scoreTotal
-                    : "Nenhuma selecionada"}
-                </div>
-              </div>
-            </div>
-            <div className={styles.sideNavTopic}>
-              <div className={styles.sideNavIcon}>
-                <HugeiconsIcon
-                  icon={DocumentCodeFreeIcons}
-                  size={16}
-                  strokeWidth={1.8}
-                />
-              </div>
-              <div className={styles.TopicContent}>
-                <div className={styles.topicTitle}>Observação</div>
-                <div className={styles.topicDescription}>
-                  {avaliacaoSelecionada
-                    ? avaliacaoSelecionada?.regraInterpretacao
                     : "Nenhuma selecionada"}
                 </div>
               </div>

@@ -310,7 +310,159 @@ async function main() {
   console.log(`Exames base: ${examesBase.length} exames cadastrados`);
 
   // Questionário padrão do SAASN-15 (schema normalizado)
-  await criarQuestionarioPadraoParaClinica(clinica.id);
+  const questionario = await criarQuestionarioPadraoParaClinica(clinica.id);
+
+  // ===== Avaliações (respostas do questionário) para os 3 pacientes =====
+  // Busca o questionário completo com módulos e perguntas
+  const questionarioCompleto = await prisma.questionario.findUnique({
+    where: { id: questionario.id },
+    include: {
+      modulos: {
+        orderBy: { ordem: "asc" },
+        include: {
+          perguntas: { orderBy: { ordem: "asc" } },
+        },
+      },
+    },
+  });
+
+  if (questionarioCompleto && isabela && olimpia && carlos) {
+    // Coleta todas as perguntas em ordem
+    const todasPerguntas = questionarioCompleto.modulos.flatMap(
+      (m) => m.perguntas,
+    );
+
+    // Notas por paciente (63 respostas cada, escala 0-4)
+    // Isabela: score ~72 — absoluta certeza de hipersensibilidade
+    const notasIsabela = [
+      // Cabeça (4): dor de cabeça, desmaio, tonturas, insônia
+      3, 0, 2, 3,
+      // Olhos (4): coceira, inchaço, olheiras, visão borrada
+      2, 1, 3, 1,
+      // Ouvidos (4): coceira, dores, fluido, zumbido
+      1, 0, 0, 1,
+      // Nariz (3): entupido, sinusite, ataques de espirro
+      3, 2, 3,
+      // Boca/Garganta (5): muco, tosse, dor de garganta, língua/lábios, aftas
+      2, 1, 1, 0, 2,
+      // Pele (5): acne, pele seca, cabelo, vermelhidão, suor excessivo
+      1, 2, 1, 2, 1,
+      // Coração (3): batimento falhando/rápido, dor no peito, congestão
+      0, 0, 1,
+      // Pulmão (3): asma, falta de fôlego, dificuldade respiratória
+      3, 2, 2,
+      // Trato Digestivo (7): náuseas, diarreia, constipação, distensão, arrotos, azia, dor estomacal
+      2, 1, 1, 2, 1, 2, 1,
+      // Articulações/Músculos (5): dor articular, artrite, rigidez, dolorido, fraqueza
+      1, 0, 1, 2, 1,
+      // Energia/Atividade (4): fadiga, apatia, hiperatividade, dificuldade de relaxar
+      3, 2, 0, 3,
+      // Mente (8): memória, confusão, concentração, coordenação motora, decisão, repetições, pronúncia, aprendizagem
+      1, 0, 2, 0, 1, 0, 0, 1,
+      // Emocional (4): humor, ansiedade, raiva, depressão
+      2, 3, 1, 2,
+      // Outros (4): doença frequente, urgência urinária, corrimento, edema
+      1, 0, 0, 1,
+    ]; // Total: 72
+
+    // Olímpia: score ~38 — indicativo de hipersensibilidades
+    const notasOlimpia = [
+      // Cabeça (4)
+      1, 0, 2, 1,
+      // Olhos (4)
+      1, 0, 1, 1,
+      // Ouvidos (4)
+      0, 1, 0, 1,
+      // Nariz (3)
+      1, 1, 0,
+      // Boca/Garganta (5)
+      1, 0, 1, 0, 0,
+      // Pele (5)
+      0, 1, 0, 1, 0,
+      // Coração (3)
+      1, 0, 0,
+      // Pulmão (3)
+      0, 1, 0,
+      // Trato Digestivo (7)
+      1, 1, 2, 2, 1, 1, 1,
+      // Articulações/Músculos (5)
+      2, 1, 2, 1, 1,
+      // Energia/Atividade (4)
+      1, 1, 0, 1,
+      // Mente (8)
+      1, 0, 1, 0, 0, 0, 0, 0,
+      // Emocional (4)
+      1, 1, 0, 1,
+      // Outros (4)
+      0, 1, 0, 1,
+    ]; // Total: 38
+
+    // Carlos: score ~18 — saudável
+    const notasCarlos = [
+      // Cabeça (4)
+      1, 0, 0, 1,
+      // Olhos (4)
+      0, 0, 0, 0,
+      // Ouvidos (4)
+      0, 0, 0, 0,
+      // Nariz (3)
+      1, 0, 0,
+      // Boca/Garganta (5)
+      0, 0, 0, 0, 0,
+      // Pele (5)
+      1, 0, 0, 0, 1,
+      // Coração (3)
+      0, 0, 0,
+      // Pulmão (3)
+      0, 0, 0,
+      // Trato Digestivo (7)
+      0, 0, 0, 1, 0, 1, 0,
+      // Articulações/Músculos (5)
+      0, 0, 0, 1, 1,
+      // Energia/Atividade (4)
+      1, 0, 0, 1,
+      // Mente (8)
+      1, 0, 1, 0, 1, 0, 0, 1,
+      // Emocional (4)
+      1, 1, 0, 1,
+      // Outros (4)
+      0, 1, 0, 0,
+    ]; // Total: 18
+
+    const pacientesNotas = [
+      { paciente: isabela, notas: notasIsabela, score: 72, data: new Date("2025-11-15") },
+      { paciente: olimpia, notas: notasOlimpia, score: 38, data: new Date("2025-12-03") },
+      { paciente: carlos, notas: notasCarlos, score: 18, data: new Date("2026-01-20") },
+    ];
+
+    for (const { paciente, notas, score, data } of pacientesNotas) {
+      // Verifica se já existe avaliação para este paciente neste questionário
+      const avaliacaoExistente = await prisma.avaliacao.findFirst({
+        where: { pacienteId: paciente.id, questionarioId: questionario.id },
+      });
+
+      if (!avaliacaoExistente) {
+        await prisma.avaliacao.create({
+          data: {
+            dataRealizacao: data,
+            scoreTotal: score,
+            pacienteId: paciente.id,
+            questionarioId: questionario.id,
+            respostas: {
+              create: todasPerguntas.map((pergunta, idx) => ({
+                nota: notas[idx] ?? 0,
+                perguntaId: pergunta.id,
+                pacienteId: paciente.id,
+              })),
+            },
+          },
+        });
+        console.log(`Avaliação criada: ${paciente.nome} — score ${score}`);
+      } else {
+        console.log(`Avaliação já existe: ${paciente.nome}`);
+      }
+    }
+  }
 
   console.log("Seed executado com sucesso!");
   console.log(`Clínica: ${clinica.nome} (${clinica.id})`);
