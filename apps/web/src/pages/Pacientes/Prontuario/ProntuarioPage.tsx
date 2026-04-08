@@ -296,7 +296,10 @@ export function ProntuarioPage() {
             <span>Exames</span>
             <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
           </button>
-          <button className={styles.sideNavItem} onClick={() => {}}>
+          <button
+            className={styles.sideNavItem}
+            onClick={() => navigate(`/pacientes/${id!}/comparativo`)}
+          >
             <div className={styles.sideNavIcon}>
               <HugeiconsIcon icon={ClipboardIcon} size={16} strokeWidth={1.8} />
             </div>
@@ -425,32 +428,6 @@ export function ProntuarioPage() {
                     strokeWidth={2}
                   />
                   Resultados
-                </button>
-              </div>
-            </div>
-            <div className={styles.actionGroup}>
-              <p className={styles.actionGroupLabel}>Questionários</p>
-              <div className={styles.actionBtns}>
-                <button
-                  className={`${styles.actionBtn} ${styles.actionPurple}`}
-                >
-                  <HugeiconsIcon
-                    icon={CheckListIcon}
-                    size={13}
-                    strokeWidth={2}
-                  />
-                  Ver Todos
-                </button>
-                <button
-                  className={`${styles.actionBtn} ${styles.actionTeal}`}
-                  onClick={() => navigate(`/pacientes/${id!}/comparativo`)}
-                >
-                  <HugeiconsIcon
-                    icon={GitCompareIcon}
-                    size={13}
-                    strokeWidth={2}
-                  />
-                  Comparativo
                 </button>
               </div>
             </div>

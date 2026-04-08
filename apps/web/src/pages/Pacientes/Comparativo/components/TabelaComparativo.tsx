@@ -1,5 +1,5 @@
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Delete02Icon, Search01Icon } from "@hugeicons/core-free-icons";
+import { Delete02Icon, ViewIcon } from "@hugeicons/core-free-icons";
 import styles from "./../ComparativoPage.module.scss";
 import { Avaliacao } from "@/services/avaliacao";
 import { NavigateFunction } from "react-router-dom";
@@ -23,8 +23,8 @@ export function TabelaComparativo({
       <table className={styles.table}>
         <thead>
           <tr>
-            <th>Data e Hora</th>
-            <th>Somatório</th>
+            <th>Data</th>
+            <th>Evolução</th>
             <th>Observação</th>
             <th>Ações</th>
           </tr>
@@ -45,11 +45,7 @@ export function TabelaComparativo({
                     }
                     title="Ver detalhes"
                   >
-                    <HugeiconsIcon
-                      icon={Search01Icon}
-                      size={16}
-                      strokeWidth={2}
-                    />
+                    <HugeiconsIcon icon={ViewIcon} size={16} strokeWidth={2} />
                   </button>
 
                   <button

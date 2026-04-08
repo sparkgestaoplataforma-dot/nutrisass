@@ -18,6 +18,8 @@ router.post(
   controller.criarAvaliacao,
 );
 
+router.get("/:id/nome", controller.buscarNomePorId);
+
 // Rotas autenticadas
 router.use(authMiddleware);
 

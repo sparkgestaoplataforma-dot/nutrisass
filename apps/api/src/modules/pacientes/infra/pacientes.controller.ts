@@ -3,11 +3,7 @@ import { prisma } from "../../../shared/providers/prisma.js";
 import { AppError } from "../../../shared/middlewares/errorHandler.js";
 import { getClinicaId } from "../../../shared/middlewares/auth.js";
 import * as service from "./pacientes.service.js";
-import {
-  CreatePacienteQuestionarioAvaliacaoInput,
-  createPacienteQuestionarioAvaliacaoSchema,
-} from "@nutricao/shared";
-import { me } from "@/modules/auth/infra/auth.controller.js";
+import { CreatePacienteQuestionarioAvaliacaoInput } from "@nutricao/shared";
 
 export async function listar(req: Request, res: Response) {
   const clinicaId = getClinicaId(req);
@@ -145,4 +141,15 @@ export async function criarAvaliacao(req: Request, res: Response) {
     data: avaliacao,
     message: "Questionário preenchido com sucesso",
   });
+}
+
+export async function buscarNomePorId(
+  req: Request<{ id: string }>,
+  res: Response,
+) {
+  const id = req.params.id as string;
+
+  const nome = await service.buscarNomePorId(id);
+
+  return res.json({ success: true, data: { nome } });
 }

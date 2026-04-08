@@ -8,7 +8,7 @@
 
 .searchBox {
   @include input-base;
-  max-width: 200px;
+  max-width: 220px;
 }
 
 .novoBtn {
@@ -46,6 +46,12 @@
   font-weight: 700;
   color: $gray-900;
   line-height: 1.2;
+}
+
+.subViewSubtitle {
+  margin: 0.25rem 0 0;
+  color: $gray-600;
+  font-size: $font-size-sm;
 }
 
 .backBtn {
@@ -365,35 +371,173 @@
   background: $success-light !important;
 }
 
-@media (max-width: 768px) {
-  .header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: $space-3;
+.chartContainer {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.25);
+  margin-bottom: 20px;
+}
+
+.chartLegend {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.chartLegendLeft {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chartLegendIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: $success;
+}
+
+.chartLegendLabel {
+  color: $success;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+}
+
+.infoButton {
+  @include flex-center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba($primary, 0.35);
+  background: linear-gradient(
+    180deg,
+    rgba($primary, 0.12) 0%,
+    rgba($primary, 0.05) 100%
+  );
+  color: $primary-dark;
+  font-size: $font-size-2xs;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba($primary, 0.2);
+    border-color: rgba($primary, 0.5);
+    transform: translateY(-1px);
   }
 
-  .questionarioItem {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .questionarioActions {
-    width: 100%;
-
-    .actionBtn {
-      flex: 1;
-    }
+  &:focus-visible {
+    outline: 2px solid rgba($primary, 0.35);
+    outline-offset: 2px;
   }
 }
 
-.chartContainer {
+.chartGraphic {
   width: 100%;
-  height: 340px;
-  background: #ffffff;
-  border-radius: 14px;
-  padding: 16px;
-  box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.25);
-  margin-bottom: 20px;
+  height: 320px;
+}
+
+.infoModal {
+  @include card;
+  width: 100%;
+  max-width: 860px;
+  border: 1px solid rgba($primary, 0.18);
+}
+
+.scoreSection {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+
+  h4 {
+    margin: 0;
+    color: $gray-900;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+  }
+
+  p {
+    margin: 0;
+    color: $gray-700;
+    font-size: $font-size-xs;
+    line-height: $line-height-normal;
+  }
+}
+
+.scoreFormula {
+  border: 1px solid rgba($primary, 0.22);
+  background: linear-gradient(
+    180deg,
+    rgba($primary, 0.09) 0%,
+    rgba($primary, 0.04) 100%
+  );
+  color: $primary-dark;
+  border-radius: $radius-md;
+  padding: $space-2 $space-3;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+}
+
+.scoreTableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba($primary, 0.18);
+  border-radius: $radius-md;
+}
+
+.scoreTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 680px;
+
+  th {
+    background: rgba($primary, 0.1);
+    color: $primary-dark;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    text-align: left;
+    padding: $space-2 $space-3;
+    border-bottom: 1px solid rgba($primary, 0.2);
+    white-space: nowrap;
+  }
+
+  td {
+    font-size: $font-size-xs;
+    color: $gray-700;
+    padding: $space-2 $space-3;
+    border-bottom: 1px solid $gray-100;
+    vertical-align: top;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.scoreExamplesList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $space-3;
+}
+
+.scoreExampleItem {
+  border: 1px solid rgba($primary, 0.14);
+  background: rgba($primary, 0.03);
+  border-radius: $radius-md;
+  padding: $space-3;
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+
+  strong {
+    color: $primary-dark;
+    font-size: $font-size-xs;
+  }
 }
 
 .novoBtn {
@@ -470,4 +614,83 @@
   white-space: nowrap;
   padding: 0.55rem 1rem;
   font-size: $font-size-sm;
+}
+
+.filterRangeInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filterTag {
+  color: $gray-700;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+}
+
+.filterDateInput {
+  @include input-base;
+  width: 170px;
+  padding-right: 0.8rem;
+
+  &::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.75;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: $space-3;
+  }
+
+  .questionarioItem {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .questionarioActions {
+    width: 100%;
+
+    .actionBtn {
+      flex: 1;
+    }
+  }
+
+  .filterRow {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .searchBox,
+  .rangeBtn {
+    max-width: none;
+    width: 100%;
+  }
+
+  .filterRangeInline {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem;
+  }
+
+  .filterDateInput {
+    width: 100%;
+  }
+
+  .chartGraphic {
+    height: 280px;
+  }
+
+  .chartLegend {
+    gap: 0.35rem;
+  }
+
+  .scoreExamplesList {
+    grid-template-columns: 1fr;
+  }
 }
