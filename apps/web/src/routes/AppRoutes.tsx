@@ -1,20 +1,22 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ProtectedRoute } from "./ProtectedRoute";
-import { DashboardLayout } from "@/components/DashboardLayout/DashboardLayout";
-import { LoginPage } from "@/pages/Login/LoginPage";
-import { DashboardPage } from "@/pages/Dashboard/DashboardPage";
-import { AgendaPage } from "@/pages/Agenda/AgendaPage";
-import { PacientesPage } from "@/pages/Pacientes/Listagem/PacientesPage";
-import { PacienteFormPage } from "@/pages/Pacientes/Cadastro/PacienteFormPage";
-import { ProntuarioPage } from "@/pages/Pacientes/Prontuario/ProntuarioPage";
-import { ConfigPage } from "@/pages/Configuracoes/ConfigPage";
-import { RelatoriosPage } from "@/pages/Relatorios/RelatoriosPage";
-import { OnboardingPage } from "@/pages/Onboarding/OnboardingPage";
-import { EsqueciSenhaPage } from "@/pages/RedefinirSenha/EsqueciSenhaPage";
-import { RedefinirSenhaPage } from "@/pages/RedefinirSenha/RedefinirSenhaPage";
-import { ResponderQuestionarioPage } from "@/pages/Questionario/Responder/ResponderQuestionarioPage";
-import { AvaliacaoDetalhesPage } from "@/pages/Pacientes/AvaliacaoDetalhes/AvaliacaoDetalhesPage";
-import { ComparativoPage } from "@/pages/Pacientes/Comparativo/ComparativoPage";
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ProtectedRoute } from './ProtectedRoute';
+import { DashboardLayout } from '@/components/DashboardLayout/DashboardLayout';
+import { LoginPage } from '@/pages/Login/LoginPage';
+import { DashboardPage } from '@/pages/Dashboard/DashboardPage';
+import { AgendaPage } from '@/pages/Agenda/AgendaPage';
+import { PacientesPage } from '@/pages/Pacientes/Listagem/PacientesPage';
+import { PacienteFormPage } from '@/pages/Pacientes/Cadastro/PacienteFormPage';
+import { ProntuarioPage } from '@/pages/Pacientes/Prontuario/ProntuarioPage';
+import { ConfigPage } from '@/pages/Configuracoes/ConfigPage';
+import { RelatoriosPage } from '@/pages/Relatorios/RelatoriosPage';
+import { ExamesPage } from '@/pages/Exames/ExamesPage';
+import { OnboardingPage } from '@/pages/Onboarding/OnboardingPage';
+import { EsqueciSenhaPage } from '@/pages/RedefinirSenha/EsqueciSenhaPage';
+import { RedefinirSenhaPage } from '@/pages/RedefinirSenha/RedefinirSenhaPage';
+import { ResponderQuestionarioPage } from '@/pages/Questionario/Responder/ResponderQuestionarioPage';
+import { AvaliacaoDetalhesPage } from '@/pages/Pacientes/AvaliacaoDetalhes/AvaliacaoDetalhesPage';
+import { ComparativoPage } from '@/pages/Pacientes/Comparativo/ComparativoPage';
+
 export function AppRoutes() {
   return (
     <BrowserRouter>
@@ -37,20 +39,15 @@ export function AppRoutes() {
             <Route path="/pacientes" element={<PacientesPage />} />
             <Route path="/pacientes/novo" element={<PacienteFormPage />} />
             <Route path="/pacientes/:id" element={<ProntuarioPage />} />
-            <Route
-              path="/pacientes/:id/editar"
-              element={<PacienteFormPage />}
-            />
-            <Route
-              path="/pacientes/:pacienteId/comparativo"
-              element={<ComparativoPage />}
-            />
+            <Route path="/pacientes/:id/editar" element={<PacienteFormPage />} />
+            <Route path="/pacientes/:pacienteId/comparativo" element={<ComparativoPage />} />
+            <Route path="/exames" element={<ExamesPage />} />
+            <Route path="/relatorios" element={<RelatoriosPage />} />
+            <Route path="/configuracoes" element={<ConfigPage />} />
             <Route
               path="/avaliacoes/:avaliacaoId/:pacienteId"
               element={<AvaliacaoDetalhesPage />}
             />
-            <Route path="/relatorios" element={<RelatoriosPage />} />
-            <Route path="/configuracoes" element={<ConfigPage />} />
           </Route>
         </Route>
 

@@ -296,7 +296,10 @@ export function ProntuarioPage() {
             <span>Exames</span>
             <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
           </button>
-          <button className={styles.sideNavItem} onClick={() => {}}>
+          <button
+            className={styles.sideNavItem}
+            onClick={() => navigate(`/pacientes/${id!}/comparativo`)}
+          >
             <div className={styles.sideNavIcon}>
               <HugeiconsIcon icon={ClipboardIcon} size={16} strokeWidth={1.8} />
             </div>
@@ -428,32 +431,6 @@ export function ProntuarioPage() {
                 </button>
               </div>
             </div>
-            <div className={styles.actionGroup}>
-              <p className={styles.actionGroupLabel}>Questionários</p>
-              <div className={styles.actionBtns}>
-                <button
-                  className={`${styles.actionBtn} ${styles.actionPurple}`}
-                >
-                  <HugeiconsIcon
-                    icon={CheckListIcon}
-                    size={13}
-                    strokeWidth={2}
-                  />
-                  Ver Todos
-                </button>
-                <button
-                  className={`${styles.actionBtn} ${styles.actionTeal}`}
-                  onClick={() => navigate(`/pacientes/${id!}/comparativo`)}
-                >
-                  <HugeiconsIcon
-                    icon={GitCompareIcon}
-                    size={13}
-                    strokeWidth={2}
-                  />
-                  Comparativo
-                </button>
-              </div>
-            </div>
           </section>
 
           {/* Estado Clínico */}
@@ -488,6 +465,28 @@ export function ProntuarioPage() {
               )}
             </select>
 
+            {avaliacaoSelecionada?.regraInterpretacao && (
+              <div
+                className={`${styles.observacaoCard} ${
+                  avaliacaoSelecionada.scoreTotal <= 30
+                    ? styles.observacaoGreen
+                    : avaliacaoSelecionada.scoreTotal <= 39
+                      ? styles.observacaoYellow
+                      : avaliacaoSelecionada.scoreTotal <= 99
+                        ? styles.observacaoOrange
+                        : styles.observacaoRed
+                }`}
+              >
+                <span className={styles.observacaoLabel}>Observação</span>
+                <p className={styles.observacaoText}>
+                  {avaliacaoSelecionada.regraInterpretacao}
+                </p>
+                <span className={styles.observacaoScore}>
+                  Score: {avaliacaoSelecionada.scoreTotal}
+                </span>
+              </div>
+            )}
+
             <div className={styles.sideNavTopic}>
               <div className={styles.sideNavIcon}>
                 <HugeiconsIcon
@@ -521,23 +520,6 @@ export function ProntuarioPage() {
                 <div className={styles.topicDescription}>
                   {avaliacaoSelecionada?.scoreTotal !== undefined
                     ? avaliacaoSelecionada.scoreTotal
-                    : "Nenhuma selecionada"}
-                </div>
-              </div>
-            </div>
-            <div className={styles.sideNavTopic}>
-              <div className={styles.sideNavIcon}>
-                <HugeiconsIcon
-                  icon={DocumentCodeFreeIcons}
-                  size={16}
-                  strokeWidth={1.8}
-                />
-              </div>
-              <div className={styles.TopicContent}>
-                <div className={styles.topicTitle}>Observação</div>
-                <div className={styles.topicDescription}>
-                  {avaliacaoSelecionada
-                    ? avaliacaoSelecionada?.regraInterpretacao
                     : "Nenhuma selecionada"}
                 </div>
               </div>

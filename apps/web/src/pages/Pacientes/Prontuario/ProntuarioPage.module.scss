@@ -718,6 +718,85 @@
   cursor: pointer;
 }
 
+// Card de destaque — Observação do questionário
+.observacaoCard {
+  border-radius: $radius-md;
+  padding: 0.875rem 1rem;
+  margin-bottom: 1rem;
+  border-left: 3px solid;
+}
+
+.observacaoLabel {
+  display: block;
+  font-size: $font-size-xs;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.375rem;
+  opacity: 0.8;
+}
+
+.observacaoText {
+  font-size: $font-size-sm;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.observacaoScore {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: $font-size-xs;
+  font-weight: 700;
+  padding: 0.125rem 0.5rem;
+  border-radius: $radius-full;
+  opacity: 0.9;
+}
+
+.observacaoGreen {
+  background: $success-light;
+  border-left-color: $success;
+  color: $primary-dark;
+
+  .observacaoScore {
+    background: rgba($success, 0.15);
+    color: $primary-dark;
+  }
+}
+
+.observacaoYellow {
+  background: $warning-light;
+  border-left-color: $warning;
+  color: #92400e;
+
+  .observacaoScore {
+    background: rgba($warning, 0.15);
+    color: #92400e;
+  }
+}
+
+.observacaoOrange {
+  background: $orange-light;
+  border-left-color: $orange;
+  color: #9a3412;
+
+  .observacaoScore {
+    background: rgba($orange, 0.15);
+    color: #9a3412;
+  }
+}
+
+.observacaoRed {
+  background: #fef2f2;
+  border-left-color: $danger;
+  color: #991b1b;
+
+  .observacaoScore {
+    background: rgba($danger, 0.12);
+    color: #991b1b;
+  }
+}
+
 .rightEmpty {
   text-align: center;
   padding: 1.5rem 0.5rem;

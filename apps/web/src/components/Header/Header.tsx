@@ -18,7 +18,7 @@ const pageSubtitles: Record<string, string> = {
   '/': 'Visão geral da sua clínica',
   '/agenda': 'Gerencie seus agendamentos',
   '/pacientes': 'Cadastro e prontuários',
-  '/exames': 'Solicitações e resultados',
+  '/exames': 'Exames base e personalizados da clinica',
   '/relatorios': 'Análises e métricas',
   '/configuracoes': 'Preferências do sistema',
 };
