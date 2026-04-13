@@ -305,7 +305,7 @@
 
     .sideNavIcon {
       background: $danger-light;
-      color: $danger;
+      color: darken($danger, 25%);
     }
   }
 
@@ -1327,4 +1327,45 @@
 .deleteBtn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 4rem;
+  color: $gray-400;
+  font-size: $font-size-sm;
+}
+
+.loadingSpinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid $gray-200;
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  background: $white;
+  border-radius: $radius-lg;
+  border: 1px solid $gray-200;
+  padding: 1.25rem;
+  border-left: 4px solid $danger;
+
+  h3 {
+    font-size: $font-size-sm;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: $gray-800;
+  }
 }
