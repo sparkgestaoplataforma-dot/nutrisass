@@ -10,11 +10,11 @@ import { ExcluirAvaliacaoModal } from "@/pages/Pacientes/AvaliacaoDetalhes/compo
 import { useState } from "react";
 interface SidebarDireitaProps {
   avaliacao: any;
-  handleDeleteAvaliacao: () => void;
+  deleteMutation: any;
 }
 export function SidebarDireita({
   avaliacao,
-  handleDeleteAvaliacao,
+  deleteMutation,
 }: SidebarDireitaProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -31,7 +31,7 @@ export function SidebarDireita({
         {isModalOpen && (
           <ExcluirAvaliacaoModal
             closeModal={closeModal}
-            handleDeleteAvaliacao={handleDeleteAvaliacao}
+            handleDeleteAvaliacao={() => deleteMutation.mutate(avaliacao?.id)}
           />
         )}
         <h4 className={styles.rightTitle}>Resumo da avaliação</h4>

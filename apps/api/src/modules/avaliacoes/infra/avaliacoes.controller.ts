@@ -19,10 +19,14 @@ export async function buscarComRespostas(
   return res.json({ success: true, data: avaliacao });
 }
 
-export async function Exluir(req:Request<{id: string}>, res: Response){
-  const id = req.params.id
+export async function Exluir(req: Request<{ id: string }>, res: Response) {
+  const id = req.params.id;
 
-  await service.DeleteAvaliacao(id)
+  await service.DeleteAvaliacao(id);
+
+  return res
+    .status(200)
+    .json({ success: true, message: "Avaliação excluída com sucesso" });
 }
 
 export async function listarAvaliacoesPorPacienteId(
