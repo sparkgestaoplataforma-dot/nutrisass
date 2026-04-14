@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { validate } from "../../../shared/middlewares/validate.js";
 import { authMiddleware, roleGuard } from "../../../shared/middlewares/auth.js";
+import { publicRateLimiter } from "../../../shared/middlewares/rateLimiter.js";
 import * as controller from "./questionarios.controller";
 import {
   createQuestionarioSchema,
@@ -13,7 +14,7 @@ import {
 
 const router = Router();
 
-router.get("/:id", controller.buscarPorId);
+router.get("/:id", publicRateLimiter, controller.buscarPorId);
 
 router.use(authMiddleware);
 
