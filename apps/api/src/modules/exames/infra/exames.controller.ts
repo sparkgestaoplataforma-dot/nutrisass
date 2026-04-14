@@ -6,8 +6,14 @@ import { getClinicaId } from '../../../shared/middlewares/auth.js';
 // Exames Base (config)
 export async function listarExamesBase(req: Request, res: Response) {
   const clinicaId = getClinicaId(req);
+  const { tipo } = req.query; // 'base' | 'custom' | undefined (all)
+
+  const where: any = { clinicaId };
+  if (tipo === 'base') where.isBase = true;
+  if (tipo === 'custom') where.isBase = false;
+
   const exames = await prisma.exameBase.findMany({
-    where: { clinicaId },
+    where,
     orderBy: { nome: 'asc' },
   });
   return res.json({ success: true, data: exames });
@@ -22,7 +28,7 @@ export async function criarExameBase(req: Request, res: Response) {
   if (existente) throw new AppError('Código de exame já existe', 409);
 
   const exame = await prisma.exameBase.create({
-    data: { ...req.body, clinicaId },
+    data: { ...req.body, clinicaId, isBase: false },
   });
   return res.status(201).json({ success: true, data: exame });
 }
@@ -32,6 +38,7 @@ export async function editarExameBase(req: Request<{ id: string }>, res: Respons
   const { id } = req.params;
   const existente = await prisma.exameBase.findFirst({ where: { id, clinicaId } });
   if (!existente) throw new AppError('Exame não encontrado', 404);
+  if (existente.isBase) throw new AppError('Exames base não podem ser editados', 403);
 
   const exame = await prisma.exameBase.update({ where: { id }, data: req.body });
   return res.json({ success: true, data: exame });
@@ -42,9 +49,10 @@ export async function excluirExameBase(req: Request<{ id: string }>, res: Respon
   const { id } = req.params;
   const existente = await prisma.exameBase.findFirst({ where: { id, clinicaId } });
   if (!existente) throw new AppError('Exame não encontrado', 404);
+  if (existente.isBase) throw new AppError('Exames base não podem ser excluídos', 403);
 
   await prisma.exameBase.delete({ where: { id } });
-  return res.json({ success: true, message: 'Exame excluído' });
+  return res.json({ success: true, message: 'Exame exclu��do' });
 }
 
 // Solicitações de Exame (por paciente)

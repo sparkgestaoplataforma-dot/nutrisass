@@ -36,6 +36,7 @@ export async function criarAvaliacao(
 
   const avaliacao = await prisma.avaliacao.create({
     data: {
+      clinicaId: paciente.clinicaId,
       pacienteId: id,
       questionarioId,
       scoreTotal,

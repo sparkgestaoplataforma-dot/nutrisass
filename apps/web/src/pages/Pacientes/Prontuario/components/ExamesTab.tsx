@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { PlusSignIcon, Delete02Icon, TaskDone01Icon } from '@hugeicons/core-free-icons';
+import { PlusSignIcon, Delete02Icon, TaskDone01Icon, Search01Icon } from '@hugeicons/core-free-icons';
 import { api } from '@/services/api';
 import styles from '../ProntuarioPage.module.scss';
 
@@ -9,8 +9,12 @@ interface ExamesTabProps {
   pacienteId: string;
 }
 
+type TabExame = 'base' | 'meus';
+
 export function ExamesTab({ pacienteId }: ExamesTabProps) {
   const [solicitando, setSolicitando] = useState(false);
+  const [tabExame, setTabExame] = useState<TabExame>('base');
+  const [busca, setBusca] = useState('');
   const [selecionados, setSelecionados] = useState<string[]>([]);
   const [resultadoForm, setResultadoForm] = useState<{
     itemId: string;
@@ -27,13 +31,33 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
     },
   });
 
-  const { data: examesBase = [] } = useQuery({
-    queryKey: ['exames-base'],
+  const { data: examesBase = [] } = useQuery<any[]>({
+    queryKey: ['exames-base', 'base'],
     queryFn: async () => {
-      const { data } = await api.get('/exames/base');
+      const { data } = await api.get('/exames/base?tipo=base');
       return data.data;
     },
   });
+
+  const { data: meusExames = [] } = useQuery<any[]>({
+    queryKey: ['exames-base', 'custom'],
+    queryFn: async () => {
+      const { data } = await api.get('/exames/base?tipo=custom');
+      return data.data;
+    },
+  });
+
+  const listaAtual = tabExame === 'base' ? examesBase : meusExames;
+
+  const examesFiltrados = useMemo(() => {
+    if (!busca.trim()) return listaAtual;
+    const termo = busca.toLowerCase();
+    return listaAtual.filter(
+      (ex: any) =>
+        ex.nome.toLowerCase().includes(termo) ||
+        ex.codigo.toLowerCase().includes(termo)
+    );
+  }, [listaAtual, busca]);
 
   const solicitarMutation = useMutation({
     mutationFn: async () => {
@@ -46,6 +70,7 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
       queryClient.invalidateQueries({ queryKey: ['exames-solicitacoes', pacienteId] });
       setSolicitando(false);
       setSelecionados([]);
+      setBusca('');
     },
   });
 
@@ -83,29 +108,118 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
 
       {solicitando && (
         <div className={styles.evolucaoForm}>
-          <h4 style={{ marginBottom: '0.75rem', fontSize: '0.875rem', fontWeight: 600 }}>
-            Selecione os exames:
-          </h4>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '1rem' }}>
-            {examesBase.map((ex: any) => (
-              <label key={ex.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+          {/* Tabs dentro do form de solicitação */}
+          <div style={{ display: 'flex', gap: '0', borderBottom: '2px solid #e5e7eb', marginBottom: '0.75rem' }}>
+            <button
+              type="button"
+              onClick={() => { setTabExame('base'); setBusca(''); }}
+              style={{
+                padding: '0.5rem 1rem',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                color: tabExame === 'base' ? '#10b981' : '#9ca3af',
+                background: 'none',
+                border: 'none',
+                borderBottom: `2px solid ${tabExame === 'base' ? '#10b981' : 'transparent'}`,
+                marginBottom: '-2px',
+                cursor: 'pointer',
+              }}
+            >
+              Exames Base ({examesBase.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => { setTabExame('meus'); setBusca(''); }}
+              style={{
+                padding: '0.5rem 1rem',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                color: tabExame === 'meus' ? '#10b981' : '#9ca3af',
+                background: 'none',
+                border: 'none',
+                borderBottom: `2px solid ${tabExame === 'meus' ? '#10b981' : 'transparent'}`,
+                marginBottom: '-2px',
+                cursor: 'pointer',
+              }}
+            >
+              Meus Exames ({meusExames.length})
+            </button>
+          </div>
+
+          {/* Busca */}
+          <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
+            <span style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', pointerEvents: 'none' }}>
+              <HugeiconsIcon icon={Search01Icon} size={14} strokeWidth={2} />
+            </span>
+            <input
+              type="text"
+              placeholder="Filtrar exames..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.5rem 0.75rem 0.5rem 2rem',
+                border: '1px solid #e5e7eb',
+                borderRadius: '0.5rem',
+                fontSize: '0.8125rem',
+                outline: 'none',
+              }}
+            />
+          </div>
+
+          {/* Lista de exames com checkboxes */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '0.375rem',
+            marginBottom: '1rem',
+            maxHeight: '280px',
+            overflowY: 'auto',
+          }}>
+            {examesFiltrados.map((ex: any) => (
+              <label key={ex.id} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.8125rem',
+                cursor: 'pointer',
+                padding: '0.25rem 0.375rem',
+                borderRadius: '0.375rem',
+                background: selecionados.includes(ex.id) ? '#f0fdf4' : 'transparent',
+                transition: 'background 0.15s',
+              }}>
                 <input
                   type="checkbox"
                   checked={selecionados.includes(ex.id)}
                   onChange={() => toggleExame(ex.id)}
                   style={{ accentColor: '#10b981' }}
                 />
-                {ex.nome}
+                <span style={{ flex: 1 }}>{ex.nome}</span>
+                {ex.unidade && (
+                  <span style={{ fontSize: '0.6875rem', color: '#9ca3af' }}>{ex.unidade}</span>
+                )}
               </label>
             ))}
           </div>
-          {examesBase.length === 0 && (
-            <p style={{ color: '#9ca3af', fontSize: '0.875rem' }}>
-              Nenhum exame base cadastrado. Cadastre em Configurações.
+
+          {examesFiltrados.length === 0 && (
+            <p style={{ color: '#9ca3af', fontSize: '0.8125rem', textAlign: 'center', padding: '1rem 0' }}>
+              {busca.trim()
+                ? 'Nenhum exame encontrado.'
+                : tabExame === 'meus'
+                  ? 'Nenhum exame personalizado cadastrado. Cadastre em Exames > Meus Exames.'
+                  : 'Nenhum exame base disponível.'}
             </p>
           )}
+
+          {selecionados.length > 0 && (
+            <p style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600, marginBottom: '0.5rem' }}>
+              {selecionados.length} exame{selecionados.length !== 1 ? 's' : ''} selecionado{selecionados.length !== 1 ? 's' : ''}
+            </p>
+          )}
+
           <div className={styles.formActions}>
-            <button type="button" className={styles.cancelBtn} onClick={() => setSolicitando(false)}>
+            <button type="button" className={styles.cancelBtn} onClick={() => { setSolicitando(false); setSelecionados([]); setBusca(''); }}>
               Cancelar
             </button>
             <button
