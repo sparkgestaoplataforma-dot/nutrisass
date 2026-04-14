@@ -52,6 +52,7 @@ model Clinica {
   agendamentos Agendamento[]
   questionarios Questionario[]
   examesBase   ExameBase[]
+  avaliacoes   Avaliacao[]
 
   @@map("clinicas")
 }
@@ -259,12 +260,15 @@ model Avaliacao {
   id             String       @id @default(uuid())
   dataRealizacao DateTime     @default(now()) @map("data_realizacao")
   scoreTotal     Int          @map("score_total")
+  clinicaId      String       @map("clinica_id")
+  clinica        Clinica      @relation(fields: [clinicaId], references: [id])
   pacienteId     String       @map("paciente_id")
   paciente       Paciente     @relation(fields: [pacienteId], references: [id])
   questionarioId String       @map("questionario_id")
   questionario   Questionario @relation(fields: [questionarioId], references: [id])
-  respostas     Resposta[]
+  respostas      Resposta[]
 
+  @@index([clinicaId])
   @@index([pacienteId])
   @@index([questionarioId])
   @@map("questionarios_avaliacoes")
