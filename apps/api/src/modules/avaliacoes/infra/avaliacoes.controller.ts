@@ -1,12 +1,9 @@
 import { Response, Request } from "express";
-import { getClinicaId } from "@/shared/middlewares/auth.js";
 import * as service from "./avaliacoes.service.js";
-
 export async function buscarPorId(req: Request<{ id: string }>, res: Response) {
-  const clinicaId = getClinicaId(req);
   const id = req.params.id;
 
-  const avaliacao = await service.pegarAvaliacaoPorId(id, clinicaId);
+  const avaliacao = await service.pegarAvaliacaoPorId(id);
 
   return res.json({ success: true, data: avaliacao });
 }
@@ -15,31 +12,30 @@ export async function buscarComRespostas(
   req: Request<{ id: string }>,
   res: Response,
 ) {
-  const clinicaId = getClinicaId(req);
   const id = req.params.id;
 
-  const avaliacao = await service.pegarAvaliacaoComRespostas(id, clinicaId);
+  const avaliacao = await service.pegarAvaliacaoComRespostas(id);
 
   return res.json({ success: true, data: avaliacao });
 }
 
-export async function excluir(req: Request<{ id: string }>, res: Response) {
-  const clinicaId = getClinicaId(req);
+export async function Exluir(req: Request<{ id: string }>, res: Response) {
   const id = req.params.id;
 
-  await service.excluirAvaliacao(id, clinicaId);
+  await service.DeleteAvaliacao(id);
 
-  return res.status(204).send();
+  return res
+    .status(200)
+    .json({ success: true, message: "Avaliação excluída com sucesso" });
 }
 
 export async function listarAvaliacoesPorPacienteId(
   req: Request<{ id: string }>,
   res: Response,
 ) {
-  const clinicaId = getClinicaId(req);
   const { id } = req.params;
 
-  const avaliacoes = await service.pegarAvaliacoesPorPacienteId(id, clinicaId);
+  const avaliacoes = await service.pegarAvaliacoesPorPacienteId(id);
 
   return res.json({ success: true, data: avaliacoes });
 }
