@@ -1,9 +1,9 @@
 import { prisma } from "@/shared/providers/prisma";
 import { AppError } from "@/shared/middlewares/errorHandler.js";
 
-export async function pegarAvaliacaoPorId(id: string, clinicaId: string) {
+export async function pegarAvaliacaoPorId(id: string) {
   const avaliacao = await prisma.avaliacao.findFirst({
-    where: { id, clinicaId },
+    where: { id },
     include: {
       questionario: {
         include: {
@@ -29,9 +29,9 @@ export async function pegarAvaliacaoPorId(id: string, clinicaId: string) {
   };
 }
 
-export async function pegarAvaliacaoComRespostas(id: string, clinicaId: string) {
-  const avaliacao = await prisma.avaliacao.findFirst({
-    where: { id, clinicaId },
+export async function pegarAvaliacaoComRespostas(id: string) {
+  const avaliacao = await prisma.avaliacao.findUnique({
+    where: { id },
     include: {
       questionario: {
         include: {
@@ -60,7 +60,6 @@ export async function pegarAvaliacaoComRespostas(id: string, clinicaId: string) 
       },
     },
   });
-
   if (!avaliacao) {
     throw new AppError("Avaliação não encontrada", 404);
   }
@@ -75,12 +74,9 @@ export async function pegarAvaliacaoComRespostas(id: string, clinicaId: string) 
   };
 }
 
-export async function pegarAvaliacoesPorPacienteId(
-  pacienteId: string,
-  clinicaId: string,
-) {
+export async function pegarAvaliacoesPorPacienteId(pacienteId: string) {
   const avaliacoes = await prisma.avaliacao.findMany({
-    where: { pacienteId, clinicaId },
+    where: { pacienteId },
     orderBy: { dataRealizacao: "desc" },
     include: {
       questionario: {
@@ -93,7 +89,7 @@ export async function pegarAvaliacoesPorPacienteId(
     },
   });
 
-  return avaliacoes.map((avaliacao) => {
+  const avaliacoesComInterpretacao = avaliacoes.map((avaliacao) => {
     const regra = avaliacao.questionario.regras.find(
       (regra) =>
         avaliacao.scoreTotal >= regra.pontuacaoMin &&
@@ -105,16 +101,16 @@ export async function pegarAvaliacoesPorPacienteId(
       regraInterpretacao: regra?.classificacao ?? null,
     };
   });
+
+  return avaliacoesComInterpretacao;
 }
 
-export async function excluirAvaliacao(id: string, clinicaId: string) {
-  const avaliacao = await prisma.avaliacao.findFirst({
-    where: { id, clinicaId },
+export async function DeleteAvaliacao(id: string) {
+  const avaliacaoDeletada = await prisma.avaliacao.delete({
+    where: { id },
   });
 
-  if (!avaliacao) {
+  if (!avaliacaoDeletada) {
     throw new AppError("Avaliação não encontrada", 404);
   }
-
-  await prisma.avaliacao.delete({ where: { id } });
 }
