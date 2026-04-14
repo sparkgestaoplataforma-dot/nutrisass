@@ -128,7 +128,6 @@ export function ProntuarioPage() {
 
       try {
         const response = await getAvaliacoesPorId(avaliacaoSelecionadaId);
-        console.log(response.data);
         setAvaliacaoSelecionada(response.data || undefined);
       } catch (error) {
         console.error("Erro ao buscar avaliação:", error);
@@ -502,24 +501,6 @@ export function ProntuarioPage() {
                     ? new Date(
                         avaliacaoSelecionada.dataRealizacao,
                       ).toLocaleDateString("pt-BR")
-                    : "Nenhuma selecionada"}
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.sideNavTopic}>
-              <div className={styles.sideNavIcon}>
-                <HugeiconsIcon
-                  icon={Calculator01Icon}
-                  size={16}
-                  strokeWidth={1.8}
-                />
-              </div>
-              <div className={styles.TopicContent}>
-                <div className={styles.topicTitle}>Somatório</div>
-                <div className={styles.topicDescription}>
-                  {avaliacaoSelecionada?.scoreTotal !== undefined
-                    ? avaliacaoSelecionada.scoreTotal
                     : "Nenhuma selecionada"}
                 </div>
               </div>
