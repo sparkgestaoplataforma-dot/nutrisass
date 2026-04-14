@@ -152,8 +152,19 @@ export async function criarQuestionarioPadraoParaClinica(clinicaId: string) {
   });
 
   if (existente) {
-    await upsertLabelsEscolhaPadrao(existente.id);
-    return existente;
+    const moduloCount = await prisma.modulo.count({
+      where: { questionarioId: existente.id },
+    });
+
+    if (moduloCount === 0) {
+      console.warn(
+        `Questionário "${QUESTIONARIO_PADRAO_NOME}" encontrado sem módulos (registro fantasma). Removendo e recriando...`,
+      );
+      await prisma.questionario.delete({ where: { id: existente.id } });
+    } else {
+      await upsertLabelsEscolhaPadrao(existente.id);
+      return existente;
+    }
   }
 
   const questionario = await prisma.questionario.create({
