@@ -9,5 +9,5 @@ router.use(authMiddleware);
 router.get("/:id", controller.buscarPorId);
 router.get("/:id/questionario", controller.buscarComRespostas);
 router.get("/paciente/:id", controller.listarAvaliacoesPorPacienteId)
-router.delete("/:id", controller.Exluir);
+router.delete("/:id", controller.excluir);
 export { router as avaliacoesRoutes };
