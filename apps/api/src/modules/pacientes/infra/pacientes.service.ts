@@ -32,6 +32,13 @@ export async function criarAvaliacao(
     );
   }
 
+  if (paciente.clinicaId !== questionario.clinicaId) {
+    throw new AppError(
+      "Paciente e questionário não pertencem à mesma clínica",
+      400,
+    );
+  }
+
   const scoreTotal = respostas.reduce((acc, r) => acc + r.nota, 0);
 
   const avaliacao = await prisma.avaliacao.create({
