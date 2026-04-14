@@ -213,6 +213,8 @@ model Modulo {
   questionarioId String       @map("questionario_id")
   questionario   Questionario @relation(fields: [questionarioId], references: [id], onDelete: Cascade)
   perguntas      Pergunta[]
+  criadoEm       DateTime     @default(now()) @map("criado_em")
+  atualizadoEm   DateTime     @updatedAt @map("atualizado_em")
 
   @@index([questionarioId])
   @@unique([questionarioId, ordem])
@@ -220,12 +222,14 @@ model Modulo {
 }
 
 model Pergunta {
-  id          String     @id @default(uuid())
-  descricao   String
-  ordem       Int
-  moduloId    String     @map("modulo_id")
-  modulo      Modulo     @relation(fields: [moduloId], references: [id], onDelete: Cascade)
-  respostas   Resposta[]
+  id           String     @id @default(uuid())
+  descricao    String
+  ordem        Int
+  moduloId     String     @map("modulo_id")
+  modulo       Modulo     @relation(fields: [moduloId], references: [id], onDelete: Cascade)
+  respostas    Resposta[]
+  criadoEm     DateTime   @default(now()) @map("criado_em")
+  atualizadoEm DateTime   @updatedAt @map("atualizado_em")
 
   @@index([moduloId])
   @@unique([moduloId, ordem])

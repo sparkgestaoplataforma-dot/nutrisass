@@ -11,6 +11,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GraficoComparativo } from "./components/GraficoComparativo";
 import { FilterComparativo } from "./components/FilterComparativo";
 import { TabelaComparativo } from "./components/TabelaComparativo";
+import { ExcluirAvaliacaoModal } from "./components/ExcluirAvaliacaoModal";
+import { InfoAvaliacaoModal } from "./components/InfoAvaliacaoModal";
 
 type FaixaScore = {
   pontuacaoMin: number;
@@ -82,7 +84,10 @@ export function ComparativoPage() {
 
   const [modalInfoPontuacaoAberto, setModalInfoPontuacaoAberto] =
     useState(false);
-
+  const [excluirAvaliacaoModalAberto, setExcluirAvaliacaoModalAberto] =
+    useState(false);
+  const [avaliacaoIdParaExcluir, setAvaliacaoIdParaExcluir] =
+    useState<string>("");
   const { data: nomePaciente } = useQuery({
     queryKey: ["paciente-nome-publico", pacienteId],
     queryFn: () => buscarNomePacientePublico(pacienteId!),
@@ -95,8 +100,41 @@ export function ComparativoPage() {
     queryKey: ["avaliacoes", pacienteId],
     queryFn: () => getAvaliacoesPorPacienteId(pacienteId!),
     enabled: !!pacienteId,
-    refetchOnMount: true,
     refetchOnWindowFocus: true,
+    refetchOnMount: "always",
+  });
+
+  const deleteAvaliacaoMutation = useMutation({
+    mutationFn: (id: string) => DeleteAvaliacao(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["avaliacoes", pacienteId] });
+      const previousData = queryClient.getQueryData<any>([
+        "avaliacoes",
+        pacienteId,
+      ]);
+
+      queryClient.setQueryData(["avaliacoes", pacienteId], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.filter((avaliacao: any) => avaliacao.id != id),
+        };
+      });
+      return { previousData };
+    },
+    onSuccess: () => {
+      setExcluirAvaliacaoModalAberto(false);
+    },
+    onError: (err, id, context) => {
+      queryClient.setQueryData(
+        ["avaliacoes", pacienteId],
+        context?.previousData,
+      );
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["avaliacoes", pacienteId] });
+    },
   });
 
   const avaliacoes = avaliacoesResponse?.data || [];
@@ -124,6 +162,15 @@ export function ComparativoPage() {
     setModalInfoPontuacaoAberto(false);
   }
 
+  function handleAbrirModalExcluirAvaliacao(id: string) {
+    setExcluirAvaliacaoModalAberto(true);
+    setAvaliacaoIdParaExcluir(id);
+  }
+
+  function handleFecharModalExcluirAvaliacao() {
+    setExcluirAvaliacaoModalAberto(false);
+  }
+
   function getClassificacaoPorScore(score: number) {
     const faixaEncontrada = FAIXAS_SCORE.find(
       (faixa) => score >= faixa.pontuacaoMin && score <= faixa.pontuacaoMax,
@@ -131,36 +178,6 @@ export function ComparativoPage() {
 
     return faixaEncontrada?.classificacao || "Fora da faixa configurada";
   }
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => DeleteAvaliacao(id),
-    onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ["avaliacoes", pacienteId] });
-      const previousData = queryClient.getQueryData<any>([
-        "avaliacoes",
-        pacienteId,
-      ]);
-
-      queryClient.setQueryData(["avaliacoes", pacienteId], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          data: old.data.filter((avaliacao: any) => avaliacao.id != id),
-        };
-      });
-      return { previousData };
-    },
-    onError: (err, id, context) => {
-      queryClient.setQueryData(
-        ["avaliacoes", pacienteId],
-        context?.previousData,
-      );
-    },
-
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["avaliacoes", pacienteId] });
-    },
-  });
 
   const resultadosFiltrados = avaliacoes.filter((item) => {
     const dataAvaliacao = new Date(item.dataRealizacao);
@@ -223,7 +240,7 @@ export function ComparativoPage() {
             resultadosFiltrados={resultadosFiltrados}
             formatarData={formatarData}
             navigate={navigate}
-            deleteMutation={deleteMutation}
+            handleAbrirModalExcluirAvaliacao={handleAbrirModalExcluirAvaliacao}
           />
         )}
       </div>
@@ -316,6 +333,22 @@ export function ComparativoPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* {modalInfoPontuacaoAberto && (
+  <InfoAvaliacaoModal
+    handleFecharModalInfoPontuacao={handleFecharModalInfoPontuacao}
+    FAIXAS_SCORE={FAIXAS_SCORE}
+    EXEMPLOS_CALCULO={EXEMPLOS_CALCULO}
+    getClassificacaoPorScore={getClassificacaoPorScore}
+  />
+)} */}
+      {excluirAvaliacaoModalAberto && (
+        <ExcluirAvaliacaoModal
+          deleteAvaliacaoMutation={deleteAvaliacaoMutation}
+          closeModal={handleFecharModalExcluirAvaliacao}
+          avaliacaoIdParaExcluir={avaliacaoIdParaExcluir}
+        />
       )}
     </div>
   );
