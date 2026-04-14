@@ -1,9 +1,9 @@
 import { prisma } from "@/shared/providers/prisma";
 import { AppError } from "@/shared/middlewares/errorHandler.js";
 
-export async function pegarAvaliacaoPorId(id: string) {
+export async function pegarAvaliacaoPorId(id: string, clinicaId: string) {
   const avaliacao = await prisma.avaliacao.findFirst({
-    where: { id },
+    where: { id, clinicaId },
     include: {
       questionario: {
         include: {
@@ -29,9 +29,9 @@ export async function pegarAvaliacaoPorId(id: string) {
   };
 }
 
-export async function pegarAvaliacaoComRespostas(id: string) {
-  const avaliacao = await prisma.avaliacao.findUnique({
-    where: { id },
+export async function pegarAvaliacaoComRespostas(id: string, clinicaId: string) {
+  const avaliacao = await prisma.avaliacao.findFirst({
+    where: { id, clinicaId },
     include: {
       questionario: {
         include: {
@@ -60,6 +60,7 @@ export async function pegarAvaliacaoComRespostas(id: string) {
       },
     },
   });
+
   if (!avaliacao) {
     throw new AppError("Avaliação não encontrada", 404);
   }
@@ -74,9 +75,12 @@ export async function pegarAvaliacaoComRespostas(id: string) {
   };
 }
 
-export async function pegarAvaliacoesPorPacienteId(pacienteId: string) {
+export async function pegarAvaliacoesPorPacienteId(
+  pacienteId: string,
+  clinicaId: string,
+) {
   const avaliacoes = await prisma.avaliacao.findMany({
-    where: { pacienteId },
+    where: { pacienteId, clinicaId },
     orderBy: { dataRealizacao: "desc" },
     include: {
       questionario: {
@@ -89,7 +93,7 @@ export async function pegarAvaliacoesPorPacienteId(pacienteId: string) {
     },
   });
 
-  const avaliacoesComInterpretacao = avaliacoes.map((avaliacao) => {
+  return avaliacoes.map((avaliacao) => {
     const regra = avaliacao.questionario.regras.find(
       (regra) =>
         avaliacao.scoreTotal >= regra.pontuacaoMin &&
@@ -101,16 +105,16 @@ export async function pegarAvaliacoesPorPacienteId(pacienteId: string) {
       regraInterpretacao: regra?.classificacao ?? null,
     };
   });
-
-  return avaliacoesComInterpretacao;
 }
 
-export async function DeleteAvaliacao(id: string) {
-  const avaliacaoDeletada = await prisma.avaliacao.delete({
-    where: { id },
+export async function excluirAvaliacao(id: string, clinicaId: string) {
+  const avaliacao = await prisma.avaliacao.findFirst({
+    where: { id, clinicaId },
   });
 
-  if (!avaliacaoDeletada) {
+  if (!avaliacao) {
     throw new AppError("Avaliação não encontrada", 404);
   }
+
+  await prisma.avaliacao.delete({ where: { id } });
 }
