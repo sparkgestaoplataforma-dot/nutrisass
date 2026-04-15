@@ -2,15 +2,10 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  onboardingSchema,
-  type OnboardingInput,
-  type ApiResponse,
-  type AuthTokens,
-  type TokenPayload,
-} from "@nutricao/shared";
-import { api } from "@/services/api";
+import { onboardingSchema, type OnboardingInput } from "@nutricao/shared";
 import { useAuthStore } from "@/stores/authStore";
+import { postOnboarding, getMe } from "@/services/clinica";
+import { criarQuestionarioDefault } from "@/services/questionarios";
 import styles from "./OnboardingPage.module.scss";
 import { PatternFormat } from "react-number-format";
 
@@ -28,17 +23,17 @@ export function OnboardingPage() {
   });
 
   const mutation = useMutation({
-    mutationFn: async (input: OnboardingInput) => {
-      const { data } = await api.post<
-        ApiResponse<{ clinica: any; tokens: AuthTokens }>
-      >("/clinica/onboarding", input);
-      return data.data!;
-    },
+    mutationFn: (input: OnboardingInput) => postOnboarding(input),
     onSuccess: async (result) => {
       setTokens(result.tokens.accessToken, result.tokens.refreshToken);
 
-      const { data } = await api.get<ApiResponse<TokenPayload>>("/auth/me");
-      setUser(data.data!);
+      const user = await getMe();
+      setUser(user);
+
+      // Cria o questionário padrão automaticamente ao cadastrar a clínica
+      await criarQuestionarioDefault().catch(() => {
+        // Silencia o erro caso o questionário default já exista
+      });
 
       navigate("/");
     },
