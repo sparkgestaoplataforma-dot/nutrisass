@@ -10,20 +10,33 @@ export function ExcluirAvaliacaoModal({
   closeModal,
 }: ExcluirAvaliacaoModalProps) {
   return (
-    <div className={styles.overlay} onClick={closeModal}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <h3>Excluir Avaliação</h3>
+    <div className={styles.excluirOverlay} onClick={closeModal}>
+      <div className={styles.excluirModal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.excluirHeader}>
+          <div className={styles.excluirHeaderTitle}>
+            <div className={styles.excluirIcon}>!</div>
+            <h3>Excluir Avaliação</h3>
+          </div>
 
-          <button className={styles.closeBtn} onClick={closeModal}>
+          <button className={styles.excluirCloseBtn} onClick={closeModal}>
             ✕
           </button>
         </div>
 
-        <div className={styles.bodyModal}>
+        <div className={styles.excluirBody}>
+          <p className={styles.excluirDescricao}>
+            Tem certeza que deseja excluir esta avaliação?
+          </p>
+
+          <p className={styles.excluirAviso}>
+            Essa ação <strong>não pode ser desfeita</strong>.
+          </p>
+        </div>
+
+        <div className={styles.excluirFooter}>
           <button
             type="button"
-            className={styles.cancelBtn}
+            className={styles.excluirCancelBtn}
             onClick={closeModal}
           >
             Cancelar
@@ -31,7 +44,7 @@ export function ExcluirAvaliacaoModal({
 
           <button
             type="button"
-            className={styles.deleteBtn}
+            className={styles.excluirDeleteBtn}
             onClick={handleDeleteAvaliacao}
           >
             Confirmar Exclusão

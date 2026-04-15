@@ -37,6 +37,10 @@ import {
   getAvaliacoesPorId,
   getAvaliacoesPorPacienteId,
 } from "@/services/avaliacao";
+import {
+  getInterpretacaoScore,
+  getClasseCorPorNivel,
+} from "@/utils/scoreInterpretacao";
 
 type View = "atendimento" | "medidas" | "exames";
 
@@ -194,7 +198,6 @@ export function ProntuarioPage() {
   ]
     .filter(Boolean)
     .join(", ");
-  const scoreTotal = avaliacaoSelecionada?.scoreTotal ?? 0;
   return (
     <div className={styles.page}>
       {/* Breadcrumb */}
@@ -464,27 +467,27 @@ export function ProntuarioPage() {
               )}
             </select>
 
-            {avaliacaoSelecionada?.regraInterpretacao && (
-              <div
-                className={`${styles.observacaoCard} ${
-                  avaliacaoSelecionada.scoreTotal <= 30
-                    ? styles.observacaoGreen
-                    : avaliacaoSelecionada.scoreTotal <= 39
-                      ? styles.observacaoYellow
-                      : avaliacaoSelecionada.scoreTotal <= 99
-                        ? styles.observacaoOrange
-                        : styles.observacaoRed
-                }`}
-              >
-                <span className={styles.observacaoLabel}>Observação</span>
-                <p className={styles.observacaoText}>
-                  {avaliacaoSelecionada.regraInterpretacao}
-                </p>
-                <span className={styles.observacaoScore}>
-                  Score: {avaliacaoSelecionada.scoreTotal}
-                </span>
-              </div>
-            )}
+            {avaliacaoSelecionada?.regraInterpretacao && (() => {
+              const regras = avaliacaoSelecionada.questionario?.regras ?? [];
+              const { nivel } = getInterpretacaoScore(
+                avaliacaoSelecionada.scoreTotal,
+                regras,
+              );
+              const corClasse = getClasseCorPorNivel(nivel, styles);
+              return (
+                <div
+                  className={`${styles.observacaoCard} ${corClasse}`}
+                >
+                  <span className={styles.observacaoLabel}>Observação</span>
+                  <p className={styles.observacaoText}>
+                    {avaliacaoSelecionada.regraInterpretacao}
+                  </p>
+                  <span className={styles.observacaoScore}>
+                    Score: {avaliacaoSelecionada.scoreTotal}
+                  </span>
+                </div>
+              );
+            })()}
 
             <div className={styles.sideNavTopic}>
               <div className={styles.sideNavIcon}>
