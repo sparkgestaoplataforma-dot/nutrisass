@@ -335,14 +335,6 @@ export function ComparativoPage() {
         </div>
       )}
 
-      {/* {modalInfoPontuacaoAberto && (
-  <InfoAvaliacaoModal
-    handleFecharModalInfoPontuacao={handleFecharModalInfoPontuacao}
-    FAIXAS_SCORE={FAIXAS_SCORE}
-    EXEMPLOS_CALCULO={EXEMPLOS_CALCULO}
-    getClassificacaoPorScore={getClassificacaoPorScore}
-  />
-)} */}
       {excluirAvaliacaoModalAberto && (
         <ExcluirAvaliacaoModal
           deleteAvaliacaoMutation={deleteAvaliacaoMutation}
