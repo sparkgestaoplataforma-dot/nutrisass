@@ -9,14 +9,14 @@ interface TabelaComparativoProps {
   resultadosFiltrados: Avaliacao[];
   formatarData: (dataISO: string) => string;
   navigate: NavigateFunction;
-  handleAbrirModalExcluirAvaliacao: (id: string) => void;
+  deleteMutation: UseMutationResult<any, any, string, any>;
 }
 export function TabelaComparativo({
   pacienteId,
   resultadosFiltrados,
   formatarData,
   navigate,
-  handleAbrirModalExcluirAvaliacao,
+  deleteMutation,
 }: TabelaComparativoProps) {
   return (
     <>
@@ -50,7 +50,7 @@ export function TabelaComparativo({
 
                   <button
                     className={`${styles.actionBtn} ${styles.danger}`}
-                    onClick={() => handleAbrirModalExcluirAvaliacao(item.id)}
+                    onClick={() => deleteMutation.mutate(item.id)}
                     title="Excluir"
                   >
                     <HugeiconsIcon
