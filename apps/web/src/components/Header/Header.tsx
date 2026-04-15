@@ -1,6 +1,10 @@
 import { useLocation } from 'react-router-dom';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { LogoutIcon, NotificationIcon } from '@hugeicons/core-free-icons';
+import {
+  LogoutIcon,
+  NotificationIcon,
+  Menu01Icon,
+} from '@hugeicons/core-free-icons';
 import { useAuthStore } from '@/stores/authStore';
 import { useLogout } from '@/hooks/useAuth';
 import styles from './Header.module.scss';
@@ -23,7 +27,11 @@ const pageSubtitles: Record<string, string> = {
   '/configuracoes': 'Preferências do sistema',
 };
 
-export function Header() {
+interface HeaderProps {
+  onMenuClick: () => void;
+}
+
+export function Header({ onMenuClick }: HeaderProps) {
   const location = useLocation();
   const user = useAuthStore((s) => s.user);
   const { mutate: logout } = useLogout();
@@ -35,6 +43,15 @@ export function Header() {
   return (
     <header className={styles.header}>
       <div className={styles.left}>
+        {/* Botão hambúrguer — visível apenas no mobile */}
+        <button
+          className={styles.menuBtn}
+          onClick={onMenuClick}
+          aria-label="Abrir menu"
+        >
+          <HugeiconsIcon icon={Menu01Icon} size={20} strokeWidth={2} />
+        </button>
+
         <div>
           <h1 className={styles.title}>{title}</h1>
           {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
