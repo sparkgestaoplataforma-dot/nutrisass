@@ -6,42 +6,17 @@ import { buscarNomePacientePublico } from "@/services/pacientes";
 import {
   getAvaliacoesPorPacienteId,
   DeleteAvaliacao,
+  type RegraInterpretacao,
 } from "@/services/avaliacao";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GraficoComparativo } from "./components/GraficoComparativo";
 import { FilterComparativo } from "./components/FilterComparativo";
 import { TabelaComparativo } from "./components/TabelaComparativo";
-
-type FaixaScore = {
-  pontuacaoMin: number;
-  pontuacaoMax: number;
-  classificacao: string;
-};
-
-const FAIXAS_SCORE: FaixaScore[] = [
-  {
-    pontuacaoMin: 0,
-    pontuacaoMax: 30,
-    classificacao:
-      "Pessoa mais saudável, menores chances de hipersensibilidades",
-  },
-  {
-    pontuacaoMin: 31,
-    pontuacaoMax: 39,
-    classificacao: "Indicativo de existência de hipersensibilidades",
-  },
-  {
-    pontuacaoMin: 40,
-    pontuacaoMax: 99,
-    classificacao: "Absoluta certeza de existência de hipersensibilidade",
-  },
-  {
-    pontuacaoMin: 100,
-    pontuacaoMax: 9999,
-    classificacao:
-      "Saúde muito ruim - alta dificuldade para tarefas diárias, possível associação com doenças crônicas e degenerativas",
-  },
-];
+import { ExcluirAvaliacaoModal } from "./components/ExcluirAvaliacaoModal";
+import { InfoAvaliacaoModal } from "./components/InfoAvaliacaoModal";
+import {
+  getInterpretacaoScore,
+} from "@/utils/scoreInterpretacao";
 
 const EXEMPLOS_CALCULO = [
   {
@@ -82,6 +57,10 @@ export function ComparativoPage() {
 
   const [modalInfoPontuacaoAberto, setModalInfoPontuacaoAberto] =
     useState(false);
+  const [excluirAvaliacaoModalAberto, setExcluirAvaliacaoModalAberto] =
+    useState(false);
+  const [avaliacaoIdParaExcluir, setAvaliacaoIdParaExcluir] =
+    useState<string>("");
 
   const { data: nomePaciente } = useQuery({
     queryKey: ["paciente-nome-publico", pacienteId],
@@ -95,11 +74,48 @@ export function ComparativoPage() {
     queryKey: ["avaliacoes", pacienteId],
     queryFn: () => getAvaliacoesPorPacienteId(pacienteId!),
     enabled: !!pacienteId,
-    refetchOnMount: true,
     refetchOnWindowFocus: true,
+    refetchOnMount: "always",
+  });
+
+  const deleteAvaliacaoMutation = useMutation({
+    mutationFn: (id: string) => DeleteAvaliacao(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["avaliacoes", pacienteId] });
+      const previousData = queryClient.getQueryData<any>([
+        "avaliacoes",
+        pacienteId,
+      ]);
+
+      queryClient.setQueryData(["avaliacoes", pacienteId], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.filter((avaliacao: any) => avaliacao.id != id),
+        };
+      });
+      return { previousData };
+    },
+    onSuccess: () => {
+      setExcluirAvaliacaoModalAberto(false);
+    },
+    onError: (err, id, context) => {
+      queryClient.setQueryData(
+        ["avaliacoes", pacienteId],
+        context?.previousData,
+      );
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["avaliacoes", pacienteId] });
+    },
   });
 
   const avaliacoes = avaliacoesResponse?.data || [];
+
+  // Extrai as regras da primeira avaliação disponível (todas pertencem ao mesmo questionário)
+  const regrasDoQuestionario: RegraInterpretacao[] =
+    avaliacoes[0]?.questionario?.regras ?? [];
 
   function formatarData(dataISO: string) {
     const data = new Date(dataISO);
@@ -124,43 +140,14 @@ export function ComparativoPage() {
     setModalInfoPontuacaoAberto(false);
   }
 
-  function getClassificacaoPorScore(score: number) {
-    const faixaEncontrada = FAIXAS_SCORE.find(
-      (faixa) => score >= faixa.pontuacaoMin && score <= faixa.pontuacaoMax,
-    );
-
-    return faixaEncontrada?.classificacao || "Fora da faixa configurada";
+  function handleAbrirModalExcluirAvaliacao(id: string) {
+    setExcluirAvaliacaoModalAberto(true);
+    setAvaliacaoIdParaExcluir(id);
   }
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => DeleteAvaliacao(id),
-    onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ["avaliacoes", pacienteId] });
-      const previousData = queryClient.getQueryData<any>([
-        "avaliacoes",
-        pacienteId,
-      ]);
-
-      queryClient.setQueryData(["avaliacoes", pacienteId], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          data: old.data.filter((avaliacao: any) => avaliacao.id != id),
-        };
-      });
-      return { previousData };
-    },
-    onError: (err, id, context) => {
-      queryClient.setQueryData(
-        ["avaliacoes", pacienteId],
-        context?.previousData,
-      );
-    },
-
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["avaliacoes", pacienteId] });
-    },
-  });
+  function handleFecharModalExcluirAvaliacao() {
+    setExcluirAvaliacaoModalAberto(false);
+  }
 
   const resultadosFiltrados = avaliacoes.filter((item) => {
     const dataAvaliacao = new Date(item.dataRealizacao);
@@ -223,7 +210,7 @@ export function ComparativoPage() {
             resultadosFiltrados={resultadosFiltrados}
             formatarData={formatarData}
             navigate={navigate}
-            deleteMutation={deleteMutation}
+            handleAbrirModalExcluirAvaliacao={handleAbrirModalExcluirAvaliacao}
           />
         )}
       </div>
@@ -269,53 +256,79 @@ export function ComparativoPage() {
 
               <div className={styles.scoreSection}>
                 <h4>Faixas de observação (conforme regra do score)</h4>
-                <div className={styles.scoreTableWrapper}>
-                  <table className={styles.scoreTable}>
-                    <thead>
-                      <tr>
-                        <th>Pontuação mínima</th>
-                        <th>Pontuação máxima</th>
-                        <th>Observação</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {FAIXAS_SCORE.map((faixa) => (
-                        <tr key={`${faixa.pontuacaoMin}-${faixa.pontuacaoMax}`}>
-                          <td>{faixa.pontuacaoMin}</td>
-                          <td>
-                            {faixa.pontuacaoMax === 9999
-                              ? ">100"
-                              : faixa.pontuacaoMax}
-                          </td>
-                          <td>{faixa.classificacao}</td>
+                {regrasDoQuestionario.length === 0 ? (
+                  <p className={styles.modalSubtitulo}>
+                    Nenhuma avaliação disponível para exibir as faixas.
+                  </p>
+                ) : (
+                  <div className={styles.scoreTableWrapper}>
+                    <table className={styles.scoreTable}>
+                      <thead>
+                        <tr>
+                          <th>Pontuação mínima</th>
+                          <th>Pontuação máxima</th>
+                          <th>Observação</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {[...regrasDoQuestionario]
+                          .sort((a, b) => a.pontuacaoMin - b.pontuacaoMin)
+                          .map((regra) => (
+                            <tr key={`${regra.pontuacaoMin}-${regra.pontuacaoMax}`}>
+                              <td>{regra.pontuacaoMin}</td>
+                              <td>{regra.pontuacaoMax}</td>
+                              <td>{regra.classificacao}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
 
               <div className={styles.scoreSection}>
                 <h4>Exemplos de cálculo</h4>
                 <div className={styles.scoreExamplesList}>
-                  {EXEMPLOS_CALCULO.map((exemplo) => (
-                    <div
-                      key={exemplo.descricao}
-                      className={styles.scoreExampleItem}
-                    >
-                      <strong>{exemplo.descricao}</strong>
-                      <p>{exemplo.formula}</p>
-                      <p>
-                        <strong>Score:</strong> {exemplo.score} -{" "}
-                        {getClassificacaoPorScore(exemplo.score)}
-                      </p>
-                    </div>
-                  ))}
+                  {EXEMPLOS_CALCULO.map((exemplo) => {
+                    const { classificacao } = getInterpretacaoScore(
+                      exemplo.score,
+                      regrasDoQuestionario,
+                    );
+                    return (
+                      <div
+                        key={exemplo.descricao}
+                        className={styles.scoreExampleItem}
+                      >
+                        <strong>{exemplo.descricao}</strong>
+                        <p>{exemplo.formula}</p>
+                        <p>
+                          <strong>Score:</strong> {exemplo.score} –{" "}
+                          {classificacao}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
           </div>
         </div>
+      )}
+
+      {/* {modalInfoPontuacaoAberto && (
+  <InfoAvaliacaoModal
+    handleFecharModalInfoPontuacao={handleFecharModalInfoPontuacao}
+    FAIXAS_SCORE={FAIXAS_SCORE}
+    EXEMPLOS_CALCULO={EXEMPLOS_CALCULO}
+    getClassificacaoPorScore={getClassificacaoPorScore}
+  />
+)} */}
+      {excluirAvaliacaoModalAberto && (
+        <ExcluirAvaliacaoModal
+          deleteAvaliacaoMutation={deleteAvaliacaoMutation}
+          closeModal={handleFecharModalExcluirAvaliacao}
+          avaliacaoIdParaExcluir={avaliacaoIdParaExcluir}
+        />
       )}
     </div>
   );
