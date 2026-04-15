@@ -15,16 +15,15 @@ export interface Avaliacao {
   scoreTotal: number;
   pacienteId: string;
   questionarioId: string;
-  regraInterpretacao?: string|null;
+  regraInterpretacao?: string | null;
+  questionario?: {
+    regras: RegraInterpretacao[];
+  };
 }
 
 export type AvaliacaoComRespostas = Avaliacao & {
   questionario: {
-    regras: {
-      pontuacaoMin: number;
-      pontuacaoMax: number;
-      classificacao: string;
-    }[];
+    regras: RegraInterpretacao[];
     modulos: any[];
     labelEscolha: any[];
   };
