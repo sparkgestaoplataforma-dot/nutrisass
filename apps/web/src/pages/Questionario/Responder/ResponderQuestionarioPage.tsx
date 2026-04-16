@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import axios from "axios";
+
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -103,11 +105,14 @@ export function ResponderQuestionarioPage() {
         response?.message || "Questionário preenchido com sucesso",
       );
     },
-    onError: (error: any) => {
-      setErroFormulario(
-        error?.response?.data?.message || "Erro ao enviar. Tente novamente.",
-      );
+    onError: (error: unknown) => {
+      let errorMessage = "Erro ao enviar. Tente novamente.";
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || errorMessage;
+      }
+      setErroFormulario(errorMessage);
     },
+
   });
 
   function handleSelecionarNota(perguntaId: string, nota: number) {

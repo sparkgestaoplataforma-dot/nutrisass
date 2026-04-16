@@ -1,4 +1,7 @@
 import styles from "../AvaliacaoDetalhesPage.module.scss";
+import { UseMutationResult } from "@tanstack/react-query";
+import { AvaliacaoComRespostas } from "@/services/avaliacao";
+
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Calendar01Icon,
@@ -9,9 +12,10 @@ import {
 import { ExcluirAvaliacaoModal } from "@/pages/Pacientes/AvaliacaoDetalhes/components/ExcluirAvaliacaoModal";
 import { useState } from "react";
 interface SidebarDireitaProps {
-  avaliacao: any;
-  deleteMutation: any;
+  avaliacao: AvaliacaoComRespostas | null | undefined;
+  deleteMutation: UseMutationResult<unknown, unknown, string, unknown>;
 }
+
 export function SidebarDireita({
   avaliacao,
   deleteMutation,
@@ -31,7 +35,12 @@ export function SidebarDireita({
         {isModalOpen && (
           <ExcluirAvaliacaoModal
             closeModal={closeModal}
-            handleDeleteAvaliacao={() => deleteMutation.mutate(avaliacao?.id)}
+            handleDeleteAvaliacao={() => {
+              if (avaliacao?.id) {
+                deleteMutation.mutate(avaliacao.id);
+              }
+            }}
+
           />
         )}
         <h4 className={styles.rightTitle}>Resumo da avaliação</h4>

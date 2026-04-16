@@ -2,8 +2,13 @@ import styles from "../AvaliacaoDetalhesPage.module.scss";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import { useNavigate } from "react-router-dom";
+import { Paciente } from "@/services/pacientes";
 
-export function HeaderAvaliacaoDetalhes({ paciente }: any) {
+interface HeaderAvaliacaoDetalhesProps {
+  paciente: Paciente | null | undefined;
+}
+
+export function HeaderAvaliacaoDetalhes({ paciente }: HeaderAvaliacaoDetalhesProps) {
   const nomePaciente = paciente?.nome || "?";
   const navigate = useNavigate();
   function getInitials(nome: string): string {
