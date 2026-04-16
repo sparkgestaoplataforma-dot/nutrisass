@@ -1,3 +1,4 @@
+import { useState } from "react";
 import styles from "./AvaliacaoDetalhesPage.module.scss";
 import { SidebarEsquerda } from "@/pages/Pacientes/AvaliacaoDetalhes/components/SidebarEsquerda";
 import { SidebarDireita } from "@/pages/Pacientes/AvaliacaoDetalhes/components/SideBarDireita";
@@ -7,15 +8,17 @@ import {
   getAvaliacaoComRespostas,
   DeleteAvaliacao,
 } from "@/services/avaliacao";
-import { getPacientePorId } from "@/services/pacientes";
+import { getPacientePorId, type Paciente } from "@/services/pacientes";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { DeleteConfirmModal } from "@/components/DeleteConfirmModal/DeleteConfirmModal";
 
 export function AvaliacaoDetalhesPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { avaliacaoId, pacienteId } = useParams();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const {
     data: avaliacao,
@@ -82,9 +85,24 @@ export function AvaliacaoDetalhesPage() {
           <SidebarDireita
             deleteMutation={deleteMutation}
             avaliacao={avaliacao}
+            paciente={paciente}
+            onDeleteClick={() => setIsDeleteModalOpen(true)}
           />
         </aside>
       </div>
+
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={() => {
+          if (avaliacao?.id) {
+            deleteMutation.mutate(avaliacao.id);
+          }
+        }}
+        title="Excluir Avaliação"
+        description="Tem certeza que deseja excluir esta avaliação? Essa ação não poderá ser desfeita."
+        isPending={deleteMutation.isPending}
+      />
     </div>
   );
 }

@@ -1,8 +1,14 @@
+import { AvaliacaoComRespostas, ModuloAvaliacao } from "@/services/avaliacao";
 import styles from "../AvaliacaoDetalhesPage.module.scss";
+
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 
-export function SidebarEsquerda({ avaliacao }: any) {
+interface SidebarEsquerdaProps {
+  avaliacao: AvaliacaoComRespostas | null | undefined;
+}
+
+export function SidebarEsquerda({ avaliacao }: SidebarEsquerdaProps) {
   function scrollToModulo(id: string) {
     const elemento = document.getElementById(`modulo-${id}`);
 
@@ -17,7 +23,7 @@ export function SidebarEsquerda({ avaliacao }: any) {
     <>
       <p className={styles.sidebarLabel}>Módulos</p>
 
-      {avaliacao?.questionario?.modulos.map((modulo: any) => (
+      {avaliacao?.questionario?.modulos.map((modulo: ModuloAvaliacao) => (
         <button
           key={modulo.nome}
           className={styles.sideNavItem}

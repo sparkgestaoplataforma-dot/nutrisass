@@ -7,6 +7,7 @@ import {
   TestTubeIcon,
   BarChartIcon,
   SettingsIcon,
+  Cancel01Icon,
 } from '@hugeicons/core-free-icons';
 import { useAuthStore } from '@/stores/authStore';
 import styles from './Sidebar.module.scss';
@@ -30,15 +31,28 @@ function getInitials(str: string): string {
     .toUpperCase();
 }
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const user = useAuthStore((s) => s.user);
 
   return (
-    <aside className={styles.sidebar}>
-      {/* Logo */}
+    <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}>
+      {/* Logo + botão fechar (mobile) */}
       <div className={styles.logo}>
         <div className={styles.logoIcon}>N</div>
         <span className={styles.logoText}>NutriSaaS</span>
+
+        <button
+          className={styles.closeBtn}
+          onClick={onClose}
+          aria-label="Fechar menu"
+        >
+          <HugeiconsIcon icon={Cancel01Icon} size={18} strokeWidth={2} />
+        </button>
       </div>
 
       {/* Navigation */}

@@ -11,6 +11,11 @@
   margin-left: $sidebar-width;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+
+  @media (max-width: $breakpoint-md) {
+    margin-left: 0;
+  }
 }
 
 .content {
@@ -19,4 +24,27 @@
   margin-top: $header-height;
   max-width: $content-max-width;
   width: 100%;
+
+  @media (max-width: $breakpoint-md) {
+    padding: $space-4;
+  }
+}
+
+// Overlay mobile
+.overlay {
+  display: none;
+
+  @media (max-width: $breakpoint-md) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba($black, 0.4);
+    z-index: $z-overlay;
+    animation: fadeIn 0.2s ease;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }

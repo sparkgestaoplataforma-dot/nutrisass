@@ -15,20 +15,41 @@ export interface Avaliacao {
   scoreTotal: number;
   pacienteId: string;
   questionarioId: string;
-  regraInterpretacao?: string|null;
+  regraInterpretacao?: string | null;
+  questionario?: {
+    regras: RegraInterpretacao[];
+  };
+}
+
+export interface PerguntaAvaliacao {
+  id: string;
+  descricao: string;
+  ordem: number;
+  respostas: Array<{
+    nota: number;
+  }>;
+}
+
+export interface ModuloAvaliacao {
+  id: string;
+  nome: string;
+  ordem: number;
+  perguntas: PerguntaAvaliacao[];
+}
+
+export interface LabelEscolhaAvaliacao {
+  nota: number;
+  label: string;
 }
 
 export type AvaliacaoComRespostas = Avaliacao & {
   questionario: {
-    regras: {
-      pontuacaoMin: number;
-      pontuacaoMax: number;
-      classificacao: string;
-    }[];
-    modulos: any[];
-    labelEscolha: any[];
+    regras: RegraInterpretacao[];
+    modulos: ModuloAvaliacao[];
+    labelEscolha: LabelEscolhaAvaliacao[];
   };
 };
+
 
 export interface Avaliacoes {
   id: string;
