@@ -1,3 +1,4 @@
+@use "sass:color";
 @use "../../../styles/variables" as *;
 @use "../../../styles/mixins" as *;
 
@@ -305,7 +306,7 @@
 
     .sideNavIcon {
       background: $danger-light;
-      color: darken($danger, 25%);
+      color: color.adjust($danger, $lightness: -25%);
     }
   }
 
@@ -1519,7 +1520,7 @@
   padding: 0.7rem 1.2rem;
   border-radius: 12px;
   border: none;
-  background: linear-gradient(135deg, $danger, darken($danger, 8%));
+  background: linear-gradient(135deg, $danger, color.adjust($danger, $lightness: -8%));
   color: #ffffff;
   font-weight: 600;
   font-size: 0.875rem;

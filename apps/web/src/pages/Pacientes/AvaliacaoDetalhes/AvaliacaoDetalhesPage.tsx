@@ -7,7 +7,7 @@ import {
   getAvaliacaoComRespostas,
   DeleteAvaliacao,
 } from "@/services/avaliacao";
-import { getPacientePorId } from "@/services/pacientes";
+import { getPacientePorId, type Paciente } from "@/services/pacientes";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

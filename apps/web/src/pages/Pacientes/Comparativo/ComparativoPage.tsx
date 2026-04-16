@@ -7,7 +7,10 @@ import {
   getAvaliacoesPorPacienteId,
   DeleteAvaliacao,
   type RegraInterpretacao,
+  type Avaliacao,
 } from "@/services/avaliacao";
+import type { ApiResponse } from "@nutricao/shared";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GraficoComparativo } from "./components/GraficoComparativo";
 import { FilterComparativo } from "./components/FilterComparativo";
@@ -82,18 +85,22 @@ export function ComparativoPage() {
     mutationFn: (id: string) => DeleteAvaliacao(id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ["avaliacoes", pacienteId] });
-      const previousData = queryClient.getQueryData<any>([
+      const previousData = queryClient.getQueryData<ApiResponse<Avaliacao[]>>([
         "avaliacoes",
         pacienteId,
       ]);
 
-      queryClient.setQueryData(["avaliacoes", pacienteId], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          data: old.data.filter((avaliacao: any) => avaliacao.id != id),
-        };
-      });
+      queryClient.setQueryData(
+        ["avaliacoes", pacienteId],
+        (old: ApiResponse<Avaliacao[]> | undefined) => {
+          if (!old || !old.data) return old;
+          return {
+            ...old,
+            data: old.data.filter((avaliacao) => avaliacao.id != id),
+          };
+        },
+      );
+
       return { previousData };
     },
     onSuccess: () => {
