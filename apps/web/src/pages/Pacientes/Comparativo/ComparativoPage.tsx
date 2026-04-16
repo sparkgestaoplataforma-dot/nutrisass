@@ -15,8 +15,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GraficoComparativo } from "./components/GraficoComparativo";
 import { FilterComparativo } from "./components/FilterComparativo";
 import { TabelaComparativo } from "./components/TabelaComparativo";
-import { ExcluirAvaliacaoModal } from "./components/ExcluirAvaliacaoModal";
 import { InfoAvaliacaoModal } from "./components/InfoAvaliacaoModal";
+import { DeleteConfirmModal } from "@/components/DeleteConfirmModal/DeleteConfirmModal";
 import {
   getInterpretacaoScore,
 } from "@/utils/scoreInterpretacao";
@@ -330,13 +330,14 @@ export function ComparativoPage() {
     getClassificacaoPorScore={getClassificacaoPorScore}
   />
 )} */}
-      {excluirAvaliacaoModalAberto && (
-        <ExcluirAvaliacaoModal
-          deleteAvaliacaoMutation={deleteAvaliacaoMutation}
-          closeModal={handleFecharModalExcluirAvaliacao}
-          avaliacaoIdParaExcluir={avaliacaoIdParaExcluir}
-        />
-      )}
+      <DeleteConfirmModal
+        isOpen={excluirAvaliacaoModalAberto}
+        onClose={handleFecharModalExcluirAvaliacao}
+        onConfirm={() => deleteAvaliacaoMutation.mutate(avaliacaoIdParaExcluir)}
+        title="Excluir Avaliação"
+        description="Tem certeza que deseja excluir esta avaliação?"
+        isPending={deleteAvaliacaoMutation.isPending}
+      />
     </div>
   );
 }
