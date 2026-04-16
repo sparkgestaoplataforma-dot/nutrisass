@@ -10,7 +10,8 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "test": "vitest run"
   },
   "dependencies": {
     "@nutricao/shared": "*",
@@ -37,6 +38,9 @@
     "@types/pg": "^8.18.0",
     "prisma": "^7.4.2",
     "tsx": "^4",
-    "typescript": "^5.5"
+    "typescript": "^5.5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.4",
+    "vitest-mock-extended": "^4.0.0"
   }
 }
