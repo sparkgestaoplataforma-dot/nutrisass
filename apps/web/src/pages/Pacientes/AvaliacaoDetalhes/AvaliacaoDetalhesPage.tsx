@@ -82,6 +82,7 @@ export function AvaliacaoDetalhesPage() {
           <SidebarDireita
             deleteMutation={deleteMutation}
             avaliacao={avaliacao}
+            paciente={paciente}
           />
         </aside>
       </div>
