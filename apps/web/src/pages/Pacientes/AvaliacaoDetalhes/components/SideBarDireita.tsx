@@ -14,29 +14,19 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Paciente } from "@/services/pacientes";
 
-import { ExcluirAvaliacaoModal } from "@/pages/Pacientes/AvaliacaoDetalhes/components/ExcluirAvaliacaoModal";
-import { useState } from "react";
 interface SidebarDireitaProps {
   avaliacao: AvaliacaoComRespostas | null | undefined;
   paciente: Paciente | null | undefined;
   deleteMutation: UseMutationResult<unknown, unknown, string, unknown>;
+  onDeleteClick: () => void;
 }
-
 
 export function SidebarDireita({
   avaliacao,
   paciente,
   deleteMutation,
+  onDeleteClick,
 }: SidebarDireitaProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const openModal = () => {
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-  };
 
   const handleExportPDF = () => {
     if (!avaliacao || !paciente) return;
@@ -154,17 +144,6 @@ export function SidebarDireita({
   return (
     <>
       <div className={styles.rightCard}>
-        {isModalOpen && (
-          <ExcluirAvaliacaoModal
-            closeModal={closeModal}
-            handleDeleteAvaliacao={() => {
-              if (avaliacao?.id) {
-                deleteMutation.mutate(avaliacao.id);
-              }
-            }}
-
-          />
-        )}
         <h4 className={styles.rightTitle}>Resumo da avaliação</h4>
 
         <div className={styles.sideNavTopic}>
@@ -214,7 +193,7 @@ export function SidebarDireita({
           <span>Exportar PDF</span>
         </button>
 
-        <button className={styles.sideNavItem} onClick={openModal}>
+        <button className={styles.sideNavItem} onClick={onDeleteClick}>
           <div className={styles.sideNavIcon}>
             <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={1.8} />
           </div>

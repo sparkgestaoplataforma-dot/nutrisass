@@ -13,6 +13,7 @@ import { api } from "@/services/api";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuthStore } from "@/stores/authStore";
 import { QuestionarioSelectorModal } from "@/components/QuestionarioSelectorModal/QuestionarioSelectorModal";
+import { DeleteConfirmModal } from "@/components/DeleteConfirmModal/DeleteConfirmModal";
 import styles from "./PacientesPage.module.scss";
 
 type PacienteSelecionado = {
@@ -26,6 +27,10 @@ export function PacientesPage() {
     useState(false);
   const [pacienteSelecionado, setPacienteSelecionado] =
     useState<PacienteSelecionado | null>(null);
+  const [pacienteIdExcluir, setPacienteIdExcluir] = useState<string | null>(
+    null,
+  );
+  const [isExcluirModalOpen, setIsExcluirModalOpen] = useState(false);
   const buscaDebounced = useDebounce(busca);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -44,13 +49,26 @@ export function PacientesPage() {
     mutationFn: (id: string) => api.delete(`/pacientes/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pacientes"] });
+      setIsExcluirModalOpen(false);
+      setPacienteIdExcluir(null);
     },
   });
 
-  function handleDelete(id: string) {
-    if (confirm("Deseja realmente excluir este paciente?")) {
-      excluirMutation.mutate(id);
+  function handleDelete(paciente: PacienteSelecionado) {
+    setPacienteIdExcluir(paciente.id);
+    setPacienteSelecionado(paciente);
+    setIsExcluirModalOpen(true);
+  }
+
+  function handleConfirmDelete() {
+    if (pacienteIdExcluir) {
+      excluirMutation.mutate(pacienteIdExcluir);
     }
+  }
+
+  function handleCancelDelete() {
+    setIsExcluirModalOpen(false);
+    setPacienteIdExcluir(null);
   }
 
   function handleAbrirQuestionarios(paciente: PacienteSelecionado) {
@@ -143,7 +161,7 @@ export function PacientesPage() {
                       </button>
                       <button
                         className={`${styles.actionBtn} ${styles.danger}`}
-                        onClick={() => handleDelete(p.id)}
+                        onClick={() => handleDelete({ id: p.id, nome: p.nome })}
                         title="Excluir"
                       >
                         <HugeiconsIcon
@@ -160,6 +178,15 @@ export function PacientesPage() {
           </table>
         )}
       </div>
+
+      <DeleteConfirmModal
+        isOpen={isExcluirModalOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Excluir paciente"
+        description={`Tem certeza que deseja excluir o paciente ${pacienteSelecionado?.nome}? Essa ação não poderá ser desfeita.`}
+        isPending={excluirMutation.isPending}
+      />
 
       <QuestionarioSelectorModal
         open={modalQuestionariosAberto}
