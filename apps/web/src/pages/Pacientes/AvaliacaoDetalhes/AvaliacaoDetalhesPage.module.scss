@@ -316,6 +316,16 @@
   }
 }
 
+.sideNavItemSuccess {
+  &:hover {
+    .sideNavIcon {
+      background: $primary-light;
+      color: $primary-dark;
+    }
+  }
+}
+
+
 .sideNavIcon {
   width: 32px;
   height: 32px;
