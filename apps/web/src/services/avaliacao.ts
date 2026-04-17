@@ -1,5 +1,5 @@
 import { api } from "./api";
-import type { ApiResponse } from "@nutricao/shared";
+import type { ApiResponse, PaginatedResponse } from "@nutricao/shared";
 
 export interface RegraInterpretacao {
   id: string;
@@ -59,6 +59,7 @@ export interface Avaliacoes {
   questionarioId: string;
 }
 
+
 export async function getAvaliacoesPorId(Id: string) {
   const response = await api.get<ApiResponse<Avaliacao>>(`/avaliacoes/${Id}`);
   return response.data;
@@ -71,9 +72,14 @@ export async function getAvaliacaoComRespostas(Id: string) {
   return response.data;
 }
 
-export async function getAvaliacoesPorPacienteId(PacienteId: string) {
-  const response = await api.get<ApiResponse<Avaliacao[]>>(
-    `/avaliacoes/paciente/${PacienteId}`,
+export async function getAvaliacoesPorPacienteId(
+  PacienteId: string,
+  page: number = 1,
+  limit: number = 20
+) {
+  const response = await api.get<ApiResponse<PaginatedResponse<Avaliacao>>>(
+    `/pacientes/${PacienteId}/avaliacoes`,
+    { params: { page, limit } }
   );
   return response.data;
 }

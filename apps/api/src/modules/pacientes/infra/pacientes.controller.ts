@@ -153,3 +153,24 @@ export async function buscarNomePorId(
 
   return res.json({ success: true, data: { nome } });
 }
+
+export async function listarAvaliacoes(
+  req: Request<{ id: string }>,
+  res: Response,
+) {
+  const clinicaId = getClinicaId(req);
+  const { id } = req.params;
+  const { page = "1", limit = "20" } = req.query;
+
+  const pageNum = Number(page);
+  const limitNum = Number(limit);
+
+  const paginatedResult = await service.listarAvaliacoes(
+    id,
+    clinicaId,
+    pageNum,
+    limitNum
+  );
+
+  return res.json({ success: true, data: paginatedResult });
+}

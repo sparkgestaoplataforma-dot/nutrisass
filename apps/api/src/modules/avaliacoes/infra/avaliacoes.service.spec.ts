@@ -149,6 +149,7 @@ describe("avaliacoes.service", () => {
         { ...mockAvaliacaoBase, id: "avaliacao-2", scoreTotal: 25 }, // Alto
         { ...mockAvaliacaoBase, id: "avaliacao-3", scoreTotal: 100 }, // Nulo
       ] as any);
+      prismaMock.avaliacao.count.mockResolvedValue(3);
 
       const result = await pegarAvaliacoesPorPacienteId("paciente-1", "clinica-1");
 
@@ -156,6 +157,8 @@ describe("avaliacoes.service", () => {
       expect(prismaMock.avaliacao.findMany).toHaveBeenCalledWith({
         where: { pacienteId: "paciente-1", clinicaId: "clinica-1" },
         orderBy: { dataRealizacao: "desc" },
+        skip: 0,
+        take: 20,
         include: {
           questionario: {
             include: {
@@ -168,10 +171,12 @@ describe("avaliacoes.service", () => {
       });
 
       // Validando o array mapeado e cálculo do score
-      expect(result).toHaveLength(3);
-      expect(result[0].regraInterpretacao).toBe("Baixo");
-      expect(result[1].regraInterpretacao).toBe("Alto");
-      expect(result[2].regraInterpretacao).toBeNull();
+      expect(result.data).toHaveLength(3);
+      expect(result.data[0].regraInterpretacao).toBe("Baixo");
+      expect(result.data[1].regraInterpretacao).toBe("Alto");
+      expect(result.data[2].regraInterpretacao).toBeNull();
+      expect(result.total).toBe(3);
+      expect(result.totalPages).toBe(1);
     });
   });
 

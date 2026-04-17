@@ -9,7 +9,7 @@ import {
   type RegraInterpretacao,
   type Avaliacao,
 } from "@/services/avaliacao";
-import type { ApiResponse } from "@nutricao/shared";
+import type { ApiResponse, PaginatedResponse } from "@nutricao/shared";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GraficoComparativo } from "./components/GraficoComparativo";
@@ -57,6 +57,8 @@ export function ComparativoPage() {
 
   const [dataInicio, setDataInicio] = useState<string>("");
   const [dataFim, setDataFim] = useState<string>(() => getDataAtualInput());
+  const [page, setPage] = useState(1);
+  const limit = 20;
 
   const [modalInfoPontuacaoAberto, setModalInfoPontuacaoAberto] =
     useState(false);
@@ -74,8 +76,8 @@ export function ComparativoPage() {
   });
 
   const { data: avaliacoesResponse } = useQuery({
-    queryKey: ["avaliacoes", pacienteId],
-    queryFn: () => getAvaliacoesPorPacienteId(pacienteId!),
+    queryKey: ["avaliacoes", pacienteId, page, limit],
+    queryFn: () => getAvaliacoesPorPacienteId(pacienteId!, page, limit),
     enabled: !!pacienteId,
     refetchOnWindowFocus: true,
     refetchOnMount: "always",
@@ -85,18 +87,21 @@ export function ComparativoPage() {
     mutationFn: (id: string) => DeleteAvaliacao(id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ["avaliacoes", pacienteId] });
-      const previousData = queryClient.getQueryData<ApiResponse<Avaliacao[]>>([
+      const previousData = queryClient.getQueryData<ApiResponse<PaginatedResponse<Avaliacao>>>([
         "avaliacoes",
         pacienteId,
       ]);
 
       queryClient.setQueryData(
         ["avaliacoes", pacienteId],
-        (old: ApiResponse<Avaliacao[]> | undefined) => {
-          if (!old || !old.data) return old;
+        (old: ApiResponse<PaginatedResponse<Avaliacao>> | undefined) => {
+          if (!old || !old.data || !old.data.data) return old;
           return {
             ...old,
-            data: old.data.filter((avaliacao) => avaliacao.id != id),
+            data: {
+              ...old.data,
+              data: old.data.data.filter((avaliacao) => avaliacao.id != id),
+            }
           };
         },
       );
@@ -118,7 +123,9 @@ export function ComparativoPage() {
     },
   });
 
-  const avaliacoes = avaliacoesResponse?.data || [];
+  const paginatedData = avaliacoesResponse?.data;
+  const avaliacoes = paginatedData?.data || [];
+  const totalPages = paginatedData?.totalPages || 1;
 
   // Extrai as regras da primeira avaliação disponível (todas pertencem ao mesmo questionário)
   const regrasDoQuestionario: RegraInterpretacao[] =
@@ -221,6 +228,26 @@ export function ComparativoPage() {
           />
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1rem' }}>
+          <button 
+            style={{ padding: '0.5rem 1rem', border: '1px solid #ccc', borderRadius: '4px', cursor: page === 1 ? 'not-allowed' : 'pointer' }}
+            onClick={() => setPage(p => Math.max(1, p - 1))} 
+            disabled={page === 1}
+          >
+            Anterior
+          </button>
+          <span>Página {page} de {totalPages}</span>
+          <button 
+            style={{ padding: '0.5rem 1rem', border: '1px solid #ccc', borderRadius: '4px', cursor: page >= totalPages ? 'not-allowed' : 'pointer' }}
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))} 
+            disabled={page >= totalPages}
+          >
+            Próxima
+          </button>
+        </div>
+      )}
 
       {modalInfoPontuacaoAberto && (
         <div
