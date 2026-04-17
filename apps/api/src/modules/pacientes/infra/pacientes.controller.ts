@@ -160,8 +160,17 @@ export async function listarAvaliacoes(
 ) {
   const clinicaId = getClinicaId(req);
   const { id } = req.params;
+  const { page = "1", limit = "20" } = req.query;
 
-  const avaliacoes = await service.listarAvaliacoes(id, clinicaId);
+  const pageNum = Number(page);
+  const limitNum = Number(limit);
 
-  return res.json({ success: true, data: avaliacoes });
+  const paginatedResult = await service.listarAvaliacoes(
+    id,
+    clinicaId,
+    pageNum,
+    limitNum
+  );
+
+  return res.json({ success: true, data: paginatedResult });
 }

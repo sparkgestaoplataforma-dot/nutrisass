@@ -79,6 +79,10 @@ export function ProntuarioPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
+
+  const [view, setView] = useState<View>("atendimento");
+  const [avaliacoesPage, setAvaliacoesPage] = useState(1);
+
   const [timerActive, setTimerActive] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerStartedAt, setTimerStartedAt] = useState<Date | null>(null);
@@ -102,12 +106,13 @@ export function ProntuarioPage() {
     data: avaliacoesResponse, 
     isLoading: isLoadingAvaliacoes,
   } = useQuery({
-    queryKey: ["avaliacoes", id],
-    queryFn: () => getAvaliacoesPorPacienteId(id!),
+    queryKey: ["avaliacoes", id, avaliacoesPage],
+    queryFn: () => getAvaliacoesPorPacienteId(id!, avaliacoesPage, 20),
     enabled: !!id,
   });
 
-  const listAvaliacoes = avaliacoesResponse?.data || [];
+  const listAvaliacoes = avaliacoesResponse?.data?.data || [];
+  const totalPagesAvaliacoes = avaliacoesResponse?.data?.totalPages || 1;
 
   const [avaliacaoSelecionadaId, setAvaliacaoSelecionadaId] = useState<
     string | null
@@ -130,8 +135,6 @@ export function ProntuarioPage() {
   });
 
   const selectedAvaliacao = avaliacaoSelecionadaResponse?.data;
-
-  const [view, setView] = useState<View>("atendimento");
 
   const startTimer = useCallback(() => {
     setTimerActive(true);
@@ -513,6 +516,26 @@ export function ProntuarioPage() {
                   <option value="">Nenhum questionário</option>
                 )}
               </select>
+            )}
+
+            {totalPagesAvaliacoes > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', marginBottom: '1rem', fontSize: '0.8rem' }}>
+                <button 
+                  style={{ border: 'none', background: 'transparent', cursor: avaliacoesPage === 1 ? 'not-allowed' : 'pointer', color: '#6b7280' }}
+                  onClick={() => setAvaliacoesPage(p => Math.max(1, p - 1))} 
+                  disabled={avaliacoesPage === 1}
+                >
+                  &laquo; Anterior
+                </button>
+                <span style={{ color: '#9ca3af' }}>{avaliacoesPage} / {totalPagesAvaliacoes}</span>
+                <button 
+                  style={{ border: 'none', background: 'transparent', cursor: avaliacoesPage >= totalPagesAvaliacoes ? 'not-allowed' : 'pointer', color: '#6b7280' }}
+                  onClick={() => setAvaliacoesPage(p => Math.min(totalPagesAvaliacoes, p + 1))} 
+                  disabled={avaliacoesPage >= totalPagesAvaliacoes}
+                >
+                  Próxima &raquo;
+                </button>
+              </div>
             )}
 
             {/* Granular Observation Card */}

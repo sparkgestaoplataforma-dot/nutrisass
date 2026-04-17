@@ -9,7 +9,7 @@ import {
   type RegraInterpretacao,
   type Avaliacao,
 } from "@/services/avaliacao";
-import type { ApiResponse } from "@nutricao/shared";
+import type { ApiResponse, PaginatedResponse } from "@nutricao/shared";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GraficoComparativo } from "./components/GraficoComparativo";
@@ -62,6 +62,8 @@ export function ComparativoPage() {
 
   const [dataInicio, setDataInicio] = useState<string>("");
   const [dataFim, setDataFim] = useState<string>(() => getDataAtualInput());
+  const [page, setPage] = useState(1);
+  const limit = 20;
 
   const [modalInfoPontuacaoAberto, setModalInfoPontuacaoAberto] =
     useState(false);
@@ -79,13 +81,13 @@ export function ComparativoPage() {
   });
 
   const { 
-    data: avaliacoesResponse, 
+    data: avaliacoesResponse,
     isLoading: isLoadingAvaliacoes,
     isError: isErrorAvaliacoes,
     refetch: refetchAvaliacoes
   } = useQuery({
-    queryKey: ["avaliacoes", pacienteId],
-    queryFn: () => getAvaliacoesPorPacienteId(pacienteId!),
+    queryKey: ["avaliacoes", pacienteId, "full"],
+    queryFn: () => getAvaliacoesPorPacienteId(pacienteId!, 1, 1000),
     enabled: !!pacienteId,
     refetchOnWindowFocus: true,
     refetchOnMount: "always",
@@ -94,19 +96,23 @@ export function ComparativoPage() {
   const deleteAvaliacaoMutation = useMutation({
     mutationFn: (id: string) => DeleteAvaliacao(id),
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ["avaliacoes", pacienteId] });
-      const previousData = queryClient.getQueryData<ApiResponse<Avaliacao[]>>([
+      await queryClient.cancelQueries({ queryKey: ["avaliacoes", pacienteId, "full"] });
+      const previousData = queryClient.getQueryData<ApiResponse<PaginatedResponse<Avaliacao>>>([
         "avaliacoes",
         pacienteId,
+        "full",
       ]);
 
       queryClient.setQueryData(
-        ["avaliacoes", pacienteId],
-        (old: ApiResponse<Avaliacao[]> | undefined) => {
-          if (!old || !old.data) return old;
+        ["avaliacoes", pacienteId, "full"],
+        (old: ApiResponse<PaginatedResponse<Avaliacao>> | undefined) => {
+          if (!old || !old.data || !old.data.data) return old;
           return {
             ...old,
-            data: old.data.filter((avaliacao) => avaliacao.id != id),
+            data: {
+              ...old.data,
+              data: old.data.data.filter((avaliacao) => avaliacao.id != id),
+            }
           };
         },
       );
@@ -118,7 +124,7 @@ export function ComparativoPage() {
     },
     onError: (err, id, context) => {
       queryClient.setQueryData(
-        ["avaliacoes", pacienteId],
+        ["avaliacoes", pacienteId, "full"],
         context?.previousData,
       );
     },
@@ -128,62 +134,51 @@ export function ComparativoPage() {
     },
   });
 
-  const avaliacoes = avaliacoesResponse?.data || [];
+  const paginatedData = avaliacoesResponse?.data;
+  const avaliacoes = paginatedData?.data || [];
 
-  // Extrai as regras da primeira avaliação disponível (todas pertencem ao mesmo questionário)
+  const formatarData = (dataISO: string) => {
+    return new Date(dataISO).toLocaleDateString("pt-BR");
+  };
+
+  const resultadosFiltrados = avaliacoes.filter((avaliacao) => {
+    const data = avaliacao.dataRealizacao.slice(0, 10);
+    const inicioOk = !dataInicio || data >= dataInicio;
+    const fimOk = !dataFim || data <= dataFim;
+    return inicioOk && fimOk;
+  });
+
+  const totalPages = Math.ceil(resultadosFiltrados.length / limit) || 1;
+
+  const paginatedResultados = resultadosFiltrados.slice(
+    (page - 1) * limit,
+    page * limit,
+  );
+
   const regrasDoQuestionario: RegraInterpretacao[] =
     avaliacoes[0]?.questionario?.regras ?? [];
 
-  function formatarData(dataISO: string) {
-    const data = new Date(dataISO);
-
-    return data.toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  }
-
-  function parseDateInput(value: string) {
+  const parseDateInput = (value: string) => {
     const [year, month, day] = value.split("-").map(Number);
     return new Date(year, month - 1, day);
-  }
+  };
 
-  function handleAbrirModalInfoPontuacao() {
+  const handleAbrirModalInfoPontuacao = () => {
     setModalInfoPontuacaoAberto(true);
-  }
+  };
 
-  function handleFecharModalInfoPontuacao() {
+  const handleFecharModalInfoPontuacao = () => {
     setModalInfoPontuacaoAberto(false);
-  }
+  };
 
-  function handleAbrirModalExcluirAvaliacao(id: string) {
+  const handleAbrirModalExcluirAvaliacao = (id: string) => {
     setExcluirAvaliacaoModalAberto(true);
     setAvaliacaoIdParaExcluir(id);
-  }
+  };
 
-  function handleFecharModalExcluirAvaliacao() {
+  const handleFecharModalExcluirAvaliacao = () => {
     setExcluirAvaliacaoModalAberto(false);
-  }
-
-  const resultadosFiltrados = avaliacoes.filter((item) => {
-    const dataAvaliacao = new Date(item.dataRealizacao);
-
-    let rangeData = true;
-
-    if (dataInicio) {
-      const inicio = parseDateInput(dataInicio);
-      rangeData = rangeData && dataAvaliacao >= inicio;
-    }
-
-    if (dataFim) {
-      const fim = parseDateInput(dataFim);
-      fim.setHours(23, 59, 59, 999);
-      rangeData = rangeData && dataAvaliacao <= fim;
-    }
-
-    return rangeData;
-  });
+  };
 
   const graficoDados = resultadosFiltrados
     .slice()
@@ -246,13 +241,33 @@ export function ComparativoPage() {
         ) : (
           <TabelaComparativo
             pacienteId={pacienteId!}
-            resultadosFiltrados={resultadosFiltrados}
+            resultadosFiltrados={paginatedResultados}
             formatarData={formatarData}
             navigate={navigate}
             handleAbrirModalExcluirAvaliacao={handleAbrirModalExcluirAvaliacao}
           />
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1rem' }}>
+          <button 
+            style={{ padding: '0.5rem 1rem', border: '1px solid #ccc', borderRadius: '4px', cursor: page === 1 ? 'not-allowed' : 'pointer' }}
+            onClick={() => setPage(p => Math.max(1, p - 1))} 
+            disabled={page === 1}
+          >
+            Anterior
+          </button>
+          <span>Página {page} de {totalPages}</span>
+          <button 
+            style={{ padding: '0.5rem 1rem', border: '1px solid #ccc', borderRadius: '4px', cursor: page >= totalPages ? 'not-allowed' : 'pointer' }}
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))} 
+            disabled={page >= totalPages}
+          >
+            Próxima
+          </button>
+        </div>
+      )}
 
       {modalInfoPontuacaoAberto && (
         <div
