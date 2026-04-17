@@ -85,7 +85,12 @@ export function ComparativoPage() {
     refetchOnWindowFocus: true,
   });
 
-  const { data: avaliacoesResponse } = useQuery({
+  const { 
+    data: avaliacoesResponse,
+    isLoading: isLoadingAvaliacoes,
+    isError: isErrorAvaliacoes,
+    refetch: refetchAvaliacoes
+  } = useQuery({
     queryKey: ["avaliacoes", pacienteId, page, limit],
     queryFn: () => getAvaliacoesPorPacienteId(pacienteId!, page, limit),
     enabled: !!pacienteId,
@@ -149,7 +154,7 @@ export function ComparativoPage() {
     return inicioOk && fimOk;
   });
 
-  const totalPages = Math.ceil(resultadosFiltrados.length / limit) || 1;
+  // const totalPages = Math.ceil(resultadosFiltrados.length / limit) || 1;
 
   const paginatedResultados = resultadosFiltrados.slice(
     (page - 1) * limit,

@@ -81,15 +81,10 @@ export function ProntuarioPage() {
   const user = useAuthStore((s) => s.user);
 
   const [view, setView] = useState<View>("atendimento");
-  const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
+  const [avaliacoesPage, setAvaliacoesPage] = useState(1);
   const [avaliacaoSelecionadaId, setAvaliacaoSelecionadaId] = useState<
     string | null
   >(null);
-  const [avaliacaoSelecionada, setAvaliacaoSelecionada] = useState<
-    Avaliacao | undefined
-  >();
-  const [avaliacoesPage, setAvaliacoesPage] = useState(1);
-  const [totalPagesAvaliacoes, setTotalPagesAvaliacoes] = useState(1);
   const [timerActive, setTimerActive] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerStartedAt, setTimerStartedAt] = useState<Date | null>(null);
@@ -121,9 +116,6 @@ export function ProntuarioPage() {
   const listAvaliacoes = avaliacoesResponse?.data?.data || [];
   const totalPagesAvaliacoes = avaliacoesResponse?.data?.totalPages || 1;
 
-  const [avaliacaoSelecionadaId, setAvaliacaoSelecionadaId] = useState<
-    string | null
-  >(null);
 
   // Sync avaliacaoSelecionadaId with first item when list loads
   useEffect(() => {
@@ -159,21 +151,6 @@ export function ProntuarioPage() {
 
   // --- Timer ---
   useEffect(() => {
-    const fetchAvaliacoes = async () => {
-      try {
-        const response = await getAvaliacoesPorPacienteId(id!, avaliacoesPage, 20);
-        setAvaliacoes(response.data?.data || []);
-        setTotalPagesAvaliacoes(response.data?.totalPages || 1);
-
-        if (response.data && response.data.data.length > 0) {
-          setAvaliacaoSelecionadaId(response.data.data[0].id);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar avaliações:", error);
-      }
-    };
-
-    fetchAvaliacoes();
     if (timerActive) {
       intervalRef.current = setInterval(() => {
         setTimerSeconds((s) => s + 1);
@@ -182,7 +159,7 @@ export function ProntuarioPage() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [id, avaliacoesPage]);
+  }, [timerActive]);
 
   // Remove global loading, use granular skeletons instead
 
@@ -522,8 +499,8 @@ export function ProntuarioPage() {
               value={avaliacaoSelecionadaId || ""}
               onChange={(e) => setAvaliacaoSelecionadaId(e.target.value)}
             >
-              {avaliacoes.length > 0 ? (
-                avaliacoes.map((av) => (
+              {listAvaliacoes.length > 0 ? (
+                listAvaliacoes.map((av: Avaliacao) => (
                   <option key={av.id} value={av.id}>
                     {new Date(av.dataRealizacao).toLocaleDateString("pt-BR")}
                   </option>
@@ -553,10 +530,10 @@ export function ProntuarioPage() {
               </div>
             )}
 
-            {avaliacaoSelecionada?.regraInterpretacao && (() => {
-              const regras = avaliacaoSelecionada.questionario?.regras ?? [];
+            {selectedAvaliacao?.regraInterpretacao && (() => {
+              const regras = selectedAvaliacao.questionario?.regras ?? [];
               const { nivel } = getInterpretacaoScore(
-                avaliacaoSelecionada.scoreTotal,
+                selectedAvaliacao.scoreTotal,
                 regras,
               );
               const corClasse = getClasseCorPorNivel(nivel, styles);
@@ -564,21 +541,21 @@ export function ProntuarioPage() {
                 <div 
                   className={`${styles.observacaoCard} ${corClasse}`} 
                   style={{ 
-                    borderColor: showSkeleton ? "#e5e7eb" : undefined,
-                    background: showSkeleton ? "#f9fafb" : undefined,
-                    borderLeftColor: showSkeleton ? "#e5e7eb" : undefined
+                    borderColor: isLoadingAvaliacaoDetalhe ? "#e5e7eb" : undefined,
+                    background: isLoadingAvaliacaoDetalhe ? "#f9fafb" : undefined,
+                    borderLeftColor: isLoadingAvaliacaoDetalhe ? "#e5e7eb" : undefined
                   }}
                 >
                   <span className={styles.observacaoLabel}>Observação</span>
-                  {showSkeleton ? (
+                  {isLoadingAvaliacaoDetalhe ? (
                     <SkeletonObservacao />
-                  ) : hasData ? (
+                  ) : selectedAvaliacao ? (
                     <>
                       <p className={styles.observacaoText}>
-                        {selectedAvaliacao?.regraInterpretacao}
+                        {selectedAvaliacao.regraInterpretacao}
                       </p>
                       <span className={styles.observacaoScore}>
-                        Score: {selectedAvaliacao?.scoreTotal}
+                        Score: {selectedAvaliacao.scoreTotal}
                       </span>
                     </>
                   ) : (
