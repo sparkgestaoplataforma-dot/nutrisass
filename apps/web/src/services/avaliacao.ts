@@ -73,7 +73,7 @@ export async function getAvaliacaoComRespostas(Id: string) {
 
 export async function getAvaliacoesPorPacienteId(PacienteId: string) {
   const response = await api.get<ApiResponse<Avaliacao[]>>(
-    `/avaliacoes/paciente/${PacienteId}`,
+    `/pacientes/${PacienteId}/avaliacoes`,
   );
   return response.data;
 }
