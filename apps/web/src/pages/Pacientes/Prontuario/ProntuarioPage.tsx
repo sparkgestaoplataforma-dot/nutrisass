@@ -75,13 +75,15 @@ export function ProntuarioPage() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const [view, setView] = useState<View>("atendimento");
-  const [avaliacoes, setAvaliacoes] = useState<Avaliacoes[]>([]);
+  const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
   const [avaliacaoSelecionadaId, setAvaliacaoSelecionadaId] = useState<
     string | null
   >(null);
   const [avaliacaoSelecionada, setAvaliacaoSelecionada] = useState<
     Avaliacao | undefined
   >();
+  const [avaliacoesPage, setAvaliacoesPage] = useState(1);
+  const [totalPagesAvaliacoes, setTotalPagesAvaliacoes] = useState(1);
   const [timerActive, setTimerActive] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerStartedAt, setTimerStartedAt] = useState<Date | null>(null);
@@ -104,11 +106,12 @@ export function ProntuarioPage() {
   useEffect(() => {
     const fetchAvaliacoes = async () => {
       try {
-        const response = await getAvaliacoesPorPacienteId(id!);
-        setAvaliacoes(response.data || []);
+        const response = await getAvaliacoesPorPacienteId(id!, avaliacoesPage, 20);
+        setAvaliacoes(response.data?.data || []);
+        setTotalPagesAvaliacoes(response.data?.totalPages || 1);
 
-        if (response.data && response.data.length > 0) {
-          setAvaliacaoSelecionadaId(response.data[0].id);
+        if (response.data && response.data.data.length > 0) {
+          setAvaliacaoSelecionadaId(response.data.data[0].id);
         }
       } catch (error) {
         console.error("Erro ao buscar avaliações:", error);
@@ -124,7 +127,7 @@ export function ProntuarioPage() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [id]);
+  }, [id, avaliacoesPage]);
 
   useEffect(() => {
     const fetchAvaliacao = async () => {
@@ -466,6 +469,26 @@ export function ProntuarioPage() {
                 <option value="">Selecione um questionário</option>
               )}
             </select>
+
+            {totalPagesAvaliacoes > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', marginBottom: '1rem', fontSize: '0.8rem' }}>
+                <button 
+                  style={{ border: 'none', background: 'transparent', cursor: avaliacoesPage === 1 ? 'not-allowed' : 'pointer', color: '#6b7280' }}
+                  onClick={() => setAvaliacoesPage(p => Math.max(1, p - 1))} 
+                  disabled={avaliacoesPage === 1}
+                >
+                  &laquo; Anterior
+                </button>
+                <span style={{ color: '#9ca3af' }}>{avaliacoesPage} / {totalPagesAvaliacoes}</span>
+                <button 
+                  style={{ border: 'none', background: 'transparent', cursor: avaliacoesPage >= totalPagesAvaliacoes ? 'not-allowed' : 'pointer', color: '#6b7280' }}
+                  onClick={() => setAvaliacoesPage(p => Math.min(totalPagesAvaliacoes, p + 1))} 
+                  disabled={avaliacoesPage >= totalPagesAvaliacoes}
+                >
+                  Próxima &raquo;
+                </button>
+              </div>
+            )}
 
             {avaliacaoSelecionada?.regraInterpretacao && (() => {
               const regras = avaliacaoSelecionada.questionario?.regras ?? [];

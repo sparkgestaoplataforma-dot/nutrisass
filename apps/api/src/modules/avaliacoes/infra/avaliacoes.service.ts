@@ -78,22 +78,33 @@ export async function pegarAvaliacaoComRespostas(id: string, clinicaId: string) 
 export async function pegarAvaliacoesPorPacienteId(
   pacienteId: string,
   clinicaId: string,
+  page: number = 1,
+  limit: number = 20,
 ) {
-  const avaliacoes = await prisma.avaliacao.findMany({
-    where: { pacienteId, clinicaId },
-    orderBy: { dataRealizacao: "desc" },
-    include: {
-      questionario: {
-        include: {
-          regras: {
-            orderBy: { pontuacaoMin: "asc" },
+  const skip = (page - 1) * limit;
+
+  const [avaliacoes, total] = await Promise.all([
+    prisma.avaliacao.findMany({
+      where: { pacienteId, clinicaId },
+      orderBy: { dataRealizacao: "desc" },
+      skip,
+      take: limit,
+      include: {
+        questionario: {
+          include: {
+            regras: {
+              orderBy: { pontuacaoMin: "asc" },
+            },
           },
         },
       },
-    },
-  });
+    }),
+    prisma.avaliacao.count({
+      where: { pacienteId, clinicaId },
+    })
+  ]);
 
-  return avaliacoes.map((avaliacao) => {
+  const data = avaliacoes.map((avaliacao) => {
     const regra = avaliacao.questionario.regras.find(
       (regra) =>
         avaliacao.scoreTotal >= regra.pontuacaoMin &&
@@ -105,6 +116,14 @@ export async function pegarAvaliacoesPorPacienteId(
       regraInterpretacao: regra?.classificacao ?? null,
     };
   });
+
+  return {
+    data,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
 }
 
 export async function excluirAvaliacao(id: string, clinicaId: string) {

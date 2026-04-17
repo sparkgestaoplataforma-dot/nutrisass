@@ -74,6 +74,11 @@ export async function buscarNomePorId(id: string) {
   return paciente.nome;
 }
 
-export async function listarAvaliacoes(pacienteId: string, clinicaId: string) {
-  return buscarAvaliacoesService(pacienteId, clinicaId);
+export async function listarAvaliacoes(
+  pacienteId: string,
+  clinicaId: string,
+  page?: number,
+  limit?: number,
+) {
+  return buscarAvaliacoesService(pacienteId, clinicaId, page, limit);
 }
