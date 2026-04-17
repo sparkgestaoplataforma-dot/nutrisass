@@ -718,6 +718,62 @@
   cursor: pointer;
 }
 
+// ==========================================
+// Pagination
+// ==========================================
+
+.paginationContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: $space-3;
+  margin-bottom: $space-4;
+}
+
+.paginationBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-full;
+  background-color: $primary;
+  color: $white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all $transition-smooth;
+  box-shadow: $shadow-sm;
+
+  &:hover:not(:disabled) {
+    background-color: $primary-dark;
+    transform: translateY(-1px);
+    box-shadow: $shadow-md;
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    background-color: $gray-100;
+    color: $gray-400;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  svg {
+    font-size: 1rem;
+  }
+}
+
+.paginationText {
+  font-size: $font-size-xs;
+  font-weight: 600;
+  color: $gray-400;
+  min-width: 48px;
+  text-align: center;
+}
+
 // Card de destaque — Observação do questionário
 .observacaoCard {
   border-radius: $radius-md;

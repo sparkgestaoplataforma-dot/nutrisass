@@ -519,21 +519,27 @@ export function ProntuarioPage() {
             )}
 
             {totalPagesAvaliacoes > 1 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', marginBottom: '1rem', fontSize: '0.8rem' }}>
-                <button 
-                  style={{ border: 'none', background: 'transparent', cursor: avaliacoesPage === 1 ? 'not-allowed' : 'pointer', color: '#6b7280' }}
-                  onClick={() => setAvaliacoesPage(p => Math.max(1, p - 1))} 
+              <div className={styles.paginationContainer}>
+                <button
+                  className={styles.paginationBtn}
                   disabled={avaliacoesPage === 1}
+                  onClick={() => setAvaliacoesPage((p) => Math.max(1, p - 1))}
+                  title="Anterior"
                 >
-                  &laquo; Anterior
+                  <HugeiconsIcon icon={ArrowLeft01Icon} size={16} />
                 </button>
-                <span style={{ color: '#9ca3af' }}>{avaliacoesPage} / {totalPagesAvaliacoes}</span>
-                <button 
-                  style={{ border: 'none', background: 'transparent', cursor: avaliacoesPage >= totalPagesAvaliacoes ? 'not-allowed' : 'pointer', color: '#6b7280' }}
-                  onClick={() => setAvaliacoesPage(p => Math.min(totalPagesAvaliacoes, p + 1))} 
-                  disabled={avaliacoesPage >= totalPagesAvaliacoes}
+                <span className={styles.paginationText}>
+                  {avaliacoesPage} / {totalPagesAvaliacoes}
+                </span>
+                <button
+                  className={styles.paginationBtn}
+                  disabled={avaliacoesPage === totalPagesAvaliacoes}
+                  onClick={() =>
+                    setAvaliacoesPage((p) => Math.min(totalPagesAvaliacoes, p + 1))
+                  }
+                  title="Próxima"
                 >
-                  Próxima &raquo;
+                  <HugeiconsIcon icon={ArrowRight01Icon} size={16} />
                 </button>
               </div>
             )}

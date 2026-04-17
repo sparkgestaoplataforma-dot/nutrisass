@@ -24,7 +24,12 @@ import { Skeleton } from "@/components/Loading/Skeleton";
 import { SkeletonTable } from "@/components/Loading/skeletons/SkeletonTable";
 import { LoadingError } from "@/components/Loading/LoadingError";
 import { EmptyState } from "@/components/Loading/EmptyState";
-import { ClipboardIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  ClipboardIcon,
+} from "@hugeicons/core-free-icons";
 
 const EXEMPLOS_CALCULO = [
   {
@@ -250,21 +255,27 @@ export function ComparativoPage() {
       </div>
 
       {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1rem' }}>
-          <button 
-            style={{ padding: '0.5rem 1rem', border: '1px solid #ccc', borderRadius: '4px', cursor: page === 1 ? 'not-allowed' : 'pointer' }}
-            onClick={() => setPage(p => Math.max(1, p - 1))} 
+        <div className={styles.paginationContainer}>
+          <button
+            className={styles.paginationBtn}
             disabled={page === 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            title="Anterior"
           >
-            Anterior
+            <HugeiconsIcon icon={ArrowLeft01Icon} />
           </button>
-          <span>Página {page} de {totalPages}</span>
-          <button 
-            style={{ padding: '0.5rem 1rem', border: '1px solid #ccc', borderRadius: '4px', cursor: page >= totalPages ? 'not-allowed' : 'pointer' }}
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))} 
+
+          <span className={styles.paginationText}>
+             {page} de {totalPages}
+          </span>
+
+          <button
+            className={styles.paginationBtn}
             disabled={page >= totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            title="Próxima"
           >
-            Próxima
+            <HugeiconsIcon icon={ArrowRight01Icon} />
           </button>
         </div>
       )}
