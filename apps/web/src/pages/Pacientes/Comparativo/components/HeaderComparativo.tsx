@@ -2,12 +2,14 @@ import styles from "../ComparativoPage.module.scss";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import { useNavigate } from "react-router-dom";
+import { Skeleton } from "@/components/Loading/Skeleton";
 
 interface HeaderComparativoProps {
   nomePaciente?: string;
+  isLoadingNome: boolean;
 }
 
-export function HeaderComparativo({ nomePaciente }: HeaderComparativoProps) {
+export function HeaderComparativo({ nomePaciente, isLoadingNome }: HeaderComparativoProps) {
   const nome = nomePaciente || "Paciente não identificado";
   const navigate = useNavigate();
 
@@ -29,7 +31,11 @@ export function HeaderComparativo({ nomePaciente }: HeaderComparativoProps) {
       </button>
 
       <div className={styles.subViewHeader}>
-        <div className={styles.subViewAvatar}>{getInitials(nome)}</div>
+        {isLoadingNome || !nomePaciente ? (
+          <Skeleton width="40px" height="40px" borderRadius="50%" />
+        ) : (
+          <div className={styles.subViewAvatar}>{getInitials(nome)}</div>
+        )}
         <div>
           <h2 className={styles.subViewTitle}>Questionários</h2>
           <p className={styles.subViewSubtitle}>{nome}</p>

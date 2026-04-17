@@ -199,7 +199,7 @@ export function ComparativoPage() {
 
   return (
     <div>
-      <HeaderComparativo nomePaciente={nomePaciente} />
+      <HeaderComparativo nomePaciente={nomePaciente} isLoadingNome={isLoadingNome}/>
       <div className={styles.chartContainer}>
         {isLoadingAvaliacoes ? (
           <div className={styles.chartGraphic}>

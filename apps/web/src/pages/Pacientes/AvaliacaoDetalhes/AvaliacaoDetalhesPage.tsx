@@ -38,7 +38,7 @@ export function AvaliacaoDetalhesPage() {
     },
     enabled: !!avaliacaoId,
   });
-  const { data: paciente } = useQuery({
+  const { data: paciente, isLoading: isLoadingPaciente } = useQuery({
     queryKey: ["paciente", pacienteId],
     queryFn: async () => {
       const response = await getPacientePorId(pacienteId!);
@@ -59,7 +59,7 @@ export function AvaliacaoDetalhesPage() {
 
   return (
     <div className={styles.page}>
-      <HeaderAvaliacaoDetalhes paciente={paciente} />
+      <HeaderAvaliacaoDetalhes paciente={paciente} isLoadingPaciente={isLoadingPaciente}/>
 
       <div className={styles.layout}>
         <aside className={styles.sidebarLeft}>
