@@ -153,3 +153,15 @@ export async function buscarNomePorId(
 
   return res.json({ success: true, data: { nome } });
 }
+
+export async function listarAvaliacoes(
+  req: Request<{ id: string }>,
+  res: Response,
+) {
+  const clinicaId = getClinicaId(req);
+  const { id } = req.params;
+
+  const avaliacoes = await service.listarAvaliacoes(id, clinicaId);
+
+  return res.json({ success: true, data: avaliacoes });
+}

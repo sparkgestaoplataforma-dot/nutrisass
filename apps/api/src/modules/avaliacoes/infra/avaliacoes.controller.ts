@@ -32,14 +32,3 @@ export async function excluir(req: Request<{ id: string }>, res: Response) {
   return res.status(204).send();
 }
 
-export async function listarAvaliacoesPorPacienteId(
-  req: Request<{ id: string }>,
-  res: Response,
-) {
-  const clinicaId = getClinicaId(req);
-  const { id } = req.params;
-
-  const avaliacoes = await service.pegarAvaliacoesPorPacienteId(id, clinicaId);
-
-  return res.json({ success: true, data: avaliacoes });
-}

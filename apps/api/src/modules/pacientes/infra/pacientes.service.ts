@@ -1,6 +1,7 @@
 import { prisma } from "../../../shared/providers/prisma.js";
 import { AppError } from "../../../shared/middlewares/errorHandler.js";
 import { CreatePacienteQuestionarioAvaliacaoInput } from "@nutricao/shared";
+import { pegarAvaliacoesPorPacienteId as buscarAvaliacoesService } from "../../avaliacoes/infra/avaliacoes.service.js";
 
 export async function criarAvaliacao(
   id: string,
@@ -71,4 +72,8 @@ export async function buscarNomePorId(id: string) {
   }
 
   return paciente.nome;
+}
+
+export async function listarAvaliacoes(pacienteId: string, clinicaId: string) {
+  return buscarAvaliacoesService(pacienteId, clinicaId);
 }

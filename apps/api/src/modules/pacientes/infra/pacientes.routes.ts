@@ -26,6 +26,7 @@ router.get("/:id/nome", controller.buscarNomePorId);
 router.use(authMiddleware);
 
 router.get("/", controller.listar);
+router.get("/:id/avaliacoes", controller.listarAvaliacoes);
 router.get("/:id", controller.buscarPorId);
 router.post("/", validate(createPacienteSchema), controller.criar);
 router.put("/:id", validate(updatePacienteSchema), controller.editar);
