@@ -85,14 +85,9 @@ export function ComparativoPage() {
     refetchOnWindowFocus: true,
   });
 
-  const { 
-    data: avaliacoesResponse,
-    isLoading: isLoadingAvaliacoes,
-    isError: isErrorAvaliacoes,
-    refetch: refetchAvaliacoes
-  } = useQuery({
-    queryKey: ["avaliacoes", pacienteId, "full"],
-    queryFn: () => getAvaliacoesPorPacienteId(pacienteId!, 1, 1000),
+  const { data: avaliacoesResponse } = useQuery({
+    queryKey: ["avaliacoes", pacienteId, page, limit],
+    queryFn: () => getAvaliacoesPorPacienteId(pacienteId!, page, limit),
     enabled: !!pacienteId,
     refetchOnWindowFocus: true,
     refetchOnMount: "always",
@@ -101,7 +96,7 @@ export function ComparativoPage() {
   const deleteAvaliacaoMutation = useMutation({
     mutationFn: (id: string) => DeleteAvaliacao(id),
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ["avaliacoes", pacienteId, "full"] });
+      await queryClient.cancelQueries({ queryKey: ["avaliacoes", pacienteId] });
       const previousData = queryClient.getQueryData<ApiResponse<PaginatedResponse<Avaliacao>>>([
         "avaliacoes",
         pacienteId,
@@ -109,7 +104,7 @@ export function ComparativoPage() {
       ]);
 
       queryClient.setQueryData(
-        ["avaliacoes", pacienteId, "full"],
+        ["avaliacoes", pacienteId],
         (old: ApiResponse<PaginatedResponse<Avaliacao>> | undefined) => {
           if (!old || !old.data || !old.data.data) return old;
           return {
@@ -141,6 +136,7 @@ export function ComparativoPage() {
 
   const paginatedData = avaliacoesResponse?.data;
   const avaliacoes = paginatedData?.data || [];
+  const totalPages = paginatedData?.totalPages || 1;
 
   const formatarData = (dataISO: string) => {
     return new Date(dataISO).toLocaleDateString("pt-BR");
@@ -255,27 +251,21 @@ export function ComparativoPage() {
       </div>
 
       {totalPages > 1 && (
-        <div className={styles.paginationContainer}>
-          <button
-            className={styles.paginationBtn}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1rem' }}>
+          <button 
+            style={{ padding: '0.5rem 1rem', border: '1px solid #ccc', borderRadius: '4px', cursor: page === 1 ? 'not-allowed' : 'pointer' }}
+            onClick={() => setPage(p => Math.max(1, p - 1))} 
             disabled={page === 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            title="Anterior"
           >
-            <HugeiconsIcon icon={ArrowLeft01Icon} />
+            Anterior
           </button>
-
-          <span className={styles.paginationText}>
-             {page} de {totalPages}
-          </span>
-
-          <button
-            className={styles.paginationBtn}
+          <span>Página {page} de {totalPages}</span>
+          <button 
+            style={{ padding: '0.5rem 1rem', border: '1px solid #ccc', borderRadius: '4px', cursor: page >= totalPages ? 'not-allowed' : 'pointer' }}
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))} 
             disabled={page >= totalPages}
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            title="Próxima"
           >
-            <HugeiconsIcon icon={ArrowRight01Icon} />
+            Próxima
           </button>
         </div>
       )}

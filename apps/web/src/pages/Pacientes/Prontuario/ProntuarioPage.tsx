@@ -81,8 +81,15 @@ export function ProntuarioPage() {
   const user = useAuthStore((s) => s.user);
 
   const [view, setView] = useState<View>("atendimento");
+  const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
+  const [avaliacaoSelecionadaId, setAvaliacaoSelecionadaId] = useState<
+    string | null
+  >(null);
+  const [avaliacaoSelecionada, setAvaliacaoSelecionada] = useState<
+    Avaliacao | undefined
+  >();
   const [avaliacoesPage, setAvaliacoesPage] = useState(1);
-
+  const [totalPagesAvaliacoes, setTotalPagesAvaliacoes] = useState(1);
   const [timerActive, setTimerActive] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerStartedAt, setTimerStartedAt] = useState<Date | null>(null);
@@ -152,6 +159,21 @@ export function ProntuarioPage() {
 
   // --- Timer ---
   useEffect(() => {
+    const fetchAvaliacoes = async () => {
+      try {
+        const response = await getAvaliacoesPorPacienteId(id!, avaliacoesPage, 20);
+        setAvaliacoes(response.data?.data || []);
+        setTotalPagesAvaliacoes(response.data?.totalPages || 1);
+
+        if (response.data && response.data.data.length > 0) {
+          setAvaliacaoSelecionadaId(response.data.data[0].id);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar avaliações:", error);
+      }
+    };
+
+    fetchAvaliacoes();
     if (timerActive) {
       intervalRef.current = setInterval(() => {
         setTimerSeconds((s) => s + 1);
@@ -160,7 +182,7 @@ export function ProntuarioPage() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [timerActive]);
+  }, [id, avaliacoesPage]);
 
   // Remove global loading, use granular skeletons instead
 
@@ -495,70 +517,49 @@ export function ProntuarioPage() {
         <aside className={styles.sidebarRight}>
           <div className={styles.rightCard}>
             <h4 className={styles.rightTitle}>Resultados de Questionários</h4>
-            {isLoadingAvaliacoes ? (
-              <div style={{ marginBottom: "1rem" }}>
-                <Skeleton width="100%" height="40px" borderRadius="8px" />
-              </div>
-            ) : (
-              <select
-                className={styles.rightSelect}
-                value={avaliacaoSelecionadaId || ""}
-                onChange={(e) => setAvaliacaoSelecionadaId(e.target.value)}
-                disabled={listAvaliacoes.length === 0}
-              >
-                {listAvaliacoes.length > 0 ? (
-                  listAvaliacoes.map((av) => (
-                    <option key={av.id} value={av.id}>
-                      {new Date(av.dataRealizacao).toLocaleDateString("pt-BR")}
-                    </option>
-                  ))
-                ) : (
-                  <option value="">Nenhum questionário</option>
-                )}
-              </select>
-            )}
+            <select
+              className={styles.rightSelect}
+              value={avaliacaoSelecionadaId || ""}
+              onChange={(e) => setAvaliacaoSelecionadaId(e.target.value)}
+            >
+              {avaliacoes.length > 0 ? (
+                avaliacoes.map((av) => (
+                  <option key={av.id} value={av.id}>
+                    {new Date(av.dataRealizacao).toLocaleDateString("pt-BR")}
+                  </option>
+                ))
+              ) : (
+                <option value="">Selecione um questionário</option>
+              )}
+            </select>
 
             {totalPagesAvaliacoes > 1 && (
-              <div className={styles.paginationContainer}>
-                <button
-                  className={styles.paginationBtn}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', marginBottom: '1rem', fontSize: '0.8rem' }}>
+                <button 
+                  style={{ border: 'none', background: 'transparent', cursor: avaliacoesPage === 1 ? 'not-allowed' : 'pointer', color: '#6b7280' }}
+                  onClick={() => setAvaliacoesPage(p => Math.max(1, p - 1))} 
                   disabled={avaliacoesPage === 1}
-                  onClick={() => setAvaliacoesPage((p) => Math.max(1, p - 1))}
-                  title="Anterior"
                 >
-                  <HugeiconsIcon icon={ArrowLeft01Icon} size={16} />
+                  &laquo; Anterior
                 </button>
-                <span className={styles.paginationText}>
-                  {avaliacoesPage} / {totalPagesAvaliacoes}
-                </span>
-                <button
-                  className={styles.paginationBtn}
-                  disabled={avaliacoesPage === totalPagesAvaliacoes}
-                  onClick={() =>
-                    setAvaliacoesPage((p) => Math.min(totalPagesAvaliacoes, p + 1))
-                  }
-                  title="Próxima"
+                <span style={{ color: '#9ca3af' }}>{avaliacoesPage} / {totalPagesAvaliacoes}</span>
+                <button 
+                  style={{ border: 'none', background: 'transparent', cursor: avaliacoesPage >= totalPagesAvaliacoes ? 'not-allowed' : 'pointer', color: '#6b7280' }}
+                  onClick={() => setAvaliacoesPage(p => Math.min(totalPagesAvaliacoes, p + 1))} 
+                  disabled={avaliacoesPage >= totalPagesAvaliacoes}
                 >
-                  <HugeiconsIcon icon={ArrowRight01Icon} size={16} />
+                  Próxima &raquo;
                 </button>
               </div>
             )}
 
-            {/* Granular Observation Card */}
-            {(() => {
-              const showSkeleton = isLoadingAvaliacaoDetalhe || isLoadingAvaliacoes;
-              const hasData = !!(selectedAvaliacao?.regraInterpretacao);
-              
-              let corClasse = "";
-              if (hasData && !showSkeleton) {
-                const regras = selectedAvaliacao?.questionario?.regras ?? [];
-                const { nivel } = getInterpretacaoScore(
-                  selectedAvaliacao!.scoreTotal,
-                  regras,
-                );
-                corClasse = getClasseCorPorNivel(nivel, styles);
-              }
-
+            {avaliacaoSelecionada?.regraInterpretacao && (() => {
+              const regras = avaliacaoSelecionada.questionario?.regras ?? [];
+              const { nivel } = getInterpretacaoScore(
+                avaliacaoSelecionada.scoreTotal,
+                regras,
+              );
+              const corClasse = getClasseCorPorNivel(nivel, styles);
               return (
                 <div 
                   className={`${styles.observacaoCard} ${corClasse}`} 
