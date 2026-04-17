@@ -20,6 +20,16 @@ import { DeleteConfirmModal } from "@/components/DeleteConfirmModal/DeleteConfir
 import {
   getInterpretacaoScore,
 } from "@/utils/scoreInterpretacao";
+import { Skeleton } from "@/components/Loading/Skeleton";
+import { SkeletonTable } from "@/components/Loading/skeletons/SkeletonTable";
+import { LoadingError } from "@/components/Loading/LoadingError";
+import { EmptyState } from "@/components/Loading/EmptyState";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  ClipboardIcon,
+} from "@hugeicons/core-free-icons";
 
 const EXEMPLOS_CALCULO = [
   {
@@ -67,7 +77,7 @@ export function ComparativoPage() {
   const [avaliacaoIdParaExcluir, setAvaliacaoIdParaExcluir] =
     useState<string>("");
 
-  const { data: nomePaciente } = useQuery({
+  const { data: nomePaciente, isLoading: isLoadingNome } = useQuery({
     queryKey: ["paciente-nome-publico", pacienteId],
     queryFn: () => buscarNomePacientePublico(pacienteId!),
     enabled: !!pacienteId,
@@ -75,7 +85,12 @@ export function ComparativoPage() {
     refetchOnWindowFocus: true,
   });
 
-  const { data: avaliacoesResponse } = useQuery({
+  const { 
+    data: avaliacoesResponse,
+    isLoading: isLoadingAvaliacoes,
+    isError: isErrorAvaliacoes,
+    refetch: refetchAvaliacoes
+  } = useQuery({
     queryKey: ["avaliacoes", pacienteId, page, limit],
     queryFn: () => getAvaliacoesPorPacienteId(pacienteId!, page, limit),
     enabled: !!pacienteId,
@@ -90,6 +105,7 @@ export function ComparativoPage() {
       const previousData = queryClient.getQueryData<ApiResponse<PaginatedResponse<Avaliacao>>>([
         "avaliacoes",
         pacienteId,
+        "full",
       ]);
 
       queryClient.setQueryData(
@@ -113,7 +129,7 @@ export function ComparativoPage() {
     },
     onError: (err, id, context) => {
       queryClient.setQueryData(
-        ["avaliacoes", pacienteId],
+        ["avaliacoes", pacienteId, "full"],
         context?.previousData,
       );
     },
@@ -127,60 +143,48 @@ export function ComparativoPage() {
   const avaliacoes = paginatedData?.data || [];
   const totalPages = paginatedData?.totalPages || 1;
 
-  // Extrai as regras da primeira avaliação disponível (todas pertencem ao mesmo questionário)
+  const formatarData = (dataISO: string) => {
+    return new Date(dataISO).toLocaleDateString("pt-BR");
+  };
+
+  const resultadosFiltrados = avaliacoes.filter((avaliacao) => {
+    const data = avaliacao.dataRealizacao.slice(0, 10);
+    const inicioOk = !dataInicio || data >= dataInicio;
+    const fimOk = !dataFim || data <= dataFim;
+    return inicioOk && fimOk;
+  });
+
+  // const totalPages = Math.ceil(resultadosFiltrados.length / limit) || 1;
+
+  const paginatedResultados = resultadosFiltrados.slice(
+    (page - 1) * limit,
+    page * limit,
+  );
+
   const regrasDoQuestionario: RegraInterpretacao[] =
     avaliacoes[0]?.questionario?.regras ?? [];
 
-  function formatarData(dataISO: string) {
-    const data = new Date(dataISO);
-
-    return data.toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  }
-
-  function parseDateInput(value: string) {
+  const parseDateInput = (value: string) => {
     const [year, month, day] = value.split("-").map(Number);
     return new Date(year, month - 1, day);
-  }
+  };
 
-  function handleAbrirModalInfoPontuacao() {
+  const handleAbrirModalInfoPontuacao = () => {
     setModalInfoPontuacaoAberto(true);
-  }
+  };
 
-  function handleFecharModalInfoPontuacao() {
+  const handleFecharModalInfoPontuacao = () => {
     setModalInfoPontuacaoAberto(false);
-  }
+  };
 
-  function handleAbrirModalExcluirAvaliacao(id: string) {
+  const handleAbrirModalExcluirAvaliacao = (id: string) => {
     setExcluirAvaliacaoModalAberto(true);
     setAvaliacaoIdParaExcluir(id);
-  }
+  };
 
-  function handleFecharModalExcluirAvaliacao() {
+  const handleFecharModalExcluirAvaliacao = () => {
     setExcluirAvaliacaoModalAberto(false);
-  }
-
-  const resultadosFiltrados = avaliacoes.filter((item) => {
-    const dataAvaliacao = new Date(item.dataRealizacao);
-
-    let rangeData = true;
-
-    if (dataInicio) {
-      const inicio = parseDateInput(dataInicio);
-      rangeData = rangeData && dataAvaliacao >= inicio;
-    }
-
-    if (dataFim) {
-      const fim = parseDateInput(dataFim);
-      fim.setHours(23, 59, 59, 999);
-      rangeData = rangeData && dataAvaliacao <= fim;
-    }
-
-    return rangeData;
-  });
+  };
 
   const graficoDados = resultadosFiltrados
     .slice()
@@ -196,14 +200,25 @@ export function ComparativoPage() {
 
   return (
     <div>
-      <HeaderComparativo nomePaciente={nomePaciente} />
+      <HeaderComparativo nomePaciente={nomePaciente} isLoadingNome={isLoadingNome}/>
       <div className={styles.chartContainer}>
-        <div className={styles.chartGraphic}>
-          <GraficoComparativo
-            graficoDados={graficoDados}
-            onInfoClick={handleAbrirModalInfoPontuacao}
+        {isLoadingAvaliacoes ? (
+          <div className={styles.chartGraphic}>
+            <Skeleton width="100%" height="300px" borderRadius="12px" />
+          </div>
+        ) : isErrorAvaliacoes ? (
+          <LoadingError 
+            message="Erro ao carregar dados do gráfico." 
+            onRetry={() => refetchAvaliacoes()} 
           />
-        </div>
+        ) : (
+          <div className={styles.chartGraphic}>
+            <GraficoComparativo
+              graficoDados={graficoDados}
+              onInfoClick={handleAbrirModalInfoPontuacao}
+            />
+          </div>
+        )}
       </div>
 
       <div className={styles.header}>
@@ -216,12 +231,23 @@ export function ComparativoPage() {
       </div>
 
       <div className={styles.container}>
-        {resultadosFiltrados.length === 0 ? (
-          <div className={styles.empty}>Nenhum resultado encontrado.</div>
+        {isLoadingAvaliacoes ? (
+          <SkeletonTable />
+        ) : isErrorAvaliacoes ? (
+          <LoadingError 
+            message="Erro ao carregar histórico de avaliações." 
+            onRetry={() => refetchAvaliacoes()} 
+          />
+        ) : resultadosFiltrados.length === 0 ? (
+          <EmptyState 
+            title={avaliacoes.length === 0 ? "Não há avaliações para comparação" : "Nenhum resultado no período selecionado"} 
+            description={avaliacoes.length === 0 ? "Aplique pelo menos uma avaliação para ver o comparativo aqui." : "Tente ajustar os filtros de data acima."}
+            icon={ClipboardIcon} 
+          />
         ) : (
           <TabelaComparativo
             pacienteId={pacienteId!}
-            resultadosFiltrados={resultadosFiltrados}
+            resultadosFiltrados={paginatedResultados}
             formatarData={formatarData}
             navigate={navigate}
             handleAbrirModalExcluirAvaliacao={handleAbrirModalExcluirAvaliacao}

@@ -13,6 +13,11 @@ import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal/DeleteConfirmModal";
+import { Skeleton } from "@/components/Loading/Skeleton";
+import { SkeletonAvaliacaoModules } from "@/components/Loading/skeletons/SkeletonAvaliacaoModules";
+import { LoadingError } from "@/components/Loading/LoadingError";
+import { EmptyState } from "@/components/Loading/EmptyState";
+import { ClipboardIcon } from "@hugeicons/core-free-icons";
 
 export function AvaliacaoDetalhesPage() {
   const navigate = useNavigate();
@@ -33,7 +38,7 @@ export function AvaliacaoDetalhesPage() {
     },
     enabled: !!avaliacaoId,
   });
-  const { data: paciente } = useQuery({
+  const { data: paciente, isLoading: isLoadingPaciente } = useQuery({
     queryKey: ["paciente", pacienteId],
     queryFn: async () => {
       const response = await getPacientePorId(pacienteId!);
@@ -50,35 +55,42 @@ export function AvaliacaoDetalhesPage() {
     },
   });
 
-  if (isLoading) {
-    return (
-      <div className={styles.page}>
-        <p>Carregando Detalhes da avaliação...</p>
-      </div>
-    );
-  }
+  const isDataMissing = !isLoading && !isError && !avaliacao;
 
-  if (isError) {
-    return (
-      <div className={styles.error}>
-        <main>
-          <h2>Erro ao carregar prontuário</h2>
-          <p>{(error as Error).message}</p>
-        </main>
-      </div>
-    );
-  }
   return (
     <div className={styles.page}>
-      <HeaderAvaliacaoDetalhes paciente={paciente} />
+      <HeaderAvaliacaoDetalhes paciente={paciente} isLoadingPaciente={isLoadingPaciente}/>
 
       <div className={styles.layout}>
         <aside className={styles.sidebarLeft}>
-          <SidebarEsquerda avaliacao={avaliacao} />
+          {isLoading ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "0 12px" }}>
+              <Skeleton width="100%" height="40px" borderRadius="8px" />
+              <Skeleton width="100%" height="40px" borderRadius="8px" />
+              <Skeleton width="100%" height="40px" borderRadius="8px" />
+            </div>
+          ) : (
+            <SidebarEsquerda avaliacao={avaliacao} />
+          )}
         </aside>
 
         <main>
-          <MainAvaliacaoDetalhes avaliacao={avaliacao ?? null} />
+          {isLoading ? (
+            <SkeletonAvaliacaoModules />
+          ) : isError ? (
+            <LoadingError 
+              message="Erro ao carregar detalhes da avaliação." 
+              onRetry={() => queryClient.invalidateQueries({ queryKey: ["avaliacao", avaliacaoId] })} 
+            />
+          ) : isDataMissing ? (
+            <EmptyState 
+              title="Avaliação não encontrada" 
+              description="Não foi possível encontrar os dados desta avaliação." 
+              icon={ClipboardIcon} 
+            />
+          ) : (
+            <MainAvaliacaoDetalhes avaliacao={avaliacao ?? null} />
+          )}
         </main>
 
         <aside className={styles.sidebarRight}>
@@ -87,6 +99,7 @@ export function AvaliacaoDetalhesPage() {
             avaliacao={avaliacao}
             paciente={paciente}
             onDeleteClick={() => setIsDeleteModalOpen(true)}
+            isLoading={isLoading}
           />
         </aside>
       </div>
