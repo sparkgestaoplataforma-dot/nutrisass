@@ -13,12 +13,15 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Paciente } from "@/services/pacientes";
+import { Skeleton } from "@/components/Loading/Skeleton";
+import { SkeletonObservacao } from "@/components/Loading/skeletons/SkeletonObservacao";
 
 interface SidebarDireitaProps {
   avaliacao: AvaliacaoComRespostas | null | undefined;
   paciente: Paciente | null | undefined;
   deleteMutation: UseMutationResult<unknown, unknown, string, unknown>;
   onDeleteClick: () => void;
+  isLoading?: boolean;
 }
 
 export function SidebarDireita({
@@ -26,6 +29,7 @@ export function SidebarDireita({
   paciente,
   deleteMutation,
   onDeleteClick,
+  isLoading = false,
 }: SidebarDireitaProps) {
 
   const handleExportPDF = () => {
@@ -153,9 +157,13 @@ export function SidebarDireita({
           <div className={styles.topicContent}>
             <div className={styles.topicTitle}>Data</div>
             <div className={styles.topicDescription}>
-              {avaliacao?.dataRealizacao
-                ? new Date(avaliacao.dataRealizacao).toLocaleDateString("pt-BR")
-                : "Nenhuma selecionada"}
+              {isLoading ? (
+                <Skeleton width="80px" height="14px" />
+              ) : avaliacao?.dataRealizacao ? (
+                new Date(avaliacao.dataRealizacao).toLocaleDateString("pt-BR")
+              ) : (
+                "Nenhuma selecionada"
+              )}
             </div>
           </div>
         </div>
@@ -167,7 +175,11 @@ export function SidebarDireita({
           <div className={styles.topicContent}>
             <div className={styles.topicTitle}>Somatório</div>
             <div className={styles.topicDescription}>
-              {avaliacao?.scoreTotal ?? "Nenhuma selecionada"}
+              {isLoading ? (
+                <Skeleton width="40px" height="14px" />
+              ) : (
+                avaliacao?.scoreTotal ?? "Nenhuma selecionada"
+              )}
             </div>
           </div>
         </div>
@@ -179,7 +191,13 @@ export function SidebarDireita({
           <div className={styles.topicContent}>
             <div className={styles.topicTitle}>Observação</div>
             <div className={styles.topicDescription}>
-              {avaliacao?.regraInterpretacao ?? "Nenhuma selecionada"}
+              {isLoading ? (
+                <div style={{ marginTop: "8px" }}>
+                  <SkeletonObservacao />
+                </div>
+              ) : (
+                avaliacao?.regraInterpretacao ?? "Nenhuma selecionada"
+              )}
             </div>
           </div>
         </div>

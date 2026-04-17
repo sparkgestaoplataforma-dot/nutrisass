@@ -23,7 +23,11 @@ import {
   Clock01Icon,
   Calculator01Icon,
   DocumentCodeFreeIcons,
+  AlertCircleIcon,
 } from "@hugeicons/core-free-icons";
+import { Skeleton } from "@/components/Loading/Skeleton";
+import { SkeletonObservacao } from "@/components/Loading/skeletons/SkeletonObservacao";
+import { EmptyState } from "@/components/Loading/EmptyState";
 import { api } from "@/services/api";
 import { useAuthStore } from "@/stores/authStore";
 import { EstadoClinicoTimeline } from "./components/EstadoClinicoTimeline";
@@ -41,6 +45,7 @@ import {
   getInterpretacaoScore,
   getClasseCorPorNivel,
 } from "@/utils/scoreInterpretacao";
+import { LoadingError } from "@/components/Loading/LoadingError";
 
 type View = "atendimento" | "medidas" | "exames";
 
@@ -74,18 +79,59 @@ export function ProntuarioPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
-  const [view, setView] = useState<View>("atendimento");
-  const [avaliacoes, setAvaliacoes] = useState<Avaliacoes[]>([]);
-  const [avaliacaoSelecionadaId, setAvaliacaoSelecionadaId] = useState<
-    string | null
-  >(null);
-  const [avaliacaoSelecionada, setAvaliacaoSelecionada] = useState<
-    Avaliacao | undefined
-  >();
   const [timerActive, setTimerActive] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerStartedAt, setTimerStartedAt] = useState<Date | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // --- Queries ---
+  const { 
+    data: paciente, 
+    isLoading: isLoadingPaciente,
+    isError: isErrorPaciente,
+    refetch: refetchPaciente
+  } = useQuery({
+    queryKey: ["paciente", id],
+    queryFn: async () => {
+      const { data } = await api.get(`/pacientes/${id}`);
+      return data.data;
+    },
+  });
+
+  const { 
+    data: avaliacoesResponse, 
+    isLoading: isLoadingAvaliacoes,
+  } = useQuery({
+    queryKey: ["avaliacoes", id],
+    queryFn: () => getAvaliacoesPorPacienteId(id!),
+    enabled: !!id,
+  });
+
+  const listAvaliacoes = avaliacoesResponse?.data || [];
+
+  const [avaliacaoSelecionadaId, setAvaliacaoSelecionadaId] = useState<
+    string | null
+  >(null);
+
+  // Sync avaliacaoSelecionadaId with first item when list loads
+  useEffect(() => {
+    if (listAvaliacoes.length > 0 && !avaliacaoSelecionadaId) {
+      setAvaliacaoSelecionadaId(listAvaliacoes[0].id);
+    }
+  }, [listAvaliacoes, avaliacaoSelecionadaId]);
+
+  const { 
+    data: avaliacaoSelecionadaResponse, 
+    isLoading: isLoadingAvaliacaoDetalhe 
+  } = useQuery({
+    queryKey: ["avaliacao-selecionada", avaliacaoSelecionadaId],
+    queryFn: () => getAvaliacoesPorId(avaliacaoSelecionadaId!),
+    enabled: !!avaliacaoSelecionadaId,
+  });
+
+  const selectedAvaliacao = avaliacaoSelecionadaResponse?.data;
+
+  const [view, setView] = useState<View>("atendimento");
 
   const startTimer = useCallback(() => {
     setTimerActive(true);
@@ -101,21 +147,8 @@ export function ProntuarioPage() {
     }
   }, []);
 
+  // --- Timer ---
   useEffect(() => {
-    const fetchAvaliacoes = async () => {
-      try {
-        const response = await getAvaliacoesPorPacienteId(id!);
-        setAvaliacoes(response.data || []);
-
-        if (response.data && response.data.length > 0) {
-          setAvaliacaoSelecionadaId(response.data[0].id);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar avaliações:", error);
-      }
-    };
-
-    fetchAvaliacoes();
     if (timerActive) {
       intervalRef.current = setInterval(() => {
         setTimerSeconds((s) => s + 1);
@@ -124,41 +157,9 @@ export function ProntuarioPage() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [id]);
+  }, [timerActive]);
 
-  useEffect(() => {
-    const fetchAvaliacao = async () => {
-      if (!avaliacaoSelecionadaId) return;
-
-      try {
-        const response = await getAvaliacoesPorId(avaliacaoSelecionadaId);
-        setAvaliacaoSelecionada(response.data || undefined);
-      } catch (error) {
-        console.error("Erro ao buscar avaliação:", error);
-      }
-    };
-
-    fetchAvaliacao();
-  }, [avaliacaoSelecionadaId]);
-
-  const { data: paciente, isLoading } = useQuery({
-    queryKey: ["paciente", id],
-    queryFn: async () => {
-      const { data } = await api.get(`/pacientes/${id}`);
-      return data.data;
-    },
-  });
-
-  if (isLoading) {
-    return (
-      <div className={styles.loadingState}>
-        <div className={styles.loadingSpinner} />
-        <p>Carregando prontuário...</p>
-      </div>
-    );
-  }
-
-  if (!paciente) return <p>Paciente não encontrado.</p>;
+  // Remove global loading, use granular skeletons instead
 
   const isNutricionista = user?.perfil === "NUTRICIONISTA";
 
@@ -175,13 +176,13 @@ export function ProntuarioPage() {
         </button>
         <div className={styles.subViewHeader}>
           <div className={styles.subViewAvatar}>
-            {getInitials(paciente.nome)}
+            {getInitials(paciente?.nome || "??")}
           </div>
           <div>
             <h2 className={styles.subViewTitle}>
               {view === "medidas" ? "Medidas Corporais" : "Exames"}
             </h2>
-            <p className={styles.subViewSubtitle}>{paciente.nome}</p>
+            <p className={styles.subViewSubtitle}>{paciente?.nome}</p>
           </div>
         </div>
         {view === "medidas" && <MedidasTab pacienteId={id!} />}
@@ -190,14 +191,16 @@ export function ProntuarioPage() {
     );
   }
 
-  const endereco = [
-    paciente.endereco,
-    paciente.bairro,
-    paciente.municipio,
-    paciente.uf,
-  ]
-    .filter(Boolean)
-    .join(", ");
+  const endereco = paciente
+    ? [
+        paciente.endereco,
+        paciente.bairro,
+        paciente.municipio,
+        paciente.uf,
+      ]
+        .filter(Boolean)
+        .join(", ")
+    : "";
   return (
     <div className={styles.page}>
       {/* Breadcrumb */}
@@ -213,7 +216,7 @@ export function ProntuarioPage() {
           Pacientes
         </span>
         <span className={styles.breadcrumbSep}>/</span>
-        <span className={styles.breadcrumbCurrent}>{paciente.nome}</span>
+        <span className={styles.breadcrumbCurrent}>{paciente?.nome}</span>
       </nav>
 
       {/* Timer Bar */}
@@ -312,85 +315,123 @@ export function ProntuarioPage() {
 
         {/* Conteúdo Central */}
         <main className={styles.center}>
-          {/* Hero do Paciente */}
           <section className={styles.heroCard}>
-            <div className={styles.heroTop}>
-              <div className={styles.avatar}>{getInitials(paciente.nome)}</div>
-              <div className={styles.heroInfo}>
-                <h1 className={styles.heroName}>{paciente.nome}</h1>
-                <div className={styles.heroBadges}>
-                  {paciente.profissao && (
-                    <span className={styles.badge}>{paciente.profissao}</span>
+            {isErrorPaciente ? (
+              <LoadingError message="Erro ao carregar paciente" onRetry={refetchPaciente} />
+            ) : !isLoadingPaciente && !paciente ? (
+              <EmptyState title="Paciente não encontrado" icon={AlertCircleIcon} />
+            ) : (
+              <>
+                <div className={styles.heroTop}>
+                  {isLoadingPaciente ? (
+                    <Skeleton width="56px" height="56px" borderRadius="14px" />
+                  ) : (
+                    <div className={styles.avatar}>{getInitials(paciente?.nome || "??")}</div>
                   )}
-                  <span className={styles.badgeConvenio}>
-                    {paciente.convenio?.nome || "Particular"}
-                  </span>
-                  {paciente.dataNascimento && (
-                    <span className={styles.badgeAge}>
-                      {getAge(paciente.dataNascimento)} anos
-                    </span>
+                  <div className={styles.heroInfo}>
+                    <h1 className={styles.heroName}>
+                      {isLoadingPaciente ? <Skeleton width="200px" height="24px" /> : paciente?.nome}
+                    </h1>
+                    <div className={styles.heroBadges}>
+                      {isLoadingPaciente ? (
+                        <>
+                          <Skeleton width="80px" height="20px" borderRadius="100px" />
+                          <Skeleton width="80px" height="20px" borderRadius="100px" />
+                        </>
+                      ) : (
+                        <>
+                          {paciente?.profissao && (
+                            <span className={styles.badge}>{paciente.profissao}</span>
+                          )}
+                          <span className={styles.badgeConvenio}>
+                            {paciente?.convenio?.nome || "Particular"}
+                          </span>
+                          {paciente?.dataNascimento && (
+                            <span className={styles.badgeAge}>
+                              {getAge(paciente.dataNascimento)} anos
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  {!isLoadingPaciente && paciente && (
+                    <button
+                      className={styles.editBtn}
+                      onClick={() => navigate(`/pacientes/${id}/editar`)}
+                    >
+                      <HugeiconsIcon
+                        icon={PencilEdit01Icon}
+                        size={14}
+                        strokeWidth={2}
+                      />
+                      <span>Editar</span>
+                    </button>
                   )}
                 </div>
-              </div>
-              <button
-                className={styles.editBtn}
-                onClick={() => navigate(`/pacientes/${id}/editar`)}
-              >
-                <HugeiconsIcon
-                  icon={PencilEdit01Icon}
-                  size={14}
-                  strokeWidth={2}
-                />
-                <span>Editar</span>
-              </button>
-            </div>
 
-            <div className={styles.heroDetails}>
-              {paciente.dataNascimento && (
-                <div className={styles.heroDetail}>
-                  <HugeiconsIcon
-                    icon={Calendar01Icon}
-                    size={15}
-                    strokeWidth={1.8}
-                  />
-                  <span>
-                    {new Date(paciente.dataNascimento).toLocaleDateString(
-                      "pt-BR",
-                    )}
-                  </span>
+                <div className={styles.heroDetails}>
+                  <div className={styles.heroDetail}>
+                    <HugeiconsIcon
+                      icon={Calendar01Icon}
+                      size={15}
+                      strokeWidth={1.8}
+                    />
+                    <span>
+                      {isLoadingPaciente ? (
+                        <Skeleton width="80px" height="14px" />
+                      ) : paciente?.dataNascimento ? (
+                        new Date(paciente.dataNascimento).toLocaleDateString("pt-BR")
+                      ) : (
+                        "Não informada"
+                      )}
+                    </span>
+                  </div>
+                  <div className={styles.heroDetail}>
+                    <HugeiconsIcon
+                      icon={Mail01Icon}
+                      size={15}
+                      strokeWidth={1.8}
+                    />
+                    <span>
+                      {isLoadingPaciente ? (
+                        <Skeleton width="150px" height="14px" />
+                      ) : (
+                        paciente?.email || "Não informado"
+                      )}
+                    </span>
+                  </div>
+                  <div className={styles.heroDetail}>
+                    <HugeiconsIcon
+                      icon={SmartPhone01Icon}
+                      size={15}
+                      strokeWidth={1.8}
+                    />
+                    <span>
+                      {isLoadingPaciente ? (
+                        <Skeleton width="100px" height="14px" />
+                      ) : (
+                        paciente?.telefone || "Não informado"
+                      )}
+                    </span>
+                  </div>
+                  <div className={styles.heroDetail}>
+                    <HugeiconsIcon
+                      icon={Location01Icon}
+                      size={15}
+                      strokeWidth={1.8}
+                    />
+                    <span>
+                      {isLoadingPaciente ? (
+                        <Skeleton width="200px" height="14px" />
+                      ) : (
+                        endereco || "Endereço não informado"
+                      )}
+                    </span>
+                  </div>
                 </div>
-              )}
-              {paciente.email && (
-                <div className={styles.heroDetail}>
-                  <HugeiconsIcon
-                    icon={Mail01Icon}
-                    size={15}
-                    strokeWidth={1.8}
-                  />
-                  <span>{paciente.email}</span>
-                </div>
-              )}
-              {paciente.telefone && (
-                <div className={styles.heroDetail}>
-                  <HugeiconsIcon
-                    icon={SmartPhone01Icon}
-                    size={15}
-                    strokeWidth={1.8}
-                  />
-                  <span>{paciente.telefone}</span>
-                </div>
-              )}
-              {endereco && (
-                <div className={styles.heroDetail}>
-                  <HugeiconsIcon
-                    icon={Location01Icon}
-                    size={15}
-                    strokeWidth={1.8}
-                  />
-                  <span>{endereco}</span>
-                </div>
-              )}
-            </div>
+              </>
+            )}
           </section>
 
           {/* Ações Rápidas */}
@@ -451,40 +492,70 @@ export function ProntuarioPage() {
         <aside className={styles.sidebarRight}>
           <div className={styles.rightCard}>
             <h4 className={styles.rightTitle}>Resultados de Questionários</h4>
-            <select
-              className={styles.rightSelect}
-              value={avaliacaoSelecionadaId || ""}
-              onChange={(e) => setAvaliacaoSelecionadaId(e.target.value)}
-            >
-              {avaliacoes.length > 0 ? (
-                avaliacoes.map((av) => (
-                  <option key={av.id} value={av.id}>
-                    {new Date(av.dataRealizacao).toLocaleDateString("pt-BR")}
-                  </option>
-                ))
-              ) : (
-                <option value="">Selecione um questionário</option>
-              )}
-            </select>
+            {isLoadingAvaliacoes ? (
+              <div style={{ marginBottom: "1rem" }}>
+                <Skeleton width="100%" height="40px" borderRadius="8px" />
+              </div>
+            ) : (
+              <select
+                className={styles.rightSelect}
+                value={avaliacaoSelecionadaId || ""}
+                onChange={(e) => setAvaliacaoSelecionadaId(e.target.value)}
+                disabled={listAvaliacoes.length === 0}
+              >
+                {listAvaliacoes.length > 0 ? (
+                  listAvaliacoes.map((av) => (
+                    <option key={av.id} value={av.id}>
+                      {new Date(av.dataRealizacao).toLocaleDateString("pt-BR")}
+                    </option>
+                  ))
+                ) : (
+                  <option value="">Nenhum questionário</option>
+                )}
+              </select>
+            )}
 
-            {avaliacaoSelecionada?.regraInterpretacao && (() => {
-              const regras = avaliacaoSelecionada.questionario?.regras ?? [];
-              const { nivel } = getInterpretacaoScore(
-                avaliacaoSelecionada.scoreTotal,
-                regras,
-              );
-              const corClasse = getClasseCorPorNivel(nivel, styles);
+            {/* Granular Observation Card */}
+            {(() => {
+              const showSkeleton = isLoadingAvaliacaoDetalhe || isLoadingAvaliacoes;
+              const hasData = !!(selectedAvaliacao?.regraInterpretacao);
+              
+              let corClasse = "";
+              if (hasData && !showSkeleton) {
+                const regras = selectedAvaliacao?.questionario?.regras ?? [];
+                const { nivel } = getInterpretacaoScore(
+                  selectedAvaliacao!.scoreTotal,
+                  regras,
+                );
+                corClasse = getClasseCorPorNivel(nivel, styles);
+              }
+
               return (
-                <div
-                  className={`${styles.observacaoCard} ${corClasse}`}
+                <div 
+                  className={`${styles.observacaoCard} ${corClasse}`} 
+                  style={{ 
+                    borderColor: showSkeleton ? "#e5e7eb" : undefined,
+                    background: showSkeleton ? "#f9fafb" : undefined,
+                    borderLeftColor: showSkeleton ? "#e5e7eb" : undefined
+                  }}
                 >
                   <span className={styles.observacaoLabel}>Observação</span>
-                  <p className={styles.observacaoText}>
-                    {avaliacaoSelecionada.regraInterpretacao}
-                  </p>
-                  <span className={styles.observacaoScore}>
-                    Score: {avaliacaoSelecionada.scoreTotal}
-                  </span>
+                  {showSkeleton ? (
+                    <SkeletonObservacao />
+                  ) : hasData ? (
+                    <>
+                      <p className={styles.observacaoText}>
+                        {selectedAvaliacao?.regraInterpretacao}
+                      </p>
+                      <span className={styles.observacaoScore}>
+                        Score: {selectedAvaliacao?.scoreTotal}
+                      </span>
+                    </>
+                  ) : (
+                    <p className={styles.observacaoText} style={{ color: "#9ca3af", fontStyle: "italic", fontWeight: "normal" }}>
+                      {listAvaliacoes.length === 0 ? "Nenhum questionário aplicado" : "Nenhuma observação cadastrada"}
+                    </p>
+                  )}
                 </div>
               );
             })()}
@@ -500,37 +571,48 @@ export function ProntuarioPage() {
               <div className={styles.TopicContent}>
                 <div className={styles.topicTitle}>Data</div>
                 <div className={styles.topicDescription}>
-                  {avaliacaoSelecionada?.dataRealizacao
-                    ? new Date(
-                        avaliacaoSelecionada.dataRealizacao,
-                      ).toLocaleDateString("pt-BR")
-                    : "Nenhuma selecionada"}
+                  {(isLoadingAvaliacaoDetalhe || isLoadingAvaliacoes) ? (
+                    <Skeleton width="80px" height="14px" />
+                  ) : selectedAvaliacao?.dataRealizacao ? (
+                    new Date(selectedAvaliacao.dataRealizacao).toLocaleDateString("pt-BR")
+                  ) : (
+                    "Nenhuma selecionada"
+                  )}
                 </div>
               </div>
             </div>
 
-            <button
-              className={styles.sideNavItem}
-              onClick={() => {
-                if (avaliacaoSelecionadaId) {
-                  navigate(`/avaliacoes/${avaliacaoSelecionadaId}/${id}`);
-                }
-              }}
-            >
-              <div className={styles.sideNavIcon}>
+            {isLoadingAvaliacaoDetalhe || isLoadingAvaliacoes ? (
+              <Skeleton width="100%" height="44px" borderRadius="8px" />
+            ) : (
+              <button
+                className={styles.sideNavItem}
+                onClick={() => {
+                  const idToUse = avaliacaoSelecionadaId;
+                  if (idToUse) {
+                    navigate(`/avaliacoes/${idToUse}/${id}`);
+                  }
+                }}
+                disabled={!avaliacaoSelecionadaId}
+                style={{
+                  opacity: !avaliacaoSelecionadaId ? 0.5 : 1,
+                }}
+              >
+                <div className={styles.sideNavIcon}>
+                  <HugeiconsIcon
+                    icon={ClipboardIcon}
+                    size={16}
+                    strokeWidth={1.8}
+                  />
+                </div>
+                <span>Ver Respostas</span>
                 <HugeiconsIcon
-                  icon={ClipboardIcon}
-                  size={16}
-                  strokeWidth={1.8}
+                  icon={ArrowRight01Icon}
+                  size={12}
+                  strokeWidth={2}
                 />
-              </div>
-              <span>Ver Respostas</span>
-              <HugeiconsIcon
-                icon={ArrowRight01Icon}
-                size={12}
-                strokeWidth={2}
-              />
-            </button>
+              </button>
+            )}
           </div>
         </aside>
       </div>

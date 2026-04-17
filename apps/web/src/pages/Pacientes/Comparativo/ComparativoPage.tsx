@@ -20,6 +20,11 @@ import { DeleteConfirmModal } from "@/components/DeleteConfirmModal/DeleteConfir
 import {
   getInterpretacaoScore,
 } from "@/utils/scoreInterpretacao";
+import { Skeleton } from "@/components/Loading/Skeleton";
+import { SkeletonTable } from "@/components/Loading/skeletons/SkeletonTable";
+import { LoadingError } from "@/components/Loading/LoadingError";
+import { EmptyState } from "@/components/Loading/EmptyState";
+import { ClipboardIcon } from "@hugeicons/core-free-icons";
 
 const EXEMPLOS_CALCULO = [
   {
@@ -65,7 +70,7 @@ export function ComparativoPage() {
   const [avaliacaoIdParaExcluir, setAvaliacaoIdParaExcluir] =
     useState<string>("");
 
-  const { data: nomePaciente } = useQuery({
+  const { data: nomePaciente, isLoading: isLoadingNome } = useQuery({
     queryKey: ["paciente-nome-publico", pacienteId],
     queryFn: () => buscarNomePacientePublico(pacienteId!),
     enabled: !!pacienteId,
@@ -73,7 +78,12 @@ export function ComparativoPage() {
     refetchOnWindowFocus: true,
   });
 
-  const { data: avaliacoesResponse } = useQuery({
+  const { 
+    data: avaliacoesResponse, 
+    isLoading: isLoadingAvaliacoes,
+    isError: isErrorAvaliacoes,
+    refetch: refetchAvaliacoes
+  } = useQuery({
     queryKey: ["avaliacoes", pacienteId],
     queryFn: () => getAvaliacoesPorPacienteId(pacienteId!),
     enabled: !!pacienteId,
@@ -191,12 +201,23 @@ export function ComparativoPage() {
     <div>
       <HeaderComparativo nomePaciente={nomePaciente} />
       <div className={styles.chartContainer}>
-        <div className={styles.chartGraphic}>
-          <GraficoComparativo
-            graficoDados={graficoDados}
-            onInfoClick={handleAbrirModalInfoPontuacao}
+        {isLoadingAvaliacoes ? (
+          <div className={styles.chartGraphic}>
+            <Skeleton width="100%" height="300px" borderRadius="12px" />
+          </div>
+        ) : isErrorAvaliacoes ? (
+          <LoadingError 
+            message="Erro ao carregar dados do gráfico." 
+            onRetry={() => refetchAvaliacoes()} 
           />
-        </div>
+        ) : (
+          <div className={styles.chartGraphic}>
+            <GraficoComparativo
+              graficoDados={graficoDados}
+              onInfoClick={handleAbrirModalInfoPontuacao}
+            />
+          </div>
+        )}
       </div>
 
       <div className={styles.header}>
@@ -209,8 +230,19 @@ export function ComparativoPage() {
       </div>
 
       <div className={styles.container}>
-        {resultadosFiltrados.length === 0 ? (
-          <div className={styles.empty}>Nenhum resultado encontrado.</div>
+        {isLoadingAvaliacoes ? (
+          <SkeletonTable />
+        ) : isErrorAvaliacoes ? (
+          <LoadingError 
+            message="Erro ao carregar histórico de avaliações." 
+            onRetry={() => refetchAvaliacoes()} 
+          />
+        ) : resultadosFiltrados.length === 0 ? (
+          <EmptyState 
+            title={avaliacoes.length === 0 ? "Não há avaliações para comparação" : "Nenhum resultado no período selecionado"} 
+            description={avaliacoes.length === 0 ? "Aplique pelo menos uma avaliação para ver o comparativo aqui." : "Tente ajustar os filtros de data acima."}
+            icon={ClipboardIcon} 
+          />
         ) : (
           <TabelaComparativo
             pacienteId={pacienteId!}
