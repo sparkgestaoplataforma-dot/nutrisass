@@ -111,6 +111,7 @@ export function ProntuarioPage() {
     queryKey: ["avaliacoes", id, avaliacoesPage],
     queryFn: () => getAvaliacoesPorPacienteId(id!, avaliacoesPage, 20),
     enabled: !!id,
+    refetchOnMount: "always",
   });
 
   const listAvaliacoes = avaliacoesResponse?.data?.data || [];

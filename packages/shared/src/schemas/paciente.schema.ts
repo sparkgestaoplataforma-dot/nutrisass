@@ -19,7 +19,7 @@ export const createPacienteSchema = z.object({
   profissao: z.string().optional(),
   escolaridade: z.string().optional(),
   nomeMae: z.string().optional(),
-  convenioId: z.string().uuid().optional(),
+  convenioId: z.preprocess((val) => (val === "" ? undefined : val), z.string().uuid().optional()),
   numeroCarteira: z.string().optional(),
   validadeCarteira: z.string().optional(),
 });

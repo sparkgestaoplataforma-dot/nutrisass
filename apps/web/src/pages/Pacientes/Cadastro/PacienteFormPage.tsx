@@ -269,6 +269,9 @@ export function PacienteFormPage() {
                     </option>
                   ))}
                 </select>
+                {errors.convenioId && (
+                  <span className={styles.error}>{errors.convenioId.message}</span>
+                )}
               </div>
               <div className={styles.field}>
                 <label>Número Carteira</label>
