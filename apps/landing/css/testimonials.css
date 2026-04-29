@@ -1,26 +1,57 @@
 /* ============================================
-   NutriSaaS — Testimonials Section
+   NutriSaaS — Testimonials Section (Marquee)
    ============================================ */
-.testimonials { background: var(--neutral-0); overflow: hidden; }
+.testimonials { 
+  background: var(--neutral-0); 
+  overflow: hidden; 
+  padding-bottom: var(--space-4xl);
+}
 .testimonials__header { text-align: center; margin-bottom: var(--space-3xl); }
 
 .testimonials__carousel {
   position: relative;
-  max-width: 1000px;
-  margin-inline: auto;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  display: flex;
+  overflow: hidden;
+  padding: var(--space-lg) 0;
+  /* Add subtle masks to fade edges */
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
 }
-.testimonials__track-wrapper { overflow: hidden; }
+
+.testimonials__marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 40s linear infinite;
+}
+.testimonials__marquee:hover {
+  animation-play-state: paused;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 .testimonials__track {
   display: flex;
-  transition: transform var(--duration-slow) var(--ease-out);
+  gap: var(--space-lg);
+  padding: 0 calc(var(--space-lg) / 2);
 }
 
 /* Card */
 .testimonial-card {
-  flex: 0 0 100%;
-  padding: 0 var(--space-sm);
+  flex: 0 0 320px; /* Fixed width for better mobile and desktop experience */
   box-sizing: border-box;
 }
+
+@media (min-width: 768px) {
+  .testimonial-card {
+    flex: 0 0 380px;
+  }
+}
+
 .testimonial-card__inner {
   background: var(--neutral-50);
   border: 1px solid var(--neutral-200);
@@ -33,6 +64,7 @@
 .testimonial-card__inner:hover {
   border-color: var(--green-200);
   box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
 }
 
 /* Stars */
@@ -40,7 +72,7 @@
   display: flex; gap: 2px; margin-bottom: var(--space-md);
 }
 .testimonial-card__star {
-  color: #f59e0b; font-size: 16px;
+  color: #f59e0b; 
 }
 .testimonial-card__star--half { opacity: 0.5; }
 
@@ -87,43 +119,4 @@
 }
 .testimonial-card__clinic {
   font-size: var(--text-xs); color: var(--neutral-500); margin-top: 2px;
-}
-
-/* Controls */
-.testimonials__controls {
-  display: flex; align-items: center; justify-content: center;
-  gap: var(--space-lg); margin-top: var(--space-2xl);
-}
-.testimonials__btn {
-  width: 44px; height: 44px;
-  border-radius: 50%;
-  border: 1px solid var(--neutral-300);
-  display: flex; align-items: center; justify-content: center;
-  color: var(--neutral-600); font-size: 18px;
-  background: var(--neutral-0);
-  transition: all var(--duration-fast);
-}
-.testimonials__btn:hover {
-  border-color: var(--green-400); color: var(--green-600); background: var(--green-50);
-}
-.testimonials__dots {
-  display: flex; gap: var(--space-xs);
-}
-.testimonials__dot {
-  width: 8px; height: 8px;
-  border-radius: 50%; background: var(--neutral-300);
-  transition: all var(--duration-normal) var(--ease-out);
-  cursor: pointer;
-}
-.testimonials__dot--active {
-  background: var(--green-500);
-  width: 24px;
-  border-radius: 4px;
-}
-
-@media (min-width: 768px) {
-  .testimonial-card { flex: 0 0 50%; }
-}
-@media (min-width: 1024px) {
-  .testimonial-card { flex: 0 0 33.333%; }
 }

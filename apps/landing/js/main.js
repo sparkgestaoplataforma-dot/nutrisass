@@ -83,33 +83,6 @@ if (pricingSwitch) {
   });
 }
 
-// Testimonials carousel
-const track = document.querySelector('.testimonials__track');
-const dots = document.querySelectorAll('.testimonials__dot');
-const prevBtn = document.getElementById('testimonials-prev');
-const nextBtn = document.getElementById('testimonials-next');
-let currentSlide = 0;
-
-function getCardsPerView() {
-  if (window.innerWidth >= 1024) return 3;
-  if (window.innerWidth >= 768) return 2;
-  return 1;
-}
-
-function updateCarousel() {
-  if (!track) return;
-  const perView = getCardsPerView();
-  const maxSlide = Math.max(0, track.children.length - perView);
-  currentSlide = Math.min(currentSlide, maxSlide);
-  const pct = (currentSlide / track.children.length) * 100;
-  track.style.transform = `translateX(-${pct}%)`;
-  dots.forEach((d, i) => d.classList.toggle('testimonials__dot--active', i === currentSlide));
-}
-
-if (prevBtn) prevBtn.addEventListener('click', () => { currentSlide = Math.max(0, currentSlide - 1); updateCarousel(); });
-if (nextBtn) nextBtn.addEventListener('click', () => { const perView = getCardsPerView(); currentSlide = Math.min(track.children.length - perView, currentSlide + 1); updateCarousel(); });
-dots.forEach((d, i) => d.addEventListener('click', () => { currentSlide = i; updateCarousel(); }));
-window.addEventListener('resize', updateCarousel);
 
 // Agenda animation
 function animateAgenda() {
