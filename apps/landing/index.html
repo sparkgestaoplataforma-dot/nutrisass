@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NutriSaaS — Gestão Inteligente para Clínicas de Nutrição</title>
+  <meta name="description" content="Sistema completo de gestão para clínicas de nutrição. Agenda em tempo real, prontuário digital, comparativo de evolução e muito mais.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/navbar.css">
+  <link rel="stylesheet" href="css/hero.css">
+  <link rel="stylesheet" href="css/features.css">
+  <link rel="stylesheet" href="css/timeline.css">
+  <link rel="stylesheet" href="css/agenda.css">
+  <link rel="stylesheet" href="css/testimonials.css">
+  <link rel="stylesheet" href="css/pricing.css">
+  <link rel="stylesheet" href="css/faq.css">
+  <link rel="stylesheet" href="css/footer.css">
+</head>
+<body>
+
+<!-- ========== NAVBAR ========== -->
+<nav class="nav" id="navbar">
+  <div class="container nav__inner">
+    <a href="#" class="nav__logo" aria-label="NutriSaaS">
+      <svg class="nav__logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 2C12 2 8 6 8 12c0 4 2 8 8 18 6-10 8-14 8-18 0-6-4-10-8-10z" fill="currentColor" opacity="0.2"/>
+        <path d="M16 4c-3 0-6 3.5-6 9 0 3.5 1.8 7 6 15 4.2-8 6-11.5 6-15 0-5.5-3-9-6-9z" fill="currentColor"/>
+        <path d="M16 8v12M13 11c1.5 1.5 3 2 3 2M19 14c-1.5-1-3-1.5-3-1.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      Nutri<span>SaaS</span>
+    </a>
+    <div class="nav__links">
+      <a href="#features" class="nav__link">Funcionalidades</a>
+      <a href="#pricing" class="nav__link">Planos</a>
+      <a href="#testimonials" class="nav__link">Depoimentos</a>
+      <a href="#faq" class="nav__link">FAQ</a>
+    </div>
+    <a href="#pricing" class="nav__cta btn btn--primary btn--sm">Agendar Demo</a>
+    <button class="nav__toggle" id="nav-toggle" aria-label="Menu">
+      <span class="nav__toggle-bar"></span>
+      <span class="nav__toggle-bar"></span>
+      <span class="nav__toggle-bar"></span>
+    </button>
+  </div>
+  <div class="nav__mobile" id="nav-mobile">
+    <a href="#features" class="nav__mobile-link">Funcionalidades</a>
+    <a href="#pricing" class="nav__mobile-link">Planos</a>
+    <a href="#testimonials" class="nav__mobile-link">Depoimentos</a>
+    <a href="#faq" class="nav__mobile-link">FAQ</a>
+    <a href="#pricing" class="nav__mobile-cta btn btn--primary btn--lg">Agendar Demo</a>
+  </div>
+</nav>
+
+<!-- ========== HERO ========== -->
+<section class="hero section" id="hero">
+  <div class="hero__bg">
+    <div class="hero__blob hero__blob--1"></div>
+    <div class="hero__blob hero__blob--2"></div>
+    <div class="hero__blob hero__blob--3"></div>
+  </div>
+  <div class="container">
+    <div class="hero__content">
+      <div class="hero__badge"><span class="hero__badge-dot"></span> Gestão inteligente para nutricionistas</div>
+      <h1 class="hero__title">Sua clínica de nutrição merece mais que <em>planilhas</em></h1>
+      <p class="hero__subtitle">Gestão inteligente, prontuário completo e agenda em tempo real — tudo em um só lugar, com a leveza que sua rotina precisa.</p>
+      <div class="hero__cta-group">
+        <a href="#pricing" class="btn btn--primary btn--lg">Agendar demonstração</a>
+        <a href="#features" class="btn btn--secondary btn--lg">Conhecer funcionalidades</a>
+      </div>
+      <div class="hero__stats">
+        <div class="hero__stat"><div class="hero__stat-value">500+</div><div class="hero__stat-label">Nutricionistas</div></div>
+        <div class="hero__stat-divider"></div>
+        <div class="hero__stat"><div class="hero__stat-value">98%</div><div class="hero__stat-label">Satisfação</div></div>
+        <div class="hero__stat-divider"></div>
+        <div class="hero__stat"><div class="hero__stat-value">0</div><div class="hero__stat-label">Contrato mínimo</div></div>
+      </div>
+    </div>
+    <div class="hero__mockup-wrapper">
+      <div class="mockup-browser">
+        <div class="mockup-browser__header">
+          <span class="mockup-dot"></span><span class="mockup-dot"></span><span class="mockup-dot"></span>
+          <div class="mockup-url">app.nutrisaas.com.br</div>
+        </div>
+        <div class="mockup-browser__content">
+          <div class="mockup-sidebar">
+            <div class="mockup-sidebar__icon mockup-sidebar__icon--active"><span></span></div>
+            <div class="mockup-sidebar__icon"><span></span></div>
+            <div class="mockup-sidebar__icon"><span></span></div>
+            <div class="mockup-sidebar__icon"><span></span></div>
+            <div class="mockup-sidebar__icon"><span></span></div>
+          </div>
+          <div class="mockup-main">
+            <div class="mockup-topbar"><div class="mockup-topbar__title">Dashboard — Visão Geral</div><div class="mockup-topbar__avatar"></div></div>
+            <div class="mockup-cards">
+              <div class="mockup-card"><div class="mockup-card__label">Pacientes</div><div class="mockup-card__value">248</div><div class="mockup-card__trend">↑ 12%</div></div>
+              <div class="mockup-card"><div class="mockup-card__label">Consultas Hoje</div><div class="mockup-card__value">14</div><div class="mockup-card__trend">↑ 8%</div></div>
+              <div class="mockup-card"><div class="mockup-card__label">Retorno</div><div class="mockup-card__value">89%</div><div class="mockup-card__trend">↑ 3%</div></div>
+            </div>
+            <div class="mockup-chart">
+              <div class="mockup-chart__title">Atendimentos — Últimos 7 dias</div>
+              <div class="mockup-chart__bars">
+                <div class="mockup-chart__bar" style="height:45%;background:var(--green-200);--delay:0.3"></div>
+                <div class="mockup-chart__bar" style="height:65%;background:var(--green-300);--delay:0.4"></div>
+                <div class="mockup-chart__bar" style="height:50%;background:var(--green-200);--delay:0.5"></div>
+                <div class="mockup-chart__bar" style="height:80%;background:var(--green-400);--delay:0.6"></div>
+                <div class="mockup-chart__bar" style="height:70%;background:var(--green-300);--delay:0.7"></div>
+                <div class="mockup-chart__bar" style="height:90%;background:var(--green-500);--delay:0.8"></div>
+                <div class="mockup-chart__bar" style="height:60%;background:var(--green-300);--delay:0.9"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FEATURES ========== -->
+<section class="features section" id="features">
+  <div class="container">
+    <div class="features__header reveal">
+      <div class="section__badge">⚡ Funcionalidades</div>
+      <h2 class="section__title">Tudo que sua clínica precisa,<br>em um só sistema</h2>
+      <p class="section__subtitle mx-auto">Ferramentas pensadas para a rotina real do nutricionista. Sem complicação, sem excesso.</p>
+    </div>
+    <div class="features__grid">
+
+      <!-- Feature 1: Prontuário -->
+      <div class="feature reveal">
+        <div class="feature__content">
+          <div class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 12h6M12 9v6M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+          <div class="feature__label">Core Nutricional</div>
+          <h3 class="feature__title">Prontuário completo e inteligente</h3>
+          <p class="feature__desc">Evolução clínica, antropometria, medidas corporais e conduta — tudo registrado de forma organizada e acessível.</p>
+          <div class="feature__tags"><span class="feature__tag">Antropometria</span><span class="feature__tag">Evolução</span><span class="feature__tag">Conduta</span></div>
+        </div>
+        <div class="feature__visual">
+          <div class="feature-mockup">
+            <div class="feature-mockup__header"><span class="feature-mockup__header-title">Prontuário — Ana Silva</span><span class="mockup-badge">Ativo</span></div>
+            <div class="feature-mockup__body">
+              <div class="mockup-patient"><div class="mockup-patient__avatar">AS</div><div><div class="mockup-patient__name">Ana Carolina Silva</div><div class="mockup-patient__meta">32 anos • Reeducação alimentar</div></div></div>
+              <div class="mockup-data-row"><span class="mockup-data-row__label">Peso</span><span class="mockup-data-row__value">68.5 kg</span><span class="mockup-data-row__trend mockup-data-row__trend--down">↓ 1.2kg</span></div>
+              <div class="mockup-data-row"><span class="mockup-data-row__label">IMC</span><span class="mockup-data-row__value">24.8</span><span class="mockup-data-row__trend mockup-data-row__trend--down">↓ 0.4</span></div>
+              <div class="mockup-data-row"><span class="mockup-data-row__label">% Gordura</span><span class="mockup-data-row__value">28.3%</span><span class="mockup-data-row__trend mockup-data-row__trend--down">↓ 1.1%</span></div>
+              <div class="mockup-data-row"><span class="mockup-data-row__label">Massa Magra</span><span class="mockup-data-row__value">49.1 kg</span><span class="mockup-data-row__trend mockup-data-row__trend--up">↑ 0.3kg</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 2: Agenda -->
+      <div class="feature reveal">
+        <div class="feature__content">
+          <div class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+          <div class="feature__label">Produtividade</div>
+          <h3 class="feature__title">Agenda inteligente em tempo real</h3>
+          <p class="feature__desc">Sua secretária marca, você vê na hora. Atualização instantânea com tecnologia de tempo real, sem recarregar a página.</p>
+          <div class="feature__tags"><span class="feature__tag">Tempo real</span><span class="feature__tag">Multi-profissional</span><span class="feature__tag">Socket.io</span></div>
+        </div>
+        <div class="feature__visual">
+          <div class="feature-mockup">
+            <div class="feature-mockup__header"><span class="feature-mockup__header-title">Agenda — Hoje</span><span class="mockup-realtime-badge"><span class="mockup-realtime-badge__dot"></span> Ao vivo</span></div>
+            <div class="feature-mockup__body">
+              <div class="mockup-schedule">
+                <div class="mockup-schedule__slot mockup-schedule__slot--booked"><span class="mockup-schedule__time">08:00</span><div class="mockup-schedule__info"><strong>Maria Oliveira</strong>Retorno</div></div>
+                <div class="mockup-schedule__slot mockup-schedule__slot--current"><span class="mockup-schedule__time">09:00</span><div class="mockup-schedule__info"><strong>João Santos</strong>1ª Consulta</div></div>
+                <div class="mockup-schedule__slot mockup-schedule__slot--booked"><span class="mockup-schedule__time">10:00</span><div class="mockup-schedule__info"><strong>Carla Mendes</strong>Avaliação</div></div>
+                <div class="mockup-schedule__slot"><span class="mockup-schedule__time">11:00</span><div class="mockup-schedule__info" style="color:var(--neutral-400)">Disponível</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 3: Comparativo -->
+      <div class="feature reveal">
+        <div class="feature__content">
+          <div class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+          <div class="feature__label">Diferencial 🔥</div>
+          <h3 class="feature__title">Comparativo de evolução visual</h3>
+          <p class="feature__desc">Seus pacientes veem o progresso de forma visual. Compare medidas entre consultas com gráficos claros e motivadores.</p>
+          <div class="feature__tags"><span class="feature__tag">Gráficos</span><span class="feature__tag">Filtros por data</span><span class="feature__tag">Motivacional</span></div>
+        </div>
+        <div class="feature__visual">
+          <div class="feature-mockup">
+            <div class="feature-mockup__header"><span class="feature-mockup__header-title">Evolução — Ana Silva</span></div>
+            <div class="feature-mockup__body">
+              <div class="mockup-mini-chart">
+                <div class="mockup-mini-chart__bar" style="height:90%"></div>
+                <div class="mockup-mini-chart__bar" style="height:82%"></div>
+                <div class="mockup-mini-chart__bar" style="height:75%"></div>
+                <div class="mockup-mini-chart__bar" style="height:70%"></div>
+                <div class="mockup-mini-chart__bar mockup-mini-chart__bar--active" style="height:65%"></div>
+                <div class="mockup-mini-chart__bar mockup-mini-chart__bar--active" style="height:58%"></div>
+                <div class="mockup-mini-chart__bar mockup-mini-chart__bar--active" style="height:52%"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-top:8px">
+                <span style="font-size:9px;color:var(--neutral-400)">Jan</span>
+                <span style="font-size:9px;color:var(--neutral-400)">Fev</span>
+                <span style="font-size:9px;color:var(--neutral-400)">Mar</span>
+                <span style="font-size:9px;color:var(--neutral-400)">Abr</span>
+                <span style="font-size:9px;color:var(--green-600);font-weight:600">Mai</span>
+                <span style="font-size:9px;color:var(--green-600);font-weight:600">Jun</span>
+                <span style="font-size:9px;color:var(--green-600);font-weight:600">Jul</span>
+              </div>
+              <div class="mockup-data-row" style="margin-top:12px"><span class="mockup-data-row__label">Peso total perdido</span><span class="mockup-data-row__trend mockup-data-row__trend--down">↓ 7.2 kg</span></div>
+              <div class="mockup-data-row"><span class="mockup-data-row__label">% Gordura reduzido</span><span class="mockup-data-row__trend mockup-data-row__trend--down">↓ 4.8%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 4: Exames -->
+      <div class="feature reveal">
+        <div class="feature__content">
+          <div class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></div>
+          <div class="feature__label">Clínico</div>
+          <h3 class="feature__title">Gestão completa de exames</h3>
+          <p class="feature__desc">Solicite exames laboratoriais e acompanhe os resultados em um só lugar. Histórico completo por paciente.</p>
+          <div class="feature__tags"><span class="feature__tag">Solicitação</span><span class="feature__tag">Resultados</span><span class="feature__tag">Histórico</span></div>
+        </div>
+        <div class="feature__visual">
+          <div class="feature-mockup">
+            <div class="feature-mockup__header"><span class="feature-mockup__header-title">Exames — Resultados</span></div>
+            <div class="feature-mockup__body">
+              <div class="mockup-data-row"><span class="mockup-data-row__label">Glicemia</span><span class="mockup-data-row__value">92 mg/dL</span><span class="mockup-badge">Normal</span></div>
+              <div class="mockup-data-row"><span class="mockup-data-row__label">Colesterol Total</span><span class="mockup-data-row__value">185 mg/dL</span><span class="mockup-badge">Normal</span></div>
+              <div class="mockup-data-row"><span class="mockup-data-row__label">TSH</span><span class="mockup-data-row__value">2.4 mUI/L</span><span class="mockup-badge">Normal</span></div>
+              <div class="mockup-data-row"><span class="mockup-data-row__label">Vitamina D</span><span class="mockup-data-row__value">18 ng/mL</span><span class="mockup-badge" style="background:#fff3cd;color:#856404">Atenção</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 5: Questionários -->
+      <div class="feature reveal">
+        <div class="feature__content">
+          <div class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
+          <div class="feature__label">Inteligente</div>
+          <h3 class="feature__title">Questionários com versionamento</h3>
+          <p class="feature__desc">Identifique hipersensibilidades e intolerâncias alimentares com questionários inteligentes e interpretação automática.</p>
+          <div class="feature__tags"><span class="feature__tag">Hipersensibilidade</span><span class="feature__tag">Versionamento</span><span class="feature__tag">Auto-interpretação</span></div>
+        </div>
+        <div class="feature__visual">
+          <div class="feature-mockup">
+            <div class="feature-mockup__header"><span class="feature-mockup__header-title">Questionário — Resultado</span></div>
+            <div class="feature-mockup__body">
+              <div class="mockup-data-row"><span class="mockup-data-row__label">Lactose</span><span class="mockup-badge" style="background:#fde8e8;color:#c53030">Alta sensibilidade</span></div>
+              <div class="mockup-data-row"><span class="mockup-data-row__label">Glúten</span><span class="mockup-badge" style="background:#fff3cd;color:#856404">Moderada</span></div>
+              <div class="mockup-data-row"><span class="mockup-data-row__label">Ovo</span><span class="mockup-badge">Baixa</span></div>
+              <div class="mockup-data-row"><span class="mockup-data-row__label">Soja</span><span class="mockup-badge">Nenhuma</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 6: Dashboard -->
+      <div class="feature reveal">
+        <div class="feature__content">
+          <div class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="4" rx="1"/><rect x="14" y="10" width="7" height="7" rx="1"/><rect x="3" y="13" width="7" height="4" rx="1"/></svg></div>
+          <div class="feature__label">Gestão</div>
+          <h3 class="feature__title">Dashboard e relatórios avançados</h3>
+          <p class="feature__desc">KPIs da clínica, visão do dia, relatórios com filtros avançados. Tome decisões baseadas em dados reais.</p>
+          <div class="feature__tags"><span class="feature__tag">KPIs</span><span class="feature__tag">Visão do dia</span><span class="feature__tag">Filtros</span></div>
+        </div>
+        <div class="feature__visual">
+          <div class="feature-mockup">
+            <div class="feature-mockup__header"><span class="feature-mockup__header-title">Dashboard — KPIs</span></div>
+            <div class="feature-mockup__body">
+              <div class="mockup-data-row"><span class="mockup-data-row__label">Taxa de retorno</span><span class="mockup-data-row__value">89%</span><span class="mockup-data-row__trend mockup-data-row__trend--up">↑ 5%</span></div>
+              <div class="mockup-data-row"><span class="mockup-data-row__label">Atendimentos/mês</span><span class="mockup-data-row__value">312</span><span class="mockup-data-row__trend mockup-data-row__trend--up">↑ 18</span></div>
+              <div class="mockup-data-row"><span class="mockup-data-row__label">Novos pacientes</span><span class="mockup-data-row__value">47</span><span class="mockup-data-row__trend mockup-data-row__trend--up">↑ 12</span></div>
+              <div class="mockup-data-row"><span class="mockup-data-row__label">Satisfação</span><span class="mockup-data-row__value">4.9 ★</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ========== TIMELINE ========== -->
+<section class="timeline-section section" id="timeline">
+  <div class="container">
+    <div class="timeline__header reveal">
+      <div class="section__badge">📈 Evolução Real</div>
+      <h2 class="section__title">Acompanhe cada passo<br>da jornada do paciente</h2>
+      <p class="section__subtitle mx-auto" style="color:rgba(255,255,255,0.6)">Veja como o NutriSaaS transforma dados em uma história visual de progresso.</p>
+    </div>
+    <div class="timeline__track">
+      <div class="timeline__line"><div class="timeline__progress"></div></div>
+      <div class="timeline__item reveal">
+        <div class="timeline__marker"></div>
+        <div class="timeline__card">
+          <div class="timeline__date">1ª Consulta — 15 Jan</div>
+          <div class="timeline__card-title">Avaliação Inicial</div>
+          <div class="timeline__card-desc">Anamnese completa, antropometria e definição de metas. Paciente com objetivo de reeducação alimentar.</div>
+          <div class="timeline__stat"><span class="timeline__stat-value">78.5 kg</span><span class="timeline__stat-label">Peso inicial</span></div>
+        </div>
+      </div>
+      <div class="timeline__item reveal">
+        <div class="timeline__marker"></div>
+        <div class="timeline__card">
+          <div class="timeline__date">Retorno — 12 Fev</div>
+          <div class="timeline__card-title">Primeiros Resultados</div>
+          <div class="timeline__card-desc">Paciente relata mais disposição. Redução de medidas abdominais e melhora nos exames laboratoriais.</div>
+          <div class="timeline__stat"><span class="timeline__stat-value">-2.3 kg</span><span class="timeline__stat-label">Peso perdido</span></div>
+        </div>
+      </div>
+      <div class="timeline__item reveal">
+        <div class="timeline__marker"></div>
+        <div class="timeline__card">
+          <div class="timeline__date">Acompanhamento — 18 Mar</div>
+          <div class="timeline__card-title">Evolução Consistente</div>
+          <div class="timeline__card-desc">Ajuste de plano alimentar. Questionário de hipersensibilidade identifica intolerância à lactose.</div>
+          <div class="timeline__stat"><span class="timeline__stat-value">-4.8 kg</span><span class="timeline__stat-label">Total perdido</span></div>
+        </div>
+      </div>
+      <div class="timeline__item reveal">
+        <div class="timeline__marker"></div>
+        <div class="timeline__card">
+          <div class="timeline__date">Resultado — 22 Abr</div>
+          <div class="timeline__card-title">Meta Atingida 🎉</div>
+          <div class="timeline__card-desc">Paciente atinge peso ideal com melhora significativa em todos os indicadores. Plano de manutenção definido.</div>
+          <div class="timeline__stat"><span class="timeline__stat-value">-7.2 kg</span><span class="timeline__stat-label">Resultado final</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== AGENDA VIVA ========== -->
+<section class="agenda-section section" id="agenda">
+  <div class="container">
+    <div class="agenda__header reveal">
+      <div class="section__badge">📅 Agenda Viva</div>
+      <h2 class="section__title">Sua agenda, sempre atualizada</h2>
+      <p class="section__subtitle mx-auto">Veja consultas sendo marcadas em tempo real. Sua secretária agenda, você vê instantaneamente.</p>
+    </div>
+    <div class="agenda__wrapper reveal--scale">
+      <div class="agenda-cal">
+        <div class="agenda-cal__header">
+          <div class="agenda-cal__title">Semana — 28 Abr a 02 Mai</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="agenda-live"><span class="agenda-live__dot"></span> Ao vivo</span>
+            <div class="agenda-cal__nav">
+              <button class="agenda-cal__nav-btn">‹</button>
+              <button class="agenda-cal__nav-btn">›</button>
+            </div>
+          </div>
+        </div>
+        <div class="agenda-cal__days">
+          <div class="agenda-cal__day-header"></div>
+          <div class="agenda-cal__day-header">Seg 28</div>
+          <div class="agenda-cal__day-header agenda-cal__day-header--today">Ter 29</div>
+          <div class="agenda-cal__day-header">Qua 30</div>
+          <div class="agenda-cal__day-header">Qui 01</div>
+          <div class="agenda-cal__day-header">Sex 02</div>
+        </div>
+        <div class="agenda-cal__grid">
+          <div class="agenda-cal__time">08:00</div>
+          <div class="agenda-cal__cell"><div class="agenda-appt agenda-appt--green"><span class="agenda-appt__name">Maria O.</span><span class="agenda-appt__type">Retorno</span></div></div>
+          <div class="agenda-cal__cell"><div class="agenda-appt agenda-appt--blue"><span class="agenda-appt__name">Carlos S.</span><span class="agenda-appt__type">1ª Consulta</span></div></div>
+          <div class="agenda-cal__cell"></div>
+          <div class="agenda-cal__cell"><div class="agenda-appt agenda-appt--green"><span class="agenda-appt__name">Lucia R.</span><span class="agenda-appt__type">Retorno</span></div></div>
+          <div class="agenda-cal__cell"></div>
+
+          <div class="agenda-cal__time">09:00</div>
+          <div class="agenda-cal__cell"></div>
+          <div class="agenda-cal__cell"><div class="agenda-appt agenda-appt--purple"><span class="agenda-appt__name">Ana P.</span><span class="agenda-appt__type">Avaliação</span></div></div>
+          <div class="agenda-cal__cell"><div class="agenda-appt agenda-appt--green"><span class="agenda-appt__name">Pedro M.</span><span class="agenda-appt__type">Retorno</span></div></div>
+          <div class="agenda-cal__cell"></div>
+          <div class="agenda-cal__cell"><div class="agenda-appt agenda-appt--blue"><span class="agenda-appt__name">Julia F.</span><span class="agenda-appt__type">1ª Consulta</span></div></div>
+
+          <div class="agenda-cal__time">10:00</div>
+          <div class="agenda-cal__cell"><div class="agenda-appt agenda-appt--purple"><span class="agenda-appt__name">Bruno L.</span><span class="agenda-appt__type">Avaliação</span></div></div>
+          <div class="agenda-cal__cell"></div>
+          <div class="agenda-cal__cell"><div class="agenda-appt agenda-appt--green"><span class="agenda-appt__name">Fernanda C.</span><span class="agenda-appt__type">Retorno</span></div></div>
+          <div class="agenda-cal__cell"><div class="agenda-appt agenda-appt--blue"><span class="agenda-appt__name">Rafael T.</span><span class="agenda-appt__type">1ª Consulta</span></div></div>
+          <div class="agenda-cal__cell"></div>
+
+          <div class="agenda-cal__time">11:00</div>
+          <div class="agenda-cal__cell"></div>
+          <div class="agenda-cal__cell"><div class="agenda-appt agenda-appt--green"><span class="agenda-appt__name">Camila D.</span><span class="agenda-appt__type">Retorno</span></div></div>
+          <div class="agenda-cal__cell"></div>
+          <div class="agenda-cal__cell"></div>
+          <div class="agenda-cal__cell"><div class="agenda-appt agenda-appt--purple"><span class="agenda-appt__name">Marcos V.</span><span class="agenda-appt__type">Avaliação</span></div></div>
+        </div>
+      </div>
+      <div class="agenda-notif">
+        <div class="agenda-notif__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></div>
+        <div><div class="agenda-notif__text"><strong>Nova consulta confirmada!</strong>Camila Dias — Ter 29, 11:00</div><div class="agenda-notif__time">agora mesmo</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== TESTIMONIALS ========== -->
+<section class="testimonials section" id="testimonials">
+  <div class="container">
+    <div class="testimonials__header reveal">
+      <div class="section__badge">💬 Depoimentos</div>
+      <h2 class="section__title">Quem usa, recomenda</h2>
+      <p class="section__subtitle mx-auto">Veja o que nutricionistas de todo o Brasil dizem sobre o NutriSaaS.</p>
+    </div>
+    <div class="testimonials__carousel reveal">
+      <div class="testimonials__track-wrapper">
+        <div class="testimonials__track">
+          <div class="testimonial-card"><div class="testimonial-card__inner">
+            <div class="testimonial-card__stars"><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span></div>
+            <p class="testimonial-card__quote">Finalmente um sistema que entende a rotina do nutricionista. A agenda em tempo real mudou minha clínica completamente.</p>
+            <div class="testimonial-card__author"><div class="testimonial-card__avatar testimonial-card__avatar--1">CF</div><div><div class="testimonial-card__name">Dra. Camila Ferreira</div><div class="testimonial-card__clinic">NutriVida Clínica</div></div></div>
+          </div></div>
+          <div class="testimonial-card"><div class="testimonial-card__inner">
+            <div class="testimonial-card__stars"><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span></div>
+            <p class="testimonial-card__quote">O comparativo de evolução é absurdo. Meus pacientes adoram ver o progresso visualmente. Virou ferramenta de motivação.</p>
+            <div class="testimonial-card__author"><div class="testimonial-card__avatar testimonial-card__avatar--2">RM</div><div><div class="testimonial-card__name">Dr. Rafael Mendes</div><div class="testimonial-card__clinic">Clínica Equilíbrio</div></div></div>
+          </div></div>
+          <div class="testimonial-card"><div class="testimonial-card__inner">
+            <div class="testimonial-card__stars"><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span></div>
+            <p class="testimonial-card__quote">Saí do papel para o NutriSaaS e nunca mais voltei. Organização total, meus atendimentos ficaram muito mais eficientes.</p>
+            <div class="testimonial-card__author"><div class="testimonial-card__avatar testimonial-card__avatar--3">JC</div><div><div class="testimonial-card__name">Dra. Juliana Costa</div><div class="testimonial-card__clinic">NutriCare</div></div></div>
+          </div></div>
+          <div class="testimonial-card"><div class="testimonial-card__inner">
+            <div class="testimonial-card__stars"><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span><span class="testimonial-card__star testimonial-card__star--half">★</span></div>
+            <p class="testimonial-card__quote">Interface linda e fácil de usar. Minha secretária aprendeu em 10 minutos. O suporte é excelente e muito atencioso.</p>
+            <div class="testimonial-card__author"><div class="testimonial-card__avatar testimonial-card__avatar--4">AL</div><div><div class="testimonial-card__name">Dra. Amanda Lopes</div><div class="testimonial-card__clinic">Espaço Nutrir</div></div></div>
+          </div></div>
+          <div class="testimonial-card"><div class="testimonial-card__inner">
+            <div class="testimonial-card__stars"><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span></div>
+            <p class="testimonial-card__quote">O melhor investimento que fiz para minha clínica. O dashboard me dá visão completa de tudo que acontece.</p>
+            <div class="testimonial-card__author"><div class="testimonial-card__avatar testimonial-card__avatar--5">LO</div><div><div class="testimonial-card__name">Dr. Lucas Oliveira</div><div class="testimonial-card__clinic">Clínica NutriForma</div></div></div>
+          </div></div>
+          <div class="testimonial-card"><div class="testimonial-card__inner">
+            <div class="testimonial-card__stars"><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span><span class="testimonial-card__star">★</span></div>
+            <p class="testimonial-card__quote">Os relatórios avançados me ajudam a tomar decisões melhores. Consigo ver padrões que antes eram invisíveis.</p>
+            <div class="testimonial-card__author"><div class="testimonial-card__avatar testimonial-card__avatar--6">BS</div><div><div class="testimonial-card__name">Dra. Beatriz Santos</div><div class="testimonial-card__clinic">Vida &amp; Saúde Nutrição</div></div></div>
+          </div></div>
+        </div>
+      </div>
+      <div class="testimonials__controls">
+        <button class="testimonials__btn" id="testimonials-prev" aria-label="Anterior">‹</button>
+        <div class="testimonials__dots">
+          <button class="testimonials__dot testimonials__dot--active" aria-label="Slide 1"></button>
+          <button class="testimonials__dot" aria-label="Slide 2"></button>
+          <button class="testimonials__dot" aria-label="Slide 3"></button>
+          <button class="testimonials__dot" aria-label="Slide 4"></button>
+        </div>
+        <button class="testimonials__btn" id="testimonials-next" aria-label="Próximo">›</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== PRICING ========== -->
+<section class="pricing section" id="pricing">
+  <div class="container">
+    <div class="pricing__header reveal">
+      <div class="section__badge">💎 Planos</div>
+      <h2 class="section__title">O plano ideal para sua clínica</h2>
+      <p class="section__subtitle mx-auto">Comece com 14 dias grátis. Sem cartão de crédito. Cancele quando quiser.</p>
+    </div>
+    <div class="pricing__toggle reveal">
+      <span class="pricing__toggle-label pricing__toggle-label--active" id="label-monthly">Mensal</span>
+      <div class="pricing__switch" id="pricing-switch"><div class="pricing__switch-knob"></div></div>
+      <span class="pricing__toggle-label" id="label-annual">Anual</span>
+      <span class="pricing__save-badge">Economize 20%</span>
+    </div>
+    <div class="pricing__grid reveal-stagger">
+      <!-- Essencial -->
+      <div class="plan">
+        <div class="plan__icon">🌱</div>
+        <div class="plan__name">Essencial</div>
+        <div class="plan__tagline">Começando organizado</div>
+        <div class="plan__price-wrapper">
+          <div class="plan__price"><span class="plan__currency">R$</span><span class="plan__amount" data-monthly="97" data-annual="77">97</span><span class="plan__period">/mês</span></div>
+        </div>
+        <ul class="plan__features">
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>1 nutricionista</li>
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Agenda completa</li>
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Cadastro de pacientes</li>
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Prontuário básico</li>
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Relatórios simples</li>
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Suporte por email</li>
+          <li class="plan__feature plan__feature--disabled"><span class="plan__feature-icon plan__feature-icon--x">✕</span>Comparativo de evolução</li>
+          <li class="plan__feature plan__feature--disabled"><span class="plan__feature-icon plan__feature-icon--x">✕</span>Gestão de exames</li>
+          <li class="plan__feature plan__feature--disabled"><span class="plan__feature-icon plan__feature-icon--x">✕</span>Questionários</li>
+        </ul>
+        <a href="#" class="btn btn--secondary plan__cta">Agendar demonstração</a>
+      </div>
+      <!-- Profissional (FEATURED) -->
+      <div class="plan plan--featured">
+        <div class="plan__popular">⭐ Mais Popular</div>
+        <div class="plan__icon">🌿</div>
+        <div class="plan__name">Profissional</div>
+        <div class="plan__tagline">Crescendo com controle</div>
+        <div class="plan__price-wrapper">
+          <div class="plan__price"><span class="plan__currency">R$</span><span class="plan__amount" data-monthly="197" data-annual="157">197</span><span class="plan__period">/mês</span></div>
+        </div>
+        <ul class="plan__features">
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Até 5 nutricionistas</li>
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Tudo do Essencial</li>
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Comparativo de evolução <span class="plan__feature-highlight">🔥 Exclusivo</span></li>
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Gestão de exames</li>
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Questionários inteligentes</li>
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Relatórios avançados</li>
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Permissões (admin/secretária)</li>
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Suporte por chat</li>
+          <li class="plan__feature plan__feature--disabled"><span class="plan__feature-icon plan__feature-icon--x">✕</span>Multi-unidades</li>
+        </ul>
+        <a href="#" class="btn btn--primary plan__cta">Agendar demonstração</a>
+      </div>
+      <!-- Clínica Avançada -->
+      <div class="plan">
+        <div class="plan__icon">🌳</div>
+        <div class="plan__name">Clínica Avançada</div>
+        <div class="plan__tagline">Gestão completa e inteligente</div>
+        <div class="plan__price-wrapper">
+          <div class="plan__price"><span class="plan__currency">R$</span><span class="plan__amount" data-monthly="347" data-annual="277">347</span><span class="plan__period">/mês</span></div>
+        </div>
+        <ul class="plan__features">
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Nutricionistas ilimitados</li>
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Tudo do Profissional</li>
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Multi-unidades</li>
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Dashboard completo (KPIs)</li>
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Métricas avançadas</li>
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Customizações leves</li>
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Suporte prioritário</li>
+          <li class="plan__feature"><span class="plan__feature-icon plan__feature-icon--check">✓</span>Onboarding dedicado</li>
+        </ul>
+        <a href="#" class="btn btn--secondary plan__cta">Agendar demonstração</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FAQ ========== -->
+<section class="faq section section--alt" id="faq">
+  <div class="container">
+    <div class="faq__header reveal">
+      <div class="section__badge">❓ Dúvidas</div>
+      <h2 class="section__title">Perguntas frequentes</h2>
+      <p class="section__subtitle mx-auto">Tudo que você precisa saber antes de começar.</p>
+    </div>
+    <div class="faq__list reveal">
+      <div class="faq__item">
+        <button class="faq__question">O NutriSaaS funciona no celular?<span class="faq__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></button>
+        <div class="faq__answer"><div class="faq__answer-inner">Sim! O NutriSaaS é 100% responsivo e funciona perfeitamente em qualquer dispositivo — celular, tablet ou computador. Acesse de qualquer lugar, a qualquer momento.</div></div>
+      </div>
+      <div class="faq__item">
+        <button class="faq__question">Preciso instalar algo?<span class="faq__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></button>
+        <div class="faq__answer"><div class="faq__answer-inner">Não! O NutriSaaS funciona diretamente no navegador. Basta acessar o link e começar a usar. Sem downloads, sem instalações, sem complicações.</div></div>
+      </div>
+      <div class="faq__item">
+        <button class="faq__question">Como funciona o período de teste?<span class="faq__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></button>
+        <div class="faq__answer"><div class="faq__answer-inner">Você tem 14 dias grátis para testar todas as funcionalidades do plano escolhido, sem precisar cadastrar cartão de crédito. Ao final do período, você decide se quer continuar.</div></div>
+      </div>
+      <div class="faq__item">
+        <button class="faq__question">Posso migrar meus dados de outro sistema?<span class="faq__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></button>
+        <div class="faq__answer"><div class="faq__answer-inner">Sim! Nossa equipe oferece suporte completo de migração. Ajudamos você a transferir pacientes, prontuários e históricos de outros sistemas ou planilhas.</div></div>
+      </div>
+      <div class="faq__item">
+        <button class="faq__question">O sistema é seguro?<span class="faq__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></button>
+        <div class="faq__answer"><div class="faq__answer-inner">Totalmente. Utilizamos criptografia de ponta a ponta, isolamento completo por clínica (multi-tenant), backups diários automáticos e autenticação segura com JWT.</div></div>
+      </div>
+      <div class="faq__item">
+        <button class="faq__question">Posso cancelar a qualquer momento?<span class="faq__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></button>
+        <div class="faq__answer"><div class="faq__answer-inner">Sim, sem multa e sem contrato de fidelidade. Você pode cancelar quando quiser diretamente pelo painel administrativo.</div></div>
+      </div>
+    </div>
+    <div class="faq__cta reveal">
+      <p class="faq__cta-text">Ainda tem dúvidas? Fale diretamente com a gente.</p>
+      <a href="https://wa.me/5511999990000" class="btn btn--primary" target="_blank">Falar no WhatsApp</a>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FOOTER ========== -->
+<footer class="footer" id="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <div class="footer__logo">
+          <svg class="footer__logo-icon" viewBox="0 0 32 32" fill="none"><path d="M16 4c-3 0-6 3.5-6 9 0 3.5 1.8 7 6 15 4.2-8 6-11.5 6-15 0-5.5-3-9-6-9z" fill="currentColor"/><path d="M16 8v12M13 11c1.5 1.5 3 2 3 2M19 14c-1.5-1-3-1.5-3-1.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Nutri<span>SaaS</span>
+        </div>
+        <p class="footer__tagline">Gestão inteligente para clínicas de nutrição. Tecnologia com leveza humana.</p>
+        <div class="footer__social">
+          <a href="#" class="footer__social-link" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg></a>
+          <a href="#" class="footer__social-link" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a>
+          <a href="#" class="footer__social-link" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22.54 6.42a2.78 2.78 0 00-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 00-1.94 2A29 29 0 001 11.75a29 29 0 00.46 5.33A2.78 2.78 0 003.4 19.1c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 001.94-2 29 29 0 00.46-5.25 29 29 0 00-.46-5.43z"/><polygon points="9.75,15.02 15.5,11.75 9.75,8.48" fill="currentColor" stroke="none"/></svg></a>
+        </div>
+      </div>
+      <div class="footer__col">
+        <h4 class="footer__col-title">Produto</h4>
+        <nav class="footer__links">
+          <a href="#features" class="footer__link">Funcionalidades</a>
+          <a href="#pricing" class="footer__link">Planos</a>
+          <a href="#testimonials" class="footer__link">Depoimentos</a>
+          <a href="#faq" class="footer__link">FAQ</a>
+        </nav>
+      </div>
+      <div class="footer__col">
+        <h4 class="footer__col-title">Empresa</h4>
+        <nav class="footer__links">
+          <a href="#" class="footer__link">Sobre nós</a>
+          <a href="#" class="footer__link">Blog</a>
+          <a href="#" class="footer__link">Carreiras</a>
+        </nav>
+      </div>
+      <div class="footer__col">
+        <h4 class="footer__col-title">Contato</h4>
+        <div class="footer__contact-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> contato@nutrisaas.com.br</div>
+        <div class="footer__contact-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.362 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg> (11) 99999-0000</div>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>© 2026 NutriSaaS. Todos os direitos reservados.</span>
+      <span>Feito com 🌿 para nutricionistas</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

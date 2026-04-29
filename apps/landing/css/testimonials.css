@@ -1,0 +1,129 @@
+/* ============================================
+   NutriSaaS — Testimonials Section
+   ============================================ */
+.testimonials { background: var(--neutral-0); overflow: hidden; }
+.testimonials__header { text-align: center; margin-bottom: var(--space-3xl); }
+
+.testimonials__carousel {
+  position: relative;
+  max-width: 1000px;
+  margin-inline: auto;
+}
+.testimonials__track-wrapper { overflow: hidden; }
+.testimonials__track {
+  display: flex;
+  transition: transform var(--duration-slow) var(--ease-out);
+}
+
+/* Card */
+.testimonial-card {
+  flex: 0 0 100%;
+  padding: 0 var(--space-sm);
+  box-sizing: border-box;
+}
+.testimonial-card__inner {
+  background: var(--neutral-50);
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  height: 100%;
+  display: flex; flex-direction: column;
+  transition: all var(--duration-normal) var(--ease-out);
+}
+.testimonial-card__inner:hover {
+  border-color: var(--green-200);
+  box-shadow: var(--shadow-md);
+}
+
+/* Stars */
+.testimonial-card__stars {
+  display: flex; gap: 2px; margin-bottom: var(--space-md);
+}
+.testimonial-card__star {
+  color: #f59e0b; font-size: 16px;
+}
+.testimonial-card__star--half { opacity: 0.5; }
+
+/* Quote */
+.testimonial-card__quote {
+  font-size: var(--text-base);
+  color: var(--neutral-700);
+  line-height: var(--leading-relaxed);
+  flex: 1;
+  margin-bottom: var(--space-xl);
+  position: relative;
+}
+.testimonial-card__quote::before {
+  content: '\201C';
+  font-family: var(--font-heading);
+  font-size: 3rem;
+  color: var(--green-200);
+  position: absolute;
+  top: -10px; left: -5px;
+  line-height: 1;
+}
+
+/* Author */
+.testimonial-card__author {
+  display: flex; align-items: center; gap: var(--space-md);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--neutral-200);
+}
+.testimonial-card__avatar {
+  width: 48px; height: 48px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700;
+  color: var(--neutral-0);
+}
+.testimonial-card__avatar--1 { background: linear-gradient(135deg, var(--green-400), var(--green-600)); }
+.testimonial-card__avatar--2 { background: linear-gradient(135deg, #4a90d9, #2563eb); }
+.testimonial-card__avatar--3 { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.testimonial-card__avatar--4 { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+.testimonial-card__avatar--5 { background: linear-gradient(135deg, #ec4899, #db2777); }
+.testimonial-card__avatar--6 { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+
+.testimonial-card__name {
+  font-size: var(--text-sm); font-weight: 600; color: var(--neutral-800);
+}
+.testimonial-card__clinic {
+  font-size: var(--text-xs); color: var(--neutral-500); margin-top: 2px;
+}
+
+/* Controls */
+.testimonials__controls {
+  display: flex; align-items: center; justify-content: center;
+  gap: var(--space-lg); margin-top: var(--space-2xl);
+}
+.testimonials__btn {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--neutral-300);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--neutral-600); font-size: 18px;
+  background: var(--neutral-0);
+  transition: all var(--duration-fast);
+}
+.testimonials__btn:hover {
+  border-color: var(--green-400); color: var(--green-600); background: var(--green-50);
+}
+.testimonials__dots {
+  display: flex; gap: var(--space-xs);
+}
+.testimonials__dot {
+  width: 8px; height: 8px;
+  border-radius: 50%; background: var(--neutral-300);
+  transition: all var(--duration-normal) var(--ease-out);
+  cursor: pointer;
+}
+.testimonials__dot--active {
+  background: var(--green-500);
+  width: 24px;
+  border-radius: 4px;
+}
+
+@media (min-width: 768px) {
+  .testimonial-card { flex: 0 0 50%; }
+}
+@media (min-width: 1024px) {
+  .testimonial-card { flex: 0 0 33.333%; }
+}

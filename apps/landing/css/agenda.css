@@ -1,0 +1,153 @@
+/* ============================================
+   NutriSaaS — Agenda Viva Section
+   ============================================ */
+.agenda-section { background: var(--neutral-50); overflow: hidden; }
+.agenda__header { text-align: center; margin-bottom: var(--space-3xl); }
+.agenda__wrapper {
+  max-width: 900px;
+  margin-inline: auto;
+  position: relative;
+}
+
+/* Calendar */
+.agenda-cal {
+  background: var(--neutral-0);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--neutral-200);
+  overflow: hidden;
+}
+.agenda-cal__header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--neutral-50);
+  border-bottom: 1px solid var(--neutral-200);
+}
+.agenda-cal__title { font-size: var(--text-sm); font-weight: 600; color: var(--neutral-800); }
+.agenda-cal__nav { display: flex; gap: var(--space-xs); }
+.agenda-cal__nav-btn {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--neutral-200);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--neutral-600); font-size: 14px;
+  background: var(--neutral-0);
+}
+
+/* Days header */
+.agenda-cal__days {
+  display: grid;
+  grid-template-columns: 50px repeat(5, 1fr);
+  border-bottom: 1px solid var(--neutral-200);
+}
+.agenda-cal__day-header {
+  padding: var(--space-sm) var(--space-xs);
+  text-align: center; font-size: 10px; font-weight: 600;
+  color: var(--neutral-500); text-transform: uppercase; letter-spacing: 0.05em;
+}
+.agenda-cal__day-header:first-child { background: transparent; }
+.agenda-cal__day-header--today { color: var(--green-600); }
+
+/* Time grid */
+.agenda-cal__grid {
+  display: grid;
+  grid-template-columns: 50px repeat(5, 1fr);
+}
+.agenda-cal__time {
+  padding: var(--space-sm) var(--space-xs);
+  font-size: 10px; font-weight: 500;
+  color: var(--neutral-400); text-align: right;
+  padding-right: var(--space-sm);
+  border-right: 1px solid var(--neutral-100);
+}
+.agenda-cal__cell {
+  min-height: 48px; padding: 2px;
+  border-bottom: 1px solid var(--neutral-100);
+  border-right: 1px solid var(--neutral-100);
+  position: relative;
+}
+.agenda-cal__cell:last-child { border-right: none; }
+
+/* Appointment blocks */
+.agenda-appt {
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 9px; font-weight: 500;
+  height: 100%;
+  display: flex; flex-direction: column; justify-content: center;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: all var(--duration-normal) var(--ease-out);
+}
+.agenda-appt--visible {
+  opacity: 1; transform: scale(1);
+}
+.agenda-appt--green {
+  background: var(--green-50);
+  border-left: 2px solid var(--green-500);
+  color: var(--green-800);
+}
+.agenda-appt--blue {
+  background: #eef6ff;
+  border-left: 2px solid #4a90d9;
+  color: #1a4a7a;
+}
+.agenda-appt--purple {
+  background: #f3eeff;
+  border-left: 2px solid #8b5cf6;
+  color: #4c1d95;
+}
+.agenda-appt__name { font-weight: 600; font-size: 10px; }
+.agenda-appt__type { opacity: 0.7; margin-top: 1px; }
+
+/* Floating notification */
+.agenda-notif {
+  position: absolute;
+  top: var(--space-xl);
+  right: -10px;
+  background: var(--neutral-0);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--neutral-200);
+  padding: var(--space-sm) var(--space-md);
+  display: flex; align-items: center; gap: var(--space-sm);
+  z-index: 10;
+  opacity: 0; transform: translateX(20px) scale(0.95);
+  transition: all var(--duration-slow) var(--ease-out);
+  max-width: 240px;
+}
+.agenda-notif--visible {
+  opacity: 1; transform: translateX(0) scale(1);
+}
+.agenda-notif__icon {
+  width: 32px; height: 32px; border-radius: var(--radius-sm);
+  background: var(--green-50);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--green-600); flex-shrink: 0;
+}
+.agenda-notif__text { font-size: 11px; color: var(--neutral-700); line-height: 1.4; }
+.agenda-notif__text strong { color: var(--neutral-900); display: block; }
+.agenda-notif__time { font-size: 9px; color: var(--neutral-400); margin-top: 2px; }
+
+/* Realtime pulse */
+.agenda-live {
+  display: inline-flex; align-items: center; gap: var(--space-xs);
+  padding: 4px 10px; background: var(--green-600);
+  color: white; font-size: 10px; font-weight: 600;
+  border-radius: var(--radius-full);
+}
+.agenda-live__dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #6cff9e;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@media (min-width: 768px) {
+  .agenda-notif { right: -30px; }
+}
+@media (max-width: 600px) {
+  .agenda-cal__days,
+  .agenda-cal__grid {
+    grid-template-columns: 40px repeat(3, 1fr);
+  }
+}
