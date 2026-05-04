@@ -71,8 +71,17 @@
 }
 
 /* CTA */
-.nav__cta {
+.nav__cta-group {
   display: none;
+  gap: var(--space-md);
+  align-items: center;
+}
+
+.nav.nav--menu-open {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: transparent;
+  box-shadow: none;
 }
 
 /* Mobile toggle */
@@ -148,8 +157,8 @@
   .nav__links {
     display: flex;
   }
-  .nav__cta {
-    display: inline-flex;
+  .nav__cta-group {
+    display: flex;
   }
   .nav__toggle {
     display: none;

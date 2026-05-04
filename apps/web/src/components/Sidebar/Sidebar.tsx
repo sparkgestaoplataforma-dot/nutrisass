@@ -13,7 +13,7 @@ import { useAuthStore } from '@/stores/authStore';
 import styles from './Sidebar.module.scss';
 
 const navItems = [
-  { to: '/', label: 'Início', icon: DashboardSquareIcon },
+  { to: '/dashboard', label: 'Início', icon: DashboardSquareIcon },
   { to: '/agenda', label: 'Agenda', icon: CalendarIcon },
   { to: '/pacientes', label: 'Pacientes', icon: UserGroupIcon },
   { to: '/exames', label: 'Exames', icon: TestTubeIcon },

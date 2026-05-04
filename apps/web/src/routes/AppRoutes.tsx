@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { DashboardLayout } from '@/components/DashboardLayout/DashboardLayout';
+import { LandingPage } from '@/pages/LandingPage/LandingPage';
 import { LoginPage } from '@/pages/Login/LoginPage';
 import { DashboardPage } from '@/pages/Dashboard/DashboardPage';
 import { AgendaPage } from '@/pages/Agenda/AgendaPage';
@@ -21,6 +22,9 @@ export function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Landing page pública */}
+        <Route path="/" element={<LandingPage />} />
+
         <Route path="/login" element={<LoginPage />} />
         <Route path="/cadastro" element={<OnboardingPage />} />
         <Route path="/esqueci-senha" element={<EsqueciSenhaPage />} />
@@ -34,7 +38,7 @@ export function AppRoutes() {
         />
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/" element={<DashboardPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/agenda" element={<AgendaPage />} />
             <Route path="/pacientes" element={<PacientesPage />} />
             <Route path="/pacientes/novo" element={<PacienteFormPage />} />

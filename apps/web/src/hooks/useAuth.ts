@@ -19,7 +19,7 @@ export function useLogin() {
       const { data } = await api.get<ApiResponse<TokenPayload>>('/auth/me');
       setUser(data.data!);
 
-      navigate('/');
+      navigate('/dashboard');
     },
   });
 }
