@@ -35,7 +35,7 @@ export function OnboardingPage() {
         // Silencia o erro caso o questionário default já exista
       });
 
-      navigate("/dashboard");
+      navigate("/escolher-plano");
     },
   });
 

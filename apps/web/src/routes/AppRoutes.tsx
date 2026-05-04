@@ -18,6 +18,8 @@ import { ResponderQuestionarioPage } from '@/pages/Questionario/Responder/Respon
 import { AvaliacaoDetalhesPage } from '@/pages/Pacientes/AvaliacaoDetalhes/AvaliacaoDetalhesPage';
 import { ComparativoPage } from '@/pages/Pacientes/Comparativo/ComparativoPage';
 
+import { PlanSelectionPage } from '@/pages/Onboarding/PlanSelectionPage';
+
 export function AppRoutes() {
   return (
     <BrowserRouter>
@@ -37,6 +39,7 @@ export function AppRoutes() {
           element={<Navigate to="/esqueci-senha" replace />}
         />
         <Route element={<ProtectedRoute />}>
+          <Route path="/escolher-plano" element={<PlanSelectionPage />} />
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/agenda" element={<AgendaPage />} />
