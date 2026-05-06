@@ -53,6 +53,7 @@ model Clinica {
   questionarios Questionario[]
   examesBase   ExameBase[]
   avaliacoes   Avaliacao[]
+  planosAlimentares PlanoAlimentar[]
 
   @@map("clinicas")
 }
@@ -68,6 +69,7 @@ model Usuario {
   criadoEm     DateTime      @default(now()) @map("criado_em")
   atualizadoEm DateTime      @updatedAt @map("atualizado_em")
   agendamentos Agendamento[]
+  planosAlimentares PlanoAlimentar[]
 
   @@index([clinicaId])
   @@map("usuarios")
@@ -107,6 +109,7 @@ model Paciente {
   solicitacoes     SolicitacaoExame[]
   avaliacoesQuestionarios Avaliacao[]
   respostasQuestionarios Resposta[]
+  planosAlimentares PlanoAlimentar[]
 
   @@index([clinicaId])
   @@map("pacientes")
@@ -333,4 +336,58 @@ model SolicitacaoExameItem {
   resultado      String?
 
   @@map("solicitacoes_exames_itens")
+}
+
+model PlanoAlimentar {
+  id           String          @id @default(uuid())
+  clinicaId    String          @map("clinica_id")
+  clinica      Clinica         @relation(fields: [clinicaId], references: [id])
+  pacienteId   String          @map("paciente_id")
+  paciente     Paciente        @relation(fields: [pacienteId], references: [id])
+  usuarioId    String          @map("usuario_id")
+  usuario      Usuario         @relation(fields: [usuarioId], references: [id])
+  titulo       String
+  observacoes  String?
+  criadoEm     DateTime        @default(now()) @map("criado_em")
+  atualizadoEm DateTime        @updatedAt @map("atualizado_em")
+  refeicoes    PlanoRefeicao[]
+
+  @@index([clinicaId])
+  @@index([pacienteId])
+  @@index([usuarioId])
+  @@map("planos_alimentares")
+}
+
+model PlanoRefeicao {
+  id               String          @id @default(uuid())
+  planoAlimentarId String          @map("plano_alimentar_id")
+  planoAlimentar   PlanoAlimentar  @relation(fields: [planoAlimentarId], references: [id], onDelete: Cascade)
+  nome             String
+  horario          String
+  ordem            Int
+  criadoEm         DateTime        @default(now()) @map("criado_em")
+  atualizadoEm     DateTime        @updatedAt @map("atualizado_em")
+  alimentos        PlanoAlimento[]
+
+  @@index([planoAlimentarId])
+  @@map("planos_refeicoes")
+}
+
+model PlanoAlimento {
+  id              String        @id @default(uuid())
+  planoRefeicaoId String        @map("plano_refeicao_id")
+  planoRefeicao   PlanoRefeicao @relation(fields: [planoRefeicaoId], references: [id], onDelete: Cascade)
+  alimento        String
+  quantidade      Float
+  unidade         String
+  calorias        Float?
+  proteinas       Float?
+  carboidratos    Float?
+  gorduras        Float?
+  observacao      String?
+  criadoEm        DateTime      @default(now()) @map("criado_em")
+  atualizadoEm    DateTime      @updatedAt @map("atualizado_em")
+
+  @@index([planoRefeicaoId])
+  @@map("planos_alimentos")
 }
