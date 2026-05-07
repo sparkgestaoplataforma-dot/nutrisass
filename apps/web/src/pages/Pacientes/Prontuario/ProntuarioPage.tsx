@@ -208,7 +208,7 @@ export function ProntuarioPage() {
     <div className={styles.page}>
       {/* Breadcrumb */}
       <nav className={styles.breadcrumb}>
-        <span className={styles.breadcrumbLink} onClick={() => navigate("/")}>
+        <span className={styles.breadcrumbLink} onClick={() => navigate("/dashboard")}>
           Início
         </span>
         <span className={styles.breadcrumbSep}>/</span>

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { DashboardLayout } from '@/components/DashboardLayout/DashboardLayout';
 import { LoginPage } from '@/pages/Login/LoginPage';
+import { LandingPage } from '@/pages/Landing/LandingPage';
 import { DashboardPage } from '@/pages/Dashboard/DashboardPage';
 import { AgendaPage } from '@/pages/Agenda/AgendaPage';
 import { PacientesPage } from '@/pages/Pacientes/Listagem/PacientesPage';
@@ -21,6 +22,10 @@ export function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Landing page pública */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* Rotas públicas */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/cadastro" element={<OnboardingPage />} />
         <Route path="/esqueci-senha" element={<EsqueciSenhaPage />} />
@@ -32,9 +37,11 @@ export function AppRoutes() {
           path="/redefinir-senha"
           element={<Navigate to="/esqueci-senha" replace />}
         />
+
+        {/* Rotas protegidas (dashboard) */}
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/" element={<DashboardPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/agenda" element={<AgendaPage />} />
             <Route path="/pacientes" element={<PacientesPage />} />
             <Route path="/pacientes/novo" element={<PacienteFormPage />} />
