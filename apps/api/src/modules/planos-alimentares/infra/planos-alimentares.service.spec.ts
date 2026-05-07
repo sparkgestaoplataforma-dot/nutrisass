@@ -141,7 +141,7 @@ describe("planos-alimentares.service", () => {
       prismaMock.planoAlimentar.findFirst.mockResolvedValue({ id: "plano-1" } as any);
       
       // Mock the transaction to execute its callback with the prisma mock
-      prismaMock.$transaction.mockImplementation(async (callback) => {
+      prismaMock.$transaction.mockImplementation(async (callback: any) => {
         return await callback(prismaMock);
       });
       
