@@ -9,6 +9,8 @@ export enum ObjetivoPlano {
 }
 
 export const planoAlimentoSchema = z.object({
+  alimentoId: z.string().uuid().optional().nullable(),
+  medidaCaseiraId: z.string().uuid().optional().nullable(),
   alimento: z.string().min(1, "O nome do alimento é obrigatório"),
   quantidade: z.number().min(0, "A quantidade deve ser maior ou igual a 0"),
   unidade: z.string().min(1, "A unidade é obrigatória"),

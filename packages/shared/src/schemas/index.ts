@@ -7,3 +7,4 @@ export * from "./convenio.schema";
 export * from "./clinica.schema";
 export * from "./questionario.schema";
 export * from "./plano-alimentar.schema";
+export * from "./alimento.schema";

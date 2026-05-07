@@ -13,7 +13,7 @@ import { questionariosRoutes } from "@/modules/questionarios/infra/questionarios
 import { modulosRoutes } from "@/modules/modulos/infra/modulos.routes.js";
 import { avaliacoesRoutes } from "@/modules/avaliacoes/infra/avaliacoes.routes.js";
 import { planosAlimentaresRoutes } from "../modules/planos-alimentares/infra/planos-alimentares.routes.js";
-
+import { alimentosRoutes } from "../modules/alimentos/infra/alimentos.routes.js";
 
 const router = Router();
 
@@ -31,6 +31,6 @@ router.use("/questionarios", questionariosRoutes);
 router.use("/modulos", modulosRoutes);
 router.use("/avaliacoes", avaliacoesRoutes);
 router.use("/planos-alimentares", planosAlimentaresRoutes);
-
+router.use("/alimentos", alimentosRoutes);
 
 export { router };

@@ -45,6 +45,8 @@ export async function criar(
               ordem: opcao.ordem,
               alimentos: {
                 create: opcao.alimentos.map((alimento) => ({
+                  alimentoId: alimento.alimentoId,
+                  medidaCaseiraId: alimento.medidaCaseiraId,
                   alimento: alimento.alimento,
                   quantidade: alimento.quantidade,
                   unidade: alimento.unidade,
@@ -177,6 +179,8 @@ export async function atualizar(
               ordem: opcao.ordem,
               alimentos: {
                 create: opcao.alimentos.map((alimento) => ({
+                  alimentoId: alimento.alimentoId,
+                  medidaCaseiraId: alimento.medidaCaseiraId,
                   alimento: alimento.alimento,
                   quantidade: alimento.quantidade,
                   unidade: alimento.unidade,
