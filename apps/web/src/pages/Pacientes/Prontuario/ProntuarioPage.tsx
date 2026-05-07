@@ -383,8 +383,8 @@ export function ProntuarioPage() {
                     <span>
                       {isLoadingPaciente ? (
                         <Skeleton width="80px" height="14px" />
-                      ) : paciente?.dataNascimento ? (
-                        new Date(paciente.dataNascimento).toLocaleDateString("pt-BR")
+                      ) : paciente?.dataNascimentoFormatada ? (
+                        paciente.dataNascimentoFormatada.split(' ')[0] // Pega apenas a parte da data
                       ) : (
                         "Não informada"
                       )}
@@ -501,9 +501,9 @@ export function ProntuarioPage() {
               onChange={(e) => setAvaliacaoSelecionadaId(e.target.value)}
             >
               {listAvaliacoes.length > 0 ? (
-                listAvaliacoes.map((av: Avaliacao) => (
+                listAvaliacoes.map((av: Avaliacao & { dataRealizacaoFormatada?: string }) => (
                   <option key={av.id} value={av.id}>
-                    {new Date(av.dataRealizacao).toLocaleDateString("pt-BR")}
+                    {av.dataRealizacaoFormatada || av.dataRealizacao}
                   </option>
                 ))
               ) : (
@@ -581,8 +581,8 @@ export function ProntuarioPage() {
                 <div className={styles.topicDescription}>
                   {(isLoadingAvaliacaoDetalhe || isLoadingAvaliacoes) ? (
                     <Skeleton width="80px" height="14px" />
-                  ) : selectedAvaliacao?.dataRealizacao ? (
-                    new Date(selectedAvaliacao.dataRealizacao).toLocaleDateString("pt-BR")
+                  ) : (selectedAvaliacao as any)?.dataRealizacaoFormatada ? (
+                    (selectedAvaliacao as any).dataRealizacaoFormatada
                   ) : (
                     "Nenhuma selecionada"
                   )}

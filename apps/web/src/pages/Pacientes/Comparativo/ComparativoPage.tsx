@@ -20,6 +20,7 @@ import { DeleteConfirmModal } from "@/components/DeleteConfirmModal/DeleteConfir
 import {
   getInterpretacaoScore,
 } from "@/utils/scoreInterpretacao";
+import { formatarDataBrasilia } from "@/utils/date";
 import { Skeleton } from "@/components/Loading/Skeleton";
 import { SkeletonTable } from "@/components/Loading/skeletons/SkeletonTable";
 import { LoadingError } from "@/components/Loading/LoadingError";
@@ -144,7 +145,7 @@ export function ComparativoPage() {
   const totalPages = paginatedData?.totalPages || 1;
 
   const formatarData = (dataISO: string) => {
-    return new Date(dataISO).toLocaleDateString("pt-BR");
+    return formatarDataBrasilia(dataISO);
   };
 
   const resultadosFiltrados = avaliacoes.filter((avaliacao) => {
@@ -187,8 +188,8 @@ export function ComparativoPage() {
         new Date(a.dataRealizacao).getTime() -
         new Date(b.dataRealizacao).getTime(),
     )
-    .map((item) => ({
-      data: formatarData(item.dataRealizacao),
+    .map((item: any) => ({
+      data: item.dataRealizacaoFormatada || formatarData(item.dataRealizacao),
       score: item.scoreTotal,
     }));
 

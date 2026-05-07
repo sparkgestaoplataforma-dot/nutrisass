@@ -75,10 +75,7 @@ export function TabelaAgenda({
           {agendamentos.map((ag) => (
             <tr key={ag.id}>
               <td className={styles.hora}>
-                {new Date(ag.dataHora).toLocaleTimeString("pt-BR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                {ag.dataHoraFormatada ? ag.dataHoraFormatada.split(' ')[1].slice(0, 5) : '-'}
               </td>
               <td>
                 <span

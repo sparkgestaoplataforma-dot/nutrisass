@@ -70,10 +70,10 @@ export function SidebarDireita({
     doc.text("Classificação:", 20, 89);
 
     doc.setFont("helvetica", "normal");
-    const dataNasc = paciente.dataNascimento
-      ? new Date(paciente.dataNascimento).toLocaleDateString("pt-BR")
+    const dataNasc = paciente.dataNascimentoFormatada 
+      ? paciente.dataNascimentoFormatada.split(' ')[0] 
       : "Não informada";
-    const dataAval = new Date(avaliacao.dataRealizacao).toLocaleDateString("pt-BR");
+    const dataAval = (avaliacao as any).dataRealizacaoFormatada || avaliacao.dataRealizacao;
     
     doc.text(dataNasc, 55, 75);
     doc.text(avaliacao.scoreTotal.toString(), 155, 75);
@@ -159,8 +159,8 @@ export function SidebarDireita({
             <div className={styles.topicDescription}>
               {isLoading ? (
                 <Skeleton width="80px" height="14px" />
-              ) : avaliacao?.dataRealizacao ? (
-                new Date(avaliacao.dataRealizacao).toLocaleDateString("pt-BR")
+              ) : (avaliacao as any)?.dataRealizacaoFormatada ? (
+                (avaliacao as any).dataRealizacaoFormatada
               ) : (
                 "Nenhuma selecionada"
               )}

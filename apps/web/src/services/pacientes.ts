@@ -1,6 +1,7 @@
 import axios from "axios";
 import { api } from "./api";
 import type { ApiResponse, PaginatedResponse } from "@nutricao/shared";
+import { formatarDataBrasilia } from "@/utils/date";
 
 const publicApi = axios.create({
   baseURL: "/api",
@@ -50,6 +51,9 @@ export type Paciente = {
   validadeCarteira: string | null;
   criadoEm: string;
   atualizadoEm: string;
+  dataNascimentoFormatada?: string;
+  criadoEmFormatada?: string;
+  atualizadoEmFormatada?: string;
   convenio: Convenio | null;
   agendamentos: Agendamento[];
 };
@@ -62,7 +66,18 @@ export async function listarPacientes(busca?: string) {
 }
 
 export async function getPacientePorId(id: string) {
-  const { data } = await api.get<ApiResponse<Paciente>>(`/pacientes/${id}`);
+  const { data } = await api.get<ApiResponse<Paciente & { 
+    dataNascimentoFormatada?: string;
+    criadoEmFormatada?: string;
+    atualizadoEmFormatada?: string;
+  }>>(`/pacientes/${id}`);
+  
+  if (data.data) {
+    data.data.dataNascimentoFormatada = formatarDataBrasilia(data.data.dataNascimento);
+    data.data.criadoEmFormatada = formatarDataBrasilia(data.data.criadoEm);
+    data.data.atualizadoEmFormatada = formatarDataBrasilia(data.data.atualizadoEm);
+  }
+  
   return data.data;
 }
 
