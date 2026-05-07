@@ -7,7 +7,11 @@ export async function criar(
   usuarioId: string,
   data: CreatePlanoAlimentarInput
 ) {
-  const { pacienteId, titulo, observacoes, refeicoes } = data;
+  const { 
+    pacienteId, titulo, objetivo, 
+    metaCalorias, metaProteinas, metaCarboidratos, metaGorduras, 
+    recomendacaoAguaMl, observacoes, refeicoes 
+  } = data;
 
   const paciente = await prisma.paciente.findFirst({
     where: { id: pacienteId, clinicaId },
@@ -23,22 +27,34 @@ export async function criar(
       usuarioId,
       pacienteId,
       titulo,
+      objetivo,
+      metaCalorias,
+      metaProteinas,
+      metaCarboidratos,
+      metaGorduras,
+      recomendacaoAguaMl,
       observacoes,
       refeicoes: {
         create: refeicoes.map((refeicao) => ({
           nome: refeicao.nome,
           horario: refeicao.horario,
           ordem: refeicao.ordem,
-          alimentos: {
-            create: refeicao.alimentos.map((alimento) => ({
-              alimento: alimento.alimento,
-              quantidade: alimento.quantidade,
-              unidade: alimento.unidade,
-              calorias: alimento.calorias,
-              proteinas: alimento.proteinas,
-              carboidratos: alimento.carboidratos,
-              gorduras: alimento.gorduras,
-              observacao: alimento.observacao,
+          opcoes: {
+            create: refeicao.opcoes.map((opcao) => ({
+              nome: opcao.nome,
+              ordem: opcao.ordem,
+              alimentos: {
+                create: opcao.alimentos.map((alimento) => ({
+                  alimento: alimento.alimento,
+                  quantidade: alimento.quantidade,
+                  unidade: alimento.unidade,
+                  calorias: alimento.calorias,
+                  proteinas: alimento.proteinas,
+                  carboidratos: alimento.carboidratos,
+                  gorduras: alimento.gorduras,
+                  observacao: alimento.observacao,
+                })),
+              },
             })),
           },
         })),
@@ -48,7 +64,12 @@ export async function criar(
       refeicoes: {
         orderBy: { ordem: "asc" },
         include: {
-          alimentos: true,
+          opcoes: {
+            orderBy: { ordem: "asc" },
+            include: {
+              alimentos: true,
+            },
+          },
         },
       },
     },
@@ -71,7 +92,12 @@ export async function listar(clinicaId: string, pacienteId?: string) {
       refeicoes: {
         orderBy: { ordem: "asc" },
         include: {
-          alimentos: true,
+          opcoes: {
+            orderBy: { ordem: "asc" },
+            include: {
+              alimentos: true,
+            },
+          },
         },
       },
     },
@@ -86,7 +112,12 @@ export async function buscarPorId(id: string, clinicaId: string) {
       refeicoes: {
         orderBy: { ordem: "asc" },
         include: {
-          alimentos: true,
+          opcoes: {
+            orderBy: { ordem: "asc" },
+            include: {
+              alimentos: true,
+            },
+          },
         },
       },
     },
@@ -112,54 +143,76 @@ export async function atualizar(
     throw new AppError("Plano alimentar não encontrado", 404);
   }
 
-  const { titulo, observacoes, refeicoes } = data;
+  const { 
+    titulo, objetivo, metaCalorias, metaProteinas, metaCarboidratos, 
+    metaGorduras, recomendacaoAguaMl, observacoes, refeicoes 
+  } = data;
 
   const updateData: any = {
     titulo,
+    objetivo,
+    metaCalorias,
+    metaProteinas,
+    metaCarboidratos,
+    metaGorduras,
+    recomendacaoAguaMl,
     observacoes,
   };
 
-  if (refeicoes) {
-    // Exclui as refeicoes existentes (em cascata os alimentos)
-    await prisma.planoRefeicao.deleteMany({
-      where: { planoAlimentarId: id },
-    });
+  return await prisma.$transaction(async (tx) => {
+    if (refeicoes) {
+      // Exclui as refeicoes existentes (em cascata as opcoes e alimentos)
+      await tx.planoRefeicao.deleteMany({
+        where: { planoAlimentarId: id },
+      });
 
-    updateData.refeicoes = {
-      create: refeicoes.map((refeicao) => ({
-        nome: refeicao.nome,
-        horario: refeicao.horario,
-        ordem: refeicao.ordem,
-        alimentos: {
-          create: refeicao.alimentos.map((alimento) => ({
-            alimento: alimento.alimento,
-            quantidade: alimento.quantidade,
-            unidade: alimento.unidade,
-            calorias: alimento.calorias,
-            proteinas: alimento.proteinas,
-            carboidratos: alimento.carboidratos,
-            gorduras: alimento.gorduras,
-            observacao: alimento.observacao,
-          })),
-        },
-      })),
-    };
-  }
+      updateData.refeicoes = {
+        create: refeicoes.map((refeicao) => ({
+          nome: refeicao.nome,
+          horario: refeicao.horario,
+          ordem: refeicao.ordem,
+          opcoes: {
+            create: refeicao.opcoes.map((opcao) => ({
+              nome: opcao.nome,
+              ordem: opcao.ordem,
+              alimentos: {
+                create: opcao.alimentos.map((alimento) => ({
+                  alimento: alimento.alimento,
+                  quantidade: alimento.quantidade,
+                  unidade: alimento.unidade,
+                  calorias: alimento.calorias,
+                  proteinas: alimento.proteinas,
+                  carboidratos: alimento.carboidratos,
+                  gorduras: alimento.gorduras,
+                  observacao: alimento.observacao,
+                })),
+              },
+            })),
+          },
+        })),
+      };
+    }
 
-  const planoAtualizado = await prisma.planoAlimentar.update({
-    where: { id },
-    data: updateData,
-    include: {
-      refeicoes: {
-        orderBy: { ordem: "asc" },
-        include: {
-          alimentos: true,
+    const planoAtualizado = await tx.planoAlimentar.update({
+      where: { id },
+      data: updateData,
+      include: {
+        refeicoes: {
+          orderBy: { ordem: "asc" },
+          include: {
+            opcoes: {
+              orderBy: { ordem: "asc" },
+              include: {
+                alimentos: true,
+              },
+            },
+          },
         },
       },
-    },
-  });
+    });
 
-  return planoAtualizado;
+    return planoAtualizado;
+  });
 }
 
 export async function deletar(id: string, clinicaId: string) {
@@ -177,3 +230,4 @@ export async function deletar(id: string, clinicaId: string) {
 
   return { success: true };
 }
+

@@ -23,16 +23,22 @@ describe("planos-alimentares.service", () => {
         nome: "Café da Manhã",
         horario: "08:00",
         ordem: 1,
-        alimentos: [
+        opcoes: [
           {
-            alimento: "Pão",
-            quantidade: 2,
-            unidade: "fatias",
-            calorias: 150,
-            proteinas: null,
-            carboidratos: null,
-            gorduras: null,
-            observacao: "Sem casca",
+            nome: "Opção 1",
+            ordem: 1,
+            alimentos: [
+              {
+                alimento: "Pão",
+                quantidade: 2,
+                unidade: "fatias",
+                calorias: 150,
+                proteinas: null,
+                carboidratos: null,
+                gorduras: null,
+                observacao: "Sem casca",
+              },
+            ],
           },
         ],
       },
@@ -133,6 +139,12 @@ describe("planos-alimentares.service", () => {
 
     it("deve excluir as refeições e alimentos antigos e atualizar com sucesso", async () => {
       prismaMock.planoAlimentar.findFirst.mockResolvedValue({ id: "plano-1" } as any);
+      
+      // Mock the transaction to execute its callback with the prisma mock
+      prismaMock.$transaction.mockImplementation(async (callback) => {
+        return await callback(prismaMock);
+      });
+      
       prismaMock.planoRefeicao.deleteMany.mockResolvedValue({ count: 1 } as any);
       prismaMock.planoAlimentar.update.mockResolvedValue({ id: "plano-1", titulo: "Novo Titulo" } as any);
 
