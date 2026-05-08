@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client/extension";
 import { mockDeep, mockReset, DeepMockProxy } from "vitest-mock-extended";
 import { prisma } from "../prisma";
 import { vi, beforeEach } from "vitest";
