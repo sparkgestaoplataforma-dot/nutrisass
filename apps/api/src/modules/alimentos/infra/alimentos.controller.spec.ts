@@ -62,7 +62,7 @@ describe("alimentos.controller", () => {
       req.params = { id: "alimento-1" };
       vi.mocked(service.buscarPorId).mockResolvedValue({ id: "alimento-1" } as any);
 
-      await controller.buscarPorId(req as Request, res as Response);
+      await controller.buscarPorId(req as any, res as Response);
 
       expect(service.buscarPorId).toHaveBeenCalledWith("alimento-1", "clinica-1");
       expect(res.json).toHaveBeenCalledWith({ success: true, data: { id: "alimento-1" } });

@@ -61,7 +61,7 @@ describe("planos-alimentares.controller", () => {
       req.params = { id: "plano-1" };
       vi.mocked(service.buscarPorId).mockResolvedValue({ id: "plano-1" } as any);
 
-      await controller.buscarPorId(req as Request, res as Response);
+      await controller.buscarPorId(req as any, res as Response);
 
       expect(service.buscarPorId).toHaveBeenCalledWith("plano-1", "clinica-1");
       expect(res.json).toHaveBeenCalledWith({ success: true, data: { id: "plano-1" } });
@@ -74,7 +74,7 @@ describe("planos-alimentares.controller", () => {
       req.body = { titulo: "Plano Atualizado" };
       vi.mocked(service.atualizar).mockResolvedValue({ id: "plano-1", titulo: "Plano Atualizado" } as any);
 
-      await controller.editar(req as Request, res as Response);
+      await controller.editar(req as any, res as Response);
 
       expect(service.atualizar).toHaveBeenCalledWith("plano-1", "clinica-1", req.body);
       expect(res.json).toHaveBeenCalledWith({ success: true, data: { id: "plano-1", titulo: "Plano Atualizado" } });
@@ -86,7 +86,7 @@ describe("planos-alimentares.controller", () => {
       req.params = { id: "plano-1" };
       vi.mocked(service.deletar).mockResolvedValue({ success: true });
 
-      await controller.excluir(req as Request, res as Response);
+      await controller.excluir(req as any, res as Response);
 
       expect(service.deletar).toHaveBeenCalledWith("plano-1", "clinica-1");
       expect(res.json).toHaveBeenCalledWith({ success: true, message: "Plano alimentar excluído com sucesso" });
