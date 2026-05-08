@@ -8,6 +8,7 @@ import { createAgendamentoSchema, type CreateAgendamentoInput } from '@nutricao/
 import { listarPacientes } from '@/services/pacientes';
 import { listarConvenios } from '@/services/convenios';
 import type { AgendamentoResponse } from '@/services/agenda';
+import { formatarParaInputDateTime } from '@/utils/date';
 import styles from './AgendamentoModal.module.scss';
 
 interface AgendamentoModalProps {
@@ -54,7 +55,7 @@ export function AgendamentoModal({
       reset({
         pacienteId: agendamento.pacienteId,
         convenioId: agendamento.convenio?.id || undefined,
-        dataHora: agendamento.dataHora.slice(0, 16),
+        dataHora: formatarParaInputDateTime(agendamento.dataHora),
         tipo: agendamento.tipo as 'CONSULTA' | 'RETORNO',
         status: agendamento.status as any,
         encaixe: agendamento.encaixe,

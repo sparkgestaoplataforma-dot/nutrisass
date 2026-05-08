@@ -1,4 +1,5 @@
 import { api } from './api';
+import { formatarDataBrasilia } from '@/utils/date';
 import type {
   ApiResponse,
   CreateAgendamentoInput,
@@ -12,6 +13,7 @@ export interface AgendamentoResponse {
   paciente: { id: string; nome: string; telefone: string | null; email: string | null };
   convenio: { id: string; nome: string } | null;
   dataHora: string;
+  dataHoraFormatada?: string;
   tipo: string;
   status: string;
   encaixe: boolean;
@@ -23,6 +25,14 @@ export async function listarAgendaDia(data: string) {
     '/agendamentos',
     { params: { data } },
   );
+  
+  if (res.data) {
+    res.data = res.data.map(ag => ({
+      ...ag,
+      dataHoraFormatada: formatarDataBrasilia(ag.dataHora)
+    }));
+  }
+  
   return res.data!;
 }
 
@@ -31,6 +41,11 @@ export async function criarAgendamento(input: CreateAgendamentoInput) {
     '/agendamentos',
     input,
   );
+
+  if (res.data) {
+    res.data.dataHoraFormatada = formatarDataBrasilia(res.data.dataHora);
+  }
+
   return res.data!;
 }
 
@@ -39,6 +54,11 @@ export async function editarAgendamento(id: string, input: UpdateAgendamentoInpu
     `/agendamentos/${id}`,
     input,
   );
+
+  if (res.data) {
+    res.data.dataHoraFormatada = formatarDataBrasilia(res.data.dataHora);
+  }
+
   return res.data!;
 }
 
@@ -47,6 +67,11 @@ export async function alterarStatus(id: string, input: UpdateStatusInput) {
     `/agendamentos/${id}/status`,
     input,
   );
+
+  if (res.data) {
+    res.data.dataHoraFormatada = formatarDataBrasilia(res.data.dataHora);
+  }
+
   return res.data!;
 }
 
