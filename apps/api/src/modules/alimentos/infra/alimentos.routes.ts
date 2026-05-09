@@ -1,0 +1,15 @@
+import { Router } from "express";
+import { alimentoSchema } from "@nutricao/shared";
+import { validate } from "../../../shared/middlewares/validate.js";
+import { authMiddleware } from "../../../shared/middlewares/auth.js";
+import * as controller from "./alimentos.controller.js";
+
+const router = Router();
+
+router.use(authMiddleware);
+
+router.get("/", controller.listar);
+router.get("/:id", controller.buscarPorId);
+router.post("/", validate(alimentoSchema), controller.criar);
+
+export { router as alimentosRoutes };
