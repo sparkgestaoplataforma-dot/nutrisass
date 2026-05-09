@@ -12,6 +12,8 @@ import { clinicaRoutes } from "../modules/clinica/infra/clinica.routes.js";
 import { questionariosRoutes } from "@/modules/questionarios/infra/questionarios.routes.js";
 import { modulosRoutes } from "@/modules/modulos/infra/modulos.routes.js";
 import { avaliacoesRoutes } from "@/modules/avaliacoes/infra/avaliacoes.routes.js";
+import { planosAlimentaresRoutes } from "../modules/planos-alimentares/infra/planos-alimentares.routes.js";
+
 
 const router = Router();
 
@@ -28,5 +30,7 @@ router.use("/relatorios", relatoriosRoutes);
 router.use("/questionarios", questionariosRoutes);
 router.use("/modulos", modulosRoutes);
 router.use("/avaliacoes", avaliacoesRoutes);
+router.use("/planos-alimentares", planosAlimentaresRoutes);
+
 
 export { router };
