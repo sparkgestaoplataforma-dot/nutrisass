@@ -1,6 +1,8 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "../src/shared/providers/prisma";
 import { criarQuestionarioPadraoParaClinica } from "../src/modules/questionarios/seed/default-questionario";
+import * as fs from "fs";
+import * as path from "path";
 
 async function main() {
   const senhaHash = await bcrypt.hash("123456", 10);
@@ -1057,6 +1059,124 @@ async function main() {
         console.log(`Avaliação já existe: ${paciente.nome}`);
       }
     }
+  }
+
+  // Seed Alimentos Globais
+  const alimentosGlobais = [
+    {
+      nome: "Arroz branco, cozido",
+      grupo: "Cereais e derivados",
+      calorias: 128,
+      proteinas: 2.5,
+      carboidratos: 28.1,
+      gorduras: 0.2,
+      fibra: 1.6,
+      medidasCaseiras: [
+        { nome: "Colher de sopa cheia", quantidadeEmGramas: 25 },
+        { nome: "Escumadeira cheia", quantidadeEmGramas: 80 },
+      ],
+    },
+    {
+      nome: "Feijão carioca, cozido",
+      grupo: "Leguminosas e derivados",
+      calorias: 76,
+      proteinas: 4.8,
+      carboidratos: 13.6,
+      gorduras: 0.5,
+      fibra: 8.5,
+      medidasCaseiras: [
+        { nome: "Concha média cheia", quantidadeEmGramas: 86 },
+        { nome: "Colher de sopa cheia", quantidadeEmGramas: 17 },
+      ],
+    },
+    {
+      nome: "Frango, peito, sem pele, grelhado",
+      grupo: "Carnes e ovos",
+      calorias: 159,
+      proteinas: 32.0,
+      carboidratos: 0.0,
+      gorduras: 2.5,
+      fibra: 0.0,
+      medidasCaseiras: [
+        { nome: "Bife pequeno", quantidadeEmGramas: 100 },
+        { nome: "Pedaço médio", quantidadeEmGramas: 130 },
+      ],
+    },
+    {
+      nome: "Ovo de galinha, inteiro, cozido",
+      grupo: "Carnes e ovos",
+      calorias: 146,
+      proteinas: 13.3,
+      carboidratos: 0.6,
+      gorduras: 9.5,
+      fibra: 0.0,
+      medidasCaseiras: [{ nome: "Unidade média", quantidadeEmGramas: 50 }],
+    },
+    {
+      nome: "Banana, prata, crua",
+      grupo: "Frutas e derivados",
+      calorias: 98,
+      proteinas: 1.3,
+      carboidratos: 26.0,
+      gorduras: 0.1,
+      fibra: 2.0,
+      medidasCaseiras: [{ nome: "Unidade média", quantidadeEmGramas: 70 }],
+    },
+  ];
+
+  for (const item of alimentosGlobais) {
+    const { medidasCaseiras, ...alimentoData } = item;
+    const existing = await prisma.alimento.findFirst({
+      where: { nome: alimentoData.nome, clinicaId: null },
+    });
+
+    if (!existing) {
+      await prisma.alimento.create({
+        data: {
+          ...alimentoData,
+          clinicaId: null,
+          medidasCaseiras: {
+            create: medidasCaseiras,
+          },
+        },
+      });
+      console.log(
+        `Alimento global criado com medidas caseiras: ${alimentoData.nome}`,
+      );
+    }
+  }
+
+  // Seed de 597 Alimentos da tabela TACO a partir do JSON
+  const tacoPath = path.join(__dirname, "tabela_taco/alimentos.json");
+  if (fs.existsSync(tacoPath)) {
+    const tacoData = JSON.parse(fs.readFileSync(tacoPath, "utf8"));
+    console.log(`\nLendo arquivo TACO com ${tacoData.length} alimentos...`);
+    let addedCount = 0;
+
+    for (const item of tacoData) {
+      const existing = await prisma.alimento.findFirst({
+        where: { nome: item.nome, clinicaId: null },
+      });
+
+      if (!existing) {
+        await prisma.alimento.create({
+          data: {
+            nome: item.nome,
+            grupo: item.grupo,
+            calorias: item.calorias,
+            proteinas: item.proteinas,
+            carboidratos: item.carboidratos,
+            gorduras: item.gorduras,
+            fibra: item.fibra,
+            clinicaId: null,
+          },
+        });
+        addedCount++;
+      }
+    }
+    console.log(
+      `Foram inseridos ${addedCount} novos alimentos da tabela TACO.`,
+    );
   }
 
   console.log("Seed executado com sucesso!");
