@@ -6,5 +6,6 @@ vi.mock("@/shared/providers/prisma", async () => {
   >("@/shared/providers/__mocks__/prisma");
   return {
     ...actual,
+    prisma: actual.prismaMock,
   };
 });

@@ -3,7 +3,7 @@ import {
   buscarNotificacoesService,
   marcarComoLidaOuNaoLidaService,
   marcarTodasComoLidaService,
-  criarNotificacaoService,
+  criarNotificacaoEEmitir,
 } from "./notificacao.service";
 
 export async function buscarTodasNotificações(
@@ -19,6 +19,24 @@ export async function buscarTodasNotificações(
   return res.json({
     sucess: true,
     data: bucarNotificacoes,
+  });
+}
+
+export async function criarNotificacao(
+  req: Request<{
+    clinicaId: string;
+    usuarioId: string;
+    tipo: string;
+    titulo: string;
+  }>,
+  res: Response,
+) {
+  const data = req.body;
+  const criarNotificacao = await criarNotificacaoEEmitir(data);
+
+  return res.json({
+    sucess: true,
+    data: criarNotificacao,
   });
 }
 

@@ -31,6 +31,11 @@ export function AgendamentoModal({
     queryFn: () => listarPacientes(),
   });
 
+  // const { data: nutricionistasData } = useQuery({
+  //   queryKey: ['nutricionista-select'],
+  //   queryFn: () => 
+  // })
+
   const { data: convenios } = useQuery({
     queryKey: ['convenios-select'],
     queryFn: () => listarConvenios(),
@@ -83,6 +88,21 @@ export function AgendamentoModal({
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className={styles.body}>
+            <div className={styles.field}>
+              <label>Paciente</label>
+              <select {...register('pacienteId')}>
+                <option value="">Selecione um paciente</option>
+                {pacientesData?.data.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nome}
+                  </option>
+                ))}
+              </select>
+              {errors.pacienteId && (
+                <span className={styles.error}>{errors.pacienteId.message}</span>
+              )}
+            </div>
+
             <div className={styles.field}>
               <label>Paciente</label>
               <select {...register('pacienteId')}>

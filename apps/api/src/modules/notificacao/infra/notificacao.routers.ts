@@ -9,6 +9,10 @@ router.get(
   "/clinica/:clinicaId/usuario/:usuarioId",
   controller.buscarTodasNotificações,
 );
+router.post(
+  "clinica/:clinicaId/usuario/:usuarioId",
+  controller.criarNotificacao,
+);
 router.put("/:id", controller.marcarComoLidaOuNaoLida);
 router.put(
   "/clinica/:clinicaId/usuario/:usuarioId",
