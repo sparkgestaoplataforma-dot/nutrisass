@@ -14,7 +14,6 @@ const pageTitles: Record<string, string> = {
   '/agenda': 'Agenda',
   '/pacientes': 'Pacientes',
   '/exames': 'Exames',
-  '/alimentos': 'Alimentos',
   '/relatorios': 'Relatórios',
   '/configuracoes': 'Configurações',
 };
@@ -24,7 +23,6 @@ const pageSubtitles: Record<string, string> = {
   '/agenda': 'Gerencie seus agendamentos',
   '/pacientes': 'Cadastro e prontuários',
   '/exames': 'Exames base e personalizados da clinica',
-  '/alimentos': 'Tabela TACO e Alimentos personalizados',
   '/relatorios': 'Análises e métricas',
   '/configuracoes': 'Preferências do sistema',
 };

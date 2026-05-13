@@ -11,7 +11,5 @@ router.use(authMiddleware);
 router.get("/", controller.listar);
 router.get("/:id", controller.buscarPorId);
 router.post("/", validate(alimentoSchema), controller.criar);
-router.put("/:id", validate(alimentoSchema), controller.atualizar);
-router.delete("/:id", controller.excluir);
 
 export { router as alimentosRoutes };

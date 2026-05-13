@@ -11,8 +11,6 @@ import { ProntuarioPage } from '@/pages/Pacientes/Prontuario/ProntuarioPage';
 import { ConfigPage } from '@/pages/Configuracoes/ConfigPage';
 import { RelatoriosPage } from '@/pages/Relatorios/RelatoriosPage';
 import { ExamesPage } from '@/pages/Exames/ExamesPage';
-import { AlimentosPage } from '@/pages/Alimentos/AlimentosPage';
-import { PlanoAlimentarPdfPage } from '@/pages/Pacientes/Prontuario/PlanoAlimentarPdfPage';
 import { OnboardingPage } from '@/pages/Onboarding/OnboardingPage';
 import { EsqueciSenhaPage } from '@/pages/RedefinirSenha/EsqueciSenhaPage';
 import { RedefinirSenhaPage } from '@/pages/RedefinirSenha/RedefinirSenhaPage';
@@ -42,7 +40,6 @@ export function AppRoutes() {
 
         {/* Rotas protegidas (dashboard) */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/pacientes/:pacienteId/planos/:id/pdf" element={<PlanoAlimentarPdfPage />} />
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/agenda" element={<AgendaPage />} />
@@ -52,7 +49,6 @@ export function AppRoutes() {
             <Route path="/pacientes/:id/editar" element={<PacienteFormPage />} />
             <Route path="/pacientes/:pacienteId/comparativo" element={<ComparativoPage />} />
             <Route path="/exames" element={<ExamesPage />} />
-            <Route path="/alimentos" element={<AlimentosPage />} />
             <Route path="/relatorios" element={<RelatoriosPage />} />
             <Route path="/configuracoes" element={<ConfigPage />} />
             <Route
