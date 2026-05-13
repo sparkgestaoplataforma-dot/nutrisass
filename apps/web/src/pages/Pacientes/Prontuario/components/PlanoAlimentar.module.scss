@@ -174,15 +174,7 @@
 }
 
 .pdfBtn {
-  @include btn-ghost($gray-400);
-  opacity: 0.5;
-  cursor: not-allowed;
-  position: relative;
-
-  &:hover {
-    opacity: 0.5;
-    transform: none;
-  }
+  @include btn-ghost($primary);
 }
 
 .backBtn {
