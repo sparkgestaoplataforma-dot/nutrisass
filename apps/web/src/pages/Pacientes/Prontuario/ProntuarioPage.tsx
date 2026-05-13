@@ -24,6 +24,7 @@ import {
   Calculator01Icon,
   DocumentCodeFreeIcons,
   AlertCircleIcon,
+  Restaurant01Icon,
 } from "@hugeicons/core-free-icons";
 import { Skeleton } from "@/components/Loading/Skeleton";
 import { SkeletonObservacao } from "@/components/Loading/skeletons/SkeletonObservacao";
@@ -33,6 +34,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { EstadoClinicoTimeline } from "./components/EstadoClinicoTimeline";
 import { MedidasTab } from "./components/MedidasTab";
 import { ExamesTab } from "./components/ExamesTab";
+import { PlanoAlimentarTab } from "./components/PlanoAlimentarTab";
 import styles from "./ProntuarioPage.module.scss";
 import {
   Avaliacoes,
@@ -47,7 +49,7 @@ import {
 } from "@/utils/scoreInterpretacao";
 import { LoadingError } from "@/components/Loading/LoadingError";
 
-type View = "atendimento" | "medidas" | "exames";
+type View = "atendimento" | "medidas" | "exames" | "planoAlimentar";
 
 function getInitials(nome: string): string {
   return nome
@@ -167,6 +169,30 @@ export function ProntuarioPage() {
   const isNutricionista = user?.perfil === "NUTRICIONISTA";
 
   // Sub-views (Medidas / Exames)
+  if (view === "planoAlimentar") {
+    return (
+      <div>
+        <button
+          className={styles.backBtn}
+          onClick={() => setView("atendimento")}
+        >
+          <HugeiconsIcon icon={ArrowLeft01Icon} size={16} strokeWidth={2} />
+          <span>Voltar ao Prontuário</span>
+        </button>
+        <div className={styles.subViewHeader}>
+          <div className={styles.subViewAvatar}>
+            {getInitials(paciente?.nome || "??")}
+          </div>
+          <div>
+            <h2 className={styles.subViewTitle}>Plano Alimentar</h2>
+            <p className={styles.subViewSubtitle}>{paciente?.nome}</p>
+          </div>
+        </div>
+        <PlanoAlimentarTab pacienteId={id!} />
+      </div>
+    );
+  }
+
   if (view === "medidas" || view === "exames") {
     return (
       <div>
@@ -312,6 +338,16 @@ export function ProntuarioPage() {
               <HugeiconsIcon icon={ClipboardIcon} size={16} strokeWidth={1.8} />
             </div>
             <span>Questionários</span>
+            <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
+          </button>
+          <button
+            className={styles.sideNavItem}
+            onClick={() => setView("planoAlimentar")}
+          >
+            <div className={styles.sideNavIcon}>
+              <HugeiconsIcon icon={Restaurant01Icon} size={16} strokeWidth={1.8} />
+            </div>
+            <span>Plano Alimentar</span>
             <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
           </button>
         </aside>
