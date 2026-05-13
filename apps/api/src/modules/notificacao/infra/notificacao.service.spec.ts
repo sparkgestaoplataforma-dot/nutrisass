@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/shared/providers/__mocks__/prisma";
 import {
-  buscarNotificacoesService,
-  criarNotificacaoEEmitir,
-  marcarComoLidaOuNaoLidaService,
-  marcarTodasComoLidaService,
+  pegarNotificacoes,
+  criarNotificacao,
+  marcarNotificacaoComoLida,
+  marcarTodasNotificacoesComoLida,
 } from "./notificacao.service";
 import { AppError } from "@/shared/middlewares/errorHandler";
 import * as socketProvider from "@/shared/providers/socket";
@@ -25,13 +25,13 @@ describe("notificacao.service", () => {
   const mockUsuarioId = "usuario-1";
   const mockNotificacaoId = "notificacao-1";
 
-  describe("buscarNotificacoesService", () => {
+  describe("pegarNotificacoes", () => {
     it("deve retornar notificações do usuário", async () => {
       prismaMock.notificacao.findMany.mockResolvedValue([
         { id: mockNotificacaoId, titulo: "Teste" }
       ] as any);
 
-      const result = await buscarNotificacoesService(mockClinicaId, mockUsuarioId);
+      const result = await pegarNotificacoes(mockClinicaId, mockUsuarioId);
 
       expect(prismaMock.notificacao.findMany).toHaveBeenCalledWith({
         where: { clinicaId: mockClinicaId, usuarioId: mockUsuarioId },
@@ -42,11 +42,11 @@ describe("notificacao.service", () => {
 
     it("deve lançar erro se o prisma falhar", async () => {
       prismaMock.notificacao.findMany.mockRejectedValue(new Error("DB Error"));
-      await expect(buscarNotificacoesService(mockClinicaId, mockUsuarioId)).rejects.toThrow(new AppError("não foi possivel buscar por notificações", 500));
+      await expect(pegarNotificacoes(mockClinicaId, mockUsuarioId)).rejects.toThrow(new AppError("não foi possivel buscar por notificações", 500));
     });
   });
 
-  describe("criarNotificacaoEEmitir", () => {
+  describe("criarNotificacao", () => {
     it("deve criar e emitir notificação", async () => {
       prismaMock.notificacao.create.mockResolvedValue({ id: mockNotificacaoId, titulo: "Teste" } as any);
 
@@ -57,7 +57,7 @@ describe("notificacao.service", () => {
         titulo: "Teste"
       };
 
-      const result = await criarNotificacaoEEmitir(data);
+      const result = await criarNotificacao(data);
 
       expect(prismaMock.notificacao.create).toHaveBeenCalled();
       expect(socketProvider.getIO().to).toHaveBeenCalledWith(`user:${mockUsuarioId}`);
@@ -66,12 +66,12 @@ describe("notificacao.service", () => {
     });
   });
 
-  describe("marcarComoLidaOuNaoLidaService", () => {
+  describe("marcarNotificacaoComoLida", () => {
     it("deve alternar o status de leitura da notificação", async () => {
       prismaMock.notificacao.findFirst.mockResolvedValue({ id: mockNotificacaoId, mensagemLida: false, titulo: "Teste" } as any);
       prismaMock.notificacao.update.mockResolvedValue({} as any);
 
-      const result = await marcarComoLidaOuNaoLidaService(mockNotificacaoId);
+      const result = await marcarNotificacaoComoLida(mockNotificacaoId);
 
       expect(prismaMock.notificacao.update).toHaveBeenCalledWith({
         where: { id: mockNotificacaoId },
@@ -82,15 +82,15 @@ describe("notificacao.service", () => {
 
     it("deve lançar erro se notificação não for encontrada", async () => {
       prismaMock.notificacao.findFirst.mockResolvedValue(null);
-      await expect(marcarComoLidaOuNaoLidaService(mockNotificacaoId)).rejects.toThrow(new AppError("notificação não encontrada", 404));
+      await expect(marcarNotificacaoComoLida(mockNotificacaoId)).rejects.toThrow(new AppError("notificação não encontrada", 404));
     });
   });
 
-  describe("marcarTodasComoLidaService", () => {
+  describe("marcarTodasNotificacoesComoLida", () => {
     it("deve marcar todas como lidas", async () => {
       prismaMock.notificacao.updateMany.mockResolvedValue({ count: 2 } as any);
 
-      const result = await marcarTodasComoLidaService(mockClinicaId, mockUsuarioId);
+      const result = await marcarTodasNotificacoesComoLida(mockClinicaId, mockUsuarioId);
 
       expect(prismaMock.notificacao.updateMany).toHaveBeenCalledWith({
         where: { clinicaId: mockClinicaId, usuarioId: mockUsuarioId, mensagemLida: false },

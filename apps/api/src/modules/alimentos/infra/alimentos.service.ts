@@ -2,7 +2,7 @@ import { prisma } from "../../../shared/providers/prisma.js";
 import { AppError } from "../../../shared/middlewares/errorHandler.js";
 import { AlimentoInput } from "@nutricao/shared";
 
-export async function listar(clinicaId: string, q?: string, page: number = 1, limit: number = 20) {
+export async function pegarAlimentos(clinicaId: string, q?: string, page: number = 1, limit: number = 20) {
   const skip = (page - 1) * limit;
   
   const where: any = {
@@ -40,7 +40,7 @@ export async function listar(clinicaId: string, q?: string, page: number = 1, li
   };
 }
 
-export async function criar(clinicaId: string, data: AlimentoInput) {
+export async function criarAlimento(clinicaId: string, data: AlimentoInput) {
   const { medidasCaseiras, ...alimentoData } = data;
 
   const alimento = await prisma.alimento.create({
@@ -62,7 +62,7 @@ export async function criar(clinicaId: string, data: AlimentoInput) {
   return alimento;
 }
 
-export async function buscarPorId(id: string, clinicaId: string) {
+export async function pegarAlimentoPorId(id: string, clinicaId: string) {
   const alimento = await prisma.alimento.findFirst({
     where: {
       id,

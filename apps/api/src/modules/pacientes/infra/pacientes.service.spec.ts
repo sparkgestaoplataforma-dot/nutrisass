@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/shared/providers/__mocks__/prisma";
-import { criarAvaliacao, buscarNomePorId, listarAvaliacoes } from "./pacientes.service";
+import { criarAvaliacaoPaciente, pegarNomePacientePorId, pegarAvaliacoesPaciente } from "./pacientes.service";
 import { AppError } from "@/shared/middlewares/errorHandler";
 import * as avaliacoesService from "../../avaliacoes/infra/avaliacoes.service";
 
@@ -17,11 +17,11 @@ describe("pacientes.service", () => {
   const mockClinicaId = "clinica-1";
   const mockQuestionarioId = "questionario-1";
 
-  describe("buscarNomePorId", () => {
+  describe("pegarNomePacientePorId", () => {
     it("deve retornar o nome do paciente", async () => {
       prismaMock.paciente.findUnique.mockResolvedValue({ nome: "João" } as any);
 
-      const result = await buscarNomePorId(mockPacienteId);
+      const result = await pegarNomePacientePorId(mockPacienteId);
 
       expect(prismaMock.paciente.findUnique).toHaveBeenCalledWith({
         where: { id: mockPacienteId },
@@ -33,11 +33,11 @@ describe("pacientes.service", () => {
     it("deve lançar erro se paciente não for encontrado", async () => {
       prismaMock.paciente.findUnique.mockResolvedValue(null);
 
-      await expect(buscarNomePorId(mockPacienteId)).rejects.toThrow(new AppError("Paciente não encontrado", 404));
+      await expect(pegarNomePacientePorId(mockPacienteId)).rejects.toThrow(new AppError("Paciente não encontrado", 404));
     });
   });
 
-  describe("criarAvaliacao", () => {
+  describe("criarAvaliacaoPaciente", () => {
     it("deve criar uma avaliação com sucesso", async () => {
       prismaMock.paciente.findUnique.mockResolvedValue({ id: mockPacienteId, clinicaId: mockClinicaId } as any);
       prismaMock.questionario.findUnique.mockResolvedValue({ id: mockQuestionarioId, clinicaId: mockClinicaId, ativo: true } as any);
@@ -47,7 +47,7 @@ describe("pacientes.service", () => {
         respostas: [{ perguntaId: "p1", nota: 5 }, { perguntaId: "p2", nota: 5 }]
       };
 
-      const result = await criarAvaliacao(mockPacienteId, mockQuestionarioId, data);
+      const result = await criarAvaliacaoPaciente(mockPacienteId, mockQuestionarioId, data);
 
       expect(prismaMock.avaliacao.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -65,34 +65,34 @@ describe("pacientes.service", () => {
 
     it("deve lançar erro se o paciente não for encontrado", async () => {
       prismaMock.paciente.findUnique.mockResolvedValue(null);
-      await expect(criarAvaliacao(mockPacienteId, mockQuestionarioId, { respostas: [] })).rejects.toThrow(new AppError("Paciente não encontrado", 404));
+      await expect(criarAvaliacaoPaciente(mockPacienteId, mockQuestionarioId, { respostas: [] })).rejects.toThrow(new AppError("Paciente não encontrado", 404));
     });
 
     it("deve lançar erro se o questionário não for encontrado", async () => {
       prismaMock.paciente.findUnique.mockResolvedValue({ id: mockPacienteId, clinicaId: mockClinicaId } as any);
       prismaMock.questionario.findUnique.mockResolvedValue(null);
 
-      await expect(criarAvaliacao(mockPacienteId, mockQuestionarioId, { respostas: [] })).rejects.toThrow(new AppError("Questionário não encontrado", 404));
+      await expect(criarAvaliacaoPaciente(mockPacienteId, mockQuestionarioId, { respostas: [] })).rejects.toThrow(new AppError("Questionário não encontrado", 404));
     });
 
     it("deve lançar erro se o questionário estiver inativo", async () => {
       prismaMock.paciente.findUnique.mockResolvedValue({ id: mockPacienteId, clinicaId: mockClinicaId } as any);
       prismaMock.questionario.findUnique.mockResolvedValue({ id: mockQuestionarioId, clinicaId: mockClinicaId, ativo: false } as any);
 
-      await expect(criarAvaliacao(mockPacienteId, mockQuestionarioId, { respostas: [] })).rejects.toThrow(new AppError("Questionário inativo. Utilize a versão ativa mais recente", 400));
+      await expect(criarAvaliacaoPaciente(mockPacienteId, mockQuestionarioId, { respostas: [] })).rejects.toThrow(new AppError("Questionário inativo. Utilize a versão ativa mais recente", 400));
     });
 
     it("deve lançar erro se o paciente e questionário forem de clínicas diferentes", async () => {
       prismaMock.paciente.findUnique.mockResolvedValue({ id: mockPacienteId, clinicaId: mockClinicaId } as any);
       prismaMock.questionario.findUnique.mockResolvedValue({ id: mockQuestionarioId, clinicaId: "outra-clinica", ativo: true } as any);
 
-      await expect(criarAvaliacao(mockPacienteId, mockQuestionarioId, { respostas: [] })).rejects.toThrow(new AppError("Paciente e questionário não pertencem à mesma clínica", 400));
+      await expect(criarAvaliacaoPaciente(mockPacienteId, mockQuestionarioId, { respostas: [] })).rejects.toThrow(new AppError("Paciente e questionário não pertencem à mesma clínica", 400));
     });
   });
 
-  describe("listarAvaliacoes", () => {
+  describe("pegarAvaliacoesPaciente", () => {
     it("deve repassar a chamada para avaliacoesService", async () => {
-      await listarAvaliacoes(mockPacienteId, mockClinicaId, 1, 10);
+      await pegarAvaliacoesPaciente(mockPacienteId, mockClinicaId, 1, 10);
       expect(avaliacoesService.pegarAvaliacoesPorPacienteId).toHaveBeenCalledWith(mockPacienteId, mockClinicaId, 1, 10);
     });
   });

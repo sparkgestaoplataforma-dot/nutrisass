@@ -158,7 +158,7 @@ export async function resolverQuestionarioParaMutacaoEstrutural(
   return { questionarioId: novoQuestionario.id, versionado: true };
 }
 
-export async function criar(clinicaId: string, data: CreateQuestionarioInput) {
+export async function criarQuestionario(clinicaId: string, data: CreateQuestionarioInput) {
   const clinica = await prisma.clinica.findUnique({
     where: { id: clinicaId },
   });
@@ -186,7 +186,7 @@ export async function criar(clinicaId: string, data: CreateQuestionarioInput) {
   return questionario;
 }
 
-export async function listar(
+export async function pegarQuestionarios(
   clinicaId: string,
   params: ListarQuestionariosParams,
 ) {
@@ -251,7 +251,7 @@ export async function listar(
   };
 }
 
-export async function listarModulosComPerguntas(
+export async function pegarQuestionarioPorId(
   questionarioId: string,
   params: ListarQuestionarioCompletoParams,
 ) {
@@ -373,7 +373,7 @@ export async function excluirTituloEscolha(
   });
 }
 
-export async function editar(
+export async function editarQuestionario(
   clinicaId: string,
   questionarioId: string,
   data: UpdateQuestionarioInput,
@@ -417,7 +417,7 @@ export async function editar(
   return questionario;
 }
 
-export async function excluir(clinicaId: string, questionarioId: string) {
+export async function excluirQuestionario(clinicaId: string, questionarioId: string) {
   const existente = await prisma.questionario.findFirst({
     where: { id: questionarioId, clinicaId },
     select: { id: true, ativo: true },

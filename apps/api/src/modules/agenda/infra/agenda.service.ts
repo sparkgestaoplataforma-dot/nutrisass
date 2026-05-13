@@ -1,7 +1,7 @@
 import { prisma } from "../../../shared/providers/prisma.js";
 import { AppError } from "../../../shared/middlewares/errorHandler.js";
 import type { CreateAgendamentoInput, UpdateAgendamentoInput, UpdateStatusInput } from "@nutricao/shared";
-import { criarNotificacaoEEmitir } from "../../notificacao/infra/notificacao.service.js";
+import { criarNotificacao } from "../../notificacao/infra/notificacao.service.js";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -10,7 +10,7 @@ function parseLocalDate(date: string) {
   return new Date(year, month - 1, day);
 }
 
-export async function ListarAgendaDia(data: string, clinicaId: string, usuarioId?: string) {
+export async function pegarAgendamentosDia(data: string, clinicaId: string, usuarioId?: string) {
   const inicio = parseLocalDate(data);
   inicio.setHours(0, 0, 0, 0);
 
@@ -40,7 +40,7 @@ export async function ListarAgendaDia(data: string, clinicaId: string, usuarioId
   return agendamentos;
 }
 
-export async function CriarAgendamento(input: CreateAgendamentoInput, usuarioId: string, clinicaId: string) {
+export async function criarAgendamento(input: CreateAgendamentoInput, usuarioId: string, clinicaId: string) {
   const [paciente, nutricionista] = await Promise.all([
     prisma.paciente.findUnique({ where: { id: input.pacienteId } }),
     prisma.usuario.findUnique({ where: { id: input.nutricionistaId } })
@@ -70,7 +70,7 @@ export async function CriarAgendamento(input: CreateAgendamentoInput, usuarioId:
     },
   });
 
-  await criarNotificacaoEEmitir({
+  await criarNotificacao({
     clinicaId,
     usuarioId: nutricionista.id,
     tipo: "LEMBRETE_CONSULTA",
@@ -83,7 +83,7 @@ export async function CriarAgendamento(input: CreateAgendamentoInput, usuarioId:
   return agendamento;
 }
 
-export async function EditarAgendamento(id: string, input: UpdateAgendamentoInput) {
+export async function editarAgendamento(id: string, input: UpdateAgendamentoInput) {
   const existente = await prisma.agendamento.findUnique({ where: { id } });
 
   if (!existente) {
@@ -116,7 +116,7 @@ export async function EditarAgendamento(id: string, input: UpdateAgendamentoInpu
   return agendamento;
 }
 
-export async function AlterarStatus(id: string, input: UpdateStatusInput) {
+export async function alterarStatusAgendamento(id: string, input: UpdateStatusInput) {
   const existente = await prisma.agendamento.findUnique({
     where: { id },
     include: { paciente: true },
@@ -139,7 +139,7 @@ export async function AlterarStatus(id: string, input: UpdateStatusInput) {
   });
 
   if (novoStatus === "PRESENTE" && statusAnterior !== "PRESENTE") {
-    await criarNotificacaoEEmitir({
+    await criarNotificacao({
       clinicaId: agendamento.clinicaId,
       usuarioId: agendamento.usuarioId,
       tipo: "PACIENTE_CHEGOU",
@@ -153,7 +153,7 @@ export async function AlterarStatus(id: string, input: UpdateStatusInput) {
   return agendamento;
 }
 
-export async function ExcluirAgendamento(id: string) {
+export async function excluirAgendamento(id: string) {
   const existente = await prisma.agendamento.findUnique({ where: { id } });
 
   if (!existente) {

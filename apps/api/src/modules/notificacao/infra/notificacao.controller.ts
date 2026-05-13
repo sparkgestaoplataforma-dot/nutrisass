@@ -1,17 +1,17 @@
 import { Request, Response } from "express";
 import {
-  buscarNotificacoesService,
-  marcarComoLidaOuNaoLidaService,
-  marcarTodasComoLidaService,
-  criarNotificacaoEEmitir,
+  pegarNotificacoes,
+  marcarNotificacaoComoLida,
+  marcarTodasNotificacoesComoLida,
+  criarNotificacao as criarNotificacaoService,
 } from "./notificacao.service";
 
-export async function buscarTodasNotificações(
+export async function buscar(
   req: Request<{ clinicaId: string; usuarioId: string }>,
   res: Response,
 ) {
   const { clinicaId, usuarioId } = req.params;
-  const bucarNotificacoes = await buscarNotificacoesService(
+  const bucarNotificacoes = await pegarNotificacoes(
     clinicaId,
     usuarioId,
   );
@@ -32,20 +32,20 @@ export async function criarNotificacao(
   res: Response,
 ) {
   const data = req.body;
-  const criarNotificacao = await criarNotificacaoEEmitir(data);
+  const criarNotificacaoResult = await criarNotificacaoService(data);
 
   return res.json({
     sucess: true,
-    data: criarNotificacao,
+    data: criarNotificacaoResult,
   });
 }
 
-export async function marcarComoLidaOuNaoLida(
+export async function marcarComoLida(
   req: Request<{ id: string }>,
   res: Response,
 ) {
   const { id } = req.params;
-  const notificacao = await marcarComoLidaOuNaoLidaService(id);
+  const notificacao = await marcarNotificacaoComoLida(id);
   return res.json({
     sucess: true,
     data: notificacao,
@@ -57,7 +57,7 @@ export async function marcarTodasComoLida(
   res: Response,
 ) {
   const { clinicaId, usuarioId } = req.params;
-  const lerNotificacoes = await marcarTodasComoLidaService(
+  const lerNotificacoes = await marcarTodasNotificacoesComoLida(
     clinicaId,
     usuarioId,
   );

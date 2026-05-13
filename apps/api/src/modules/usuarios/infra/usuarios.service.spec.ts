@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/shared/providers/__mocks__/prisma";
 import {
-  ListarUsuarios,
-  ListarTodosNutricionistas,
-  CriarUsuario,
-  EditarUsuario,
-  ExcluirUsuario,
-  EsqueciSenha,
-  AlterarSenha,
+  pegarUsuarios,
+  pegarTodosNutricionistas,
+  criarUsuario,
+  editarUsuario,
+  excluirUsuario,
+  esqueciSenha,
+  alterarSenha,
 } from "./usuarios.service";
 import { AppError } from "@/shared/middlewares/errorHandler";
 import bcrypt from "bcryptjs";
@@ -27,13 +27,13 @@ describe("usuarios.service", () => {
   const mockClinicaId = "clinica-1";
   const mockUsuarioId = "usuario-1";
 
-  describe("ListarUsuarios", () => {
+  describe("pegarUsuarios", () => {
     it("deve retornar uma lista de usuários da clínica", async () => {
       prismaMock.usuario.findMany.mockResolvedValue([
         { id: mockUsuarioId, nome: "João", email: "joao@example.com" },
       ] as any);
 
-      const result = await ListarUsuarios(mockClinicaId);
+      const result = await pegarUsuarios(mockClinicaId);
 
       expect(prismaMock.usuario.findMany).toHaveBeenCalledWith({
         where: { clinicaId: mockClinicaId },
@@ -44,13 +44,13 @@ describe("usuarios.service", () => {
     });
   });
 
-  describe("ListarTodosNutricionistas", () => {
+  describe("pegarTodosNutricionistas", () => {
     it("deve retornar apenas usuários com perfil NUTRICIONISTA", async () => {
       prismaMock.usuario.findMany.mockResolvedValue([
         { id: "nutri-1", nome: "Maria", perfil: "NUTRICIONISTA" },
       ] as any);
 
-      const result = await ListarTodosNutricionistas(mockClinicaId);
+      const result = await pegarTodosNutricionistas(mockClinicaId);
 
       expect(prismaMock.usuario.findMany).toHaveBeenCalledWith({
         where: {
@@ -62,7 +62,7 @@ describe("usuarios.service", () => {
     });
   });
 
-  describe("CriarUsuario", () => {
+  describe("criarUsuario", () => {
     it("deve criar um novo usuário com sucesso", async () => {
       prismaMock.usuario.findUnique.mockResolvedValue(null);
       prismaMock.usuario.create.mockResolvedValue({
@@ -72,7 +72,7 @@ describe("usuarios.service", () => {
       } as any);
 
       const data = { nome: "Novo", email: "novo@example.com", senha: "123", perfil: "NUTRICIONISTA" };
-      const result = await CriarUsuario(mockClinicaId, data);
+      const result = await criarUsuario(mockClinicaId, data);
 
       expect(prismaMock.usuario.findUnique).toHaveBeenCalledWith({ where: { email: data.email } });
       expect(bcrypt.hash).toHaveBeenCalledWith("123", 10);
@@ -85,16 +85,16 @@ describe("usuarios.service", () => {
 
       const data = { nome: "Novo", email: "existente@example.com", senha: "123", perfil: "NUTRICIONISTA" };
       
-      await expect(CriarUsuario(mockClinicaId, data)).rejects.toThrow(new AppError("E-mail já cadastrado", 409));
+      await expect(criarUsuario(mockClinicaId, data)).rejects.toThrow(new AppError("E-mail já cadastrado", 409));
     });
   });
 
-  describe("EditarUsuario", () => {
+  describe("editarUsuario", () => {
     it("deve atualizar um usuário existente", async () => {
       prismaMock.usuario.findFirst.mockResolvedValue({ id: mockUsuarioId, clinicaId: mockClinicaId } as any);
       prismaMock.usuario.update.mockResolvedValue({ id: mockUsuarioId, nome: "Atualizado" } as any);
 
-      const result = await EditarUsuario(mockUsuarioId, mockClinicaId, { nome: "Atualizado" });
+      const result = await editarUsuario(mockUsuarioId, mockClinicaId, { nome: "Atualizado" });
 
       expect(prismaMock.usuario.update).toHaveBeenCalled();
       expect(result.nome).toBe("Atualizado");
@@ -104,7 +104,7 @@ describe("usuarios.service", () => {
       prismaMock.usuario.findFirst.mockResolvedValue({ id: mockUsuarioId, clinicaId: mockClinicaId } as any);
       prismaMock.usuario.update.mockResolvedValue({ id: mockUsuarioId } as any);
 
-      await EditarUsuario(mockUsuarioId, mockClinicaId, { senha: "nova-senha" });
+      await editarUsuario(mockUsuarioId, mockClinicaId, { senha: "nova-senha" });
 
       expect(bcrypt.hash).toHaveBeenCalledWith("nova-senha", 10);
       expect(prismaMock.usuario.update).toHaveBeenCalledWith(
@@ -117,16 +117,16 @@ describe("usuarios.service", () => {
     it("deve lançar erro se o usuário não for encontrado", async () => {
       prismaMock.usuario.findFirst.mockResolvedValue(null);
 
-      await expect(EditarUsuario(mockUsuarioId, mockClinicaId, {})).rejects.toThrow(new AppError("Usuário não encontrado", 404));
+      await expect(editarUsuario(mockUsuarioId, mockClinicaId, {})).rejects.toThrow(new AppError("Usuário não encontrado", 404));
     });
   });
 
-  describe("ExcluirUsuario", () => {
+  describe("excluirUsuario", () => {
     it("deve excluir o usuário com sucesso", async () => {
       prismaMock.usuario.findFirst.mockResolvedValue({ id: mockUsuarioId, perfil: "NUTRICIONISTA" } as any);
       prismaMock.usuario.delete.mockResolvedValue({} as any);
 
-      const result = await ExcluirUsuario(mockUsuarioId, mockClinicaId);
+      const result = await excluirUsuario(mockUsuarioId, mockClinicaId);
 
       expect(prismaMock.usuario.delete).toHaveBeenCalledWith({ where: { id: mockUsuarioId } });
       expect(result.message).toBe("Usuário excluído");
@@ -136,15 +136,15 @@ describe("usuarios.service", () => {
       prismaMock.usuario.findFirst.mockResolvedValue({ id: mockUsuarioId, perfil: "ADMIN" } as any);
       prismaMock.usuario.count.mockResolvedValue(1); // Só tem ele
 
-      await expect(ExcluirUsuario(mockUsuarioId, mockClinicaId)).rejects.toThrow(new AppError("Não é possível excluir o último administrador", 400));
+      await expect(excluirUsuario(mockUsuarioId, mockClinicaId)).rejects.toThrow(new AppError("Não é possível excluir o último administrador", 400));
     });
   });
 
-  describe("EsqueciSenha", () => {
+  describe("esqueciSenha", () => {
     it("deve retornar sucesso se o e-mail existir", async () => {
       prismaMock.usuario.findUnique.mockResolvedValue({ id: mockUsuarioId } as any);
 
-      const result = await EsqueciSenha("teste@example.com");
+      const result = await esqueciSenha("teste@example.com");
 
       expect(result.found).toBe(true);
     });
@@ -152,15 +152,15 @@ describe("usuarios.service", () => {
     it("deve lançar erro se o e-mail não existir", async () => {
       prismaMock.usuario.findUnique.mockResolvedValue(null);
 
-      await expect(EsqueciSenha("naoexiste@example.com")).rejects.toThrow(new AppError("Email não encontrado", 404));
+      await expect(esqueciSenha("naoexiste@example.com")).rejects.toThrow(new AppError("Email não encontrado", 404));
     });
   });
 
-  describe("AlterarSenha", () => {
+  describe("alterarSenha", () => {
     it("deve alterar a senha com sucesso", async () => {
       prismaMock.usuario.update.mockResolvedValue({ id: mockUsuarioId } as any);
 
-      const result = await AlterarSenha("teste@example.com", "nova-senha");
+      const result = await alterarSenha("teste@example.com", "nova-senha");
 
       expect(bcrypt.hash).toHaveBeenCalledWith("nova-senha", 10);
       expect(prismaMock.usuario.update).toHaveBeenCalledWith({

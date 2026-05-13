@@ -26,11 +26,11 @@ describe("planos-alimentares.controller", () => {
   describe("criar", () => {
     it("deve criar um plano alimentar e retornar 201", async () => {
       req.body = { titulo: "Plano 1" };
-      vi.mocked(service.criar).mockResolvedValue({ id: "1", titulo: "Plano 1" } as any);
+      vi.mocked(service.criarPlanoAlimentar).mockResolvedValue({ id: "1", titulo: "Plano 1" } as any);
 
       await controller.criar(req as Request, res as Response);
 
-      expect(service.criar).toHaveBeenCalledWith("clinica-1", "usuario-1", req.body);
+      expect(service.criarPlanoAlimentar).toHaveBeenCalledWith("clinica-1", "usuario-1", req.body);
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({ success: true, data: { id: "1", titulo: "Plano 1" } });
     });
@@ -38,32 +38,32 @@ describe("planos-alimentares.controller", () => {
 
   describe("listar", () => {
     it("deve listar os planos da clínica", async () => {
-      vi.mocked(service.listar).mockResolvedValue([{ id: "1" }] as any);
+      vi.mocked(service.pegarPlanosAlimentares).mockResolvedValue([{ id: "1" }] as any);
 
       await controller.listar(req as Request, res as Response);
 
-      expect(service.listar).toHaveBeenCalledWith("clinica-1", undefined);
+      expect(service.pegarPlanosAlimentares).toHaveBeenCalledWith("clinica-1", undefined);
       expect(res.json).toHaveBeenCalledWith({ success: true, data: [{ id: "1" }] });
     });
 
     it("deve passar pacienteId se fornecido na query", async () => {
       req.query = { pacienteId: "paciente-1" };
-      vi.mocked(service.listar).mockResolvedValue([] as any);
+      vi.mocked(service.pegarPlanosAlimentares).mockResolvedValue([] as any);
 
       await controller.listar(req as Request, res as Response);
 
-      expect(service.listar).toHaveBeenCalledWith("clinica-1", "paciente-1");
+      expect(service.pegarPlanosAlimentares).toHaveBeenCalledWith("clinica-1", "paciente-1");
     });
   });
 
   describe("buscarPorId", () => {
     it("deve buscar por ID e retornar o plano", async () => {
       req.params = { id: "plano-1" };
-      vi.mocked(service.buscarPorId).mockResolvedValue({ id: "plano-1" } as any);
+      vi.mocked(service.pegarPlanoAlimentarPorId).mockResolvedValue({ id: "plano-1" } as any);
 
       await controller.buscarPorId(req as any, res as Response);
 
-      expect(service.buscarPorId).toHaveBeenCalledWith("plano-1", "clinica-1");
+      expect(service.pegarPlanoAlimentarPorId).toHaveBeenCalledWith("plano-1", "clinica-1");
       expect(res.json).toHaveBeenCalledWith({ success: true, data: { id: "plano-1" } });
     });
   });
@@ -72,11 +72,11 @@ describe("planos-alimentares.controller", () => {
     it("deve editar o plano e retornar", async () => {
       req.params = { id: "plano-1" };
       req.body = { titulo: "Plano Atualizado" };
-      vi.mocked(service.atualizar).mockResolvedValue({ id: "plano-1", titulo: "Plano Atualizado" } as any);
+      vi.mocked(service.editarPlanoAlimentar).mockResolvedValue({ id: "plano-1", titulo: "Plano Atualizado" } as any);
 
       await controller.editar(req as any, res as Response);
 
-      expect(service.atualizar).toHaveBeenCalledWith("plano-1", "clinica-1", req.body);
+      expect(service.editarPlanoAlimentar).toHaveBeenCalledWith("plano-1", "clinica-1", req.body);
       expect(res.json).toHaveBeenCalledWith({ success: true, data: { id: "plano-1", titulo: "Plano Atualizado" } });
     });
   });
@@ -84,11 +84,11 @@ describe("planos-alimentares.controller", () => {
   describe("excluir", () => {
     it("deve excluir o plano e retornar sucesso", async () => {
       req.params = { id: "plano-1" };
-      vi.mocked(service.deletar).mockResolvedValue({ success: true });
+      vi.mocked(service.excluirPlanoAlimentar).mockResolvedValue({ success: true });
 
       await controller.excluir(req as any, res as Response);
 
-      expect(service.deletar).toHaveBeenCalledWith("plano-1", "clinica-1");
+      expect(service.excluirPlanoAlimentar).toHaveBeenCalledWith("plano-1", "clinica-1");
       expect(res.json).toHaveBeenCalledWith({ success: true, message: "Plano alimentar excluído com sucesso" });
     });
   });

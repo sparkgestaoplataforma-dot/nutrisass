@@ -3,7 +3,7 @@ import { AppError } from "../../../shared/middlewares/errorHandler.js";
 import { CreatePacienteQuestionarioAvaliacaoInput } from "@nutricao/shared";
 import { pegarAvaliacoesPorPacienteId as buscarAvaliacoesService } from "../../avaliacoes/infra/avaliacoes.service.js";
 
-export async function criarAvaliacao(
+export async function criarAvaliacaoPaciente(
   id: string,
   questionarioId: string,
   data: CreatePacienteQuestionarioAvaliacaoInput,
@@ -61,7 +61,7 @@ export async function criarAvaliacao(
   return avaliacao;
 }
 
-export async function buscarNomePorId(id: string) {
+export async function pegarNomePacientePorId(id: string) {
   const paciente = await prisma.paciente.findUnique({
     where: { id },
     select: { nome: true },
@@ -74,7 +74,7 @@ export async function buscarNomePorId(id: string) {
   return paciente.nome;
 }
 
-export async function listarAvaliacoes(
+export async function pegarAvaliacoesPaciente(
   pacienteId: string,
   clinicaId: string,
   page?: number,

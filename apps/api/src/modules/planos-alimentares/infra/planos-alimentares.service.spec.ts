@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/shared/providers/__mocks__/prisma";
 import {
-  criar,
-  listar,
-  buscarPorId,
-  atualizar,
-  deletar,
+  criarPlanoAlimentar,
+  pegarPlanosAlimentares,
+  pegarPlanoAlimentarPorId,
+  editarPlanoAlimentar,
+  excluirPlanoAlimentar,
 } from "./planos-alimentares.service";
 import { AppError } from "@/shared/middlewares/errorHandler.js";
 
@@ -45,12 +45,12 @@ describe("planos-alimentares.service", () => {
     ],
   };
 
-  describe("criar", () => {
+  describe("criarPlanoAlimentar", () => {
     it("deve retornar erro 404 se o paciente não for encontrado na clínica", async () => {
       prismaMock.paciente.findFirst.mockResolvedValue(null);
 
       await expect(
-        criar("clinica-1", "usuario-1", mockPayload)
+        criarPlanoAlimentar("clinica-1", "usuario-1", mockPayload)
       ).rejects.toThrow(new AppError("Paciente não encontrado nesta clínica", 404));
     });
 
@@ -60,7 +60,7 @@ describe("planos-alimentares.service", () => {
       const mockPlanoCreated = { id: "plano-1", ...mockPayload };
       prismaMock.planoAlimentar.create.mockResolvedValue(mockPlanoCreated as any);
 
-      const result = await criar("clinica-1", "usuario-1", mockPayload);
+      const result = await criarPlanoAlimentar("clinica-1", "usuario-1", mockPayload);
 
       expect(prismaMock.planoAlimentar.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -79,11 +79,11 @@ describe("planos-alimentares.service", () => {
     });
   });
 
-  describe("listar", () => {
+  describe("pegarPlanosAlimentares", () => {
     it("deve listar os planos da clínica quando pacienteId não é informado", async () => {
       prismaMock.planoAlimentar.findMany.mockResolvedValue([{ id: "plano-1" }] as any);
 
-      const result = await listar("clinica-1");
+      const result = await pegarPlanosAlimentares("clinica-1");
 
       expect(prismaMock.planoAlimentar.findMany).toHaveBeenCalledWith({
         where: { clinicaId: "clinica-1" },
@@ -96,7 +96,7 @@ describe("planos-alimentares.service", () => {
     it("deve listar os planos filtrados pelo pacienteId", async () => {
       prismaMock.planoAlimentar.findMany.mockResolvedValue([{ id: "plano-1" }] as any);
 
-      await listar("clinica-1", "paciente-1");
+      await pegarPlanosAlimentares("clinica-1", "paciente-1");
 
       expect(prismaMock.planoAlimentar.findMany).toHaveBeenCalledWith({
         where: { clinicaId: "clinica-1", pacienteId: "paciente-1" },
@@ -106,19 +106,19 @@ describe("planos-alimentares.service", () => {
     });
   });
 
-  describe("buscarPorId", () => {
+  describe("pegarPlanoAlimentarPorId", () => {
     it("deve retornar erro 404 se o plano não existir na clínica informada", async () => {
       prismaMock.planoAlimentar.findFirst.mockResolvedValue(null);
 
       await expect(
-        buscarPorId("plano-1", "clinica-1")
+        pegarPlanoAlimentarPorId("plano-1", "clinica-1")
       ).rejects.toThrow(new AppError("Plano alimentar não encontrado", 404));
     });
 
     it("deve buscar o plano com suas relações", async () => {
       prismaMock.planoAlimentar.findFirst.mockResolvedValue({ id: "plano-1" } as any);
 
-      const result = await buscarPorId("plano-1", "clinica-1");
+      const result = await pegarPlanoAlimentarPorId("plano-1", "clinica-1");
 
       expect(prismaMock.planoAlimentar.findFirst).toHaveBeenCalledWith({
         where: { id: "plano-1", clinicaId: "clinica-1" },
@@ -128,12 +128,12 @@ describe("planos-alimentares.service", () => {
     });
   });
 
-  describe("atualizar", () => {
+  describe("editarPlanoAlimentar", () => {
     it("deve retornar erro 404 se o plano não existir", async () => {
       prismaMock.planoAlimentar.findFirst.mockResolvedValue(null);
 
       await expect(
-        atualizar("plano-1", "clinica-1", mockPayload)
+        editarPlanoAlimentar("plano-1", "clinica-1", mockPayload)
       ).rejects.toThrow(new AppError("Plano alimentar não encontrado", 404));
     });
 
@@ -149,7 +149,7 @@ describe("planos-alimentares.service", () => {
       prismaMock.planoAlimentar.update.mockResolvedValue({ id: "plano-1", titulo: "Novo Titulo" } as any);
 
       const updatePayload = { ...mockPayload, titulo: "Novo Titulo" };
-      const result = await atualizar("plano-1", "clinica-1", updatePayload);
+      const result = await editarPlanoAlimentar("plano-1", "clinica-1", updatePayload);
 
       expect(prismaMock.planoRefeicao.deleteMany).toHaveBeenCalledWith({
         where: { planoAlimentarId: "plano-1" },
@@ -170,12 +170,12 @@ describe("planos-alimentares.service", () => {
     });
   });
 
-  describe("deletar", () => {
+  describe("excluirPlanoAlimentar", () => {
     it("deve retornar erro 404 se o plano não existir ao deletar", async () => {
       prismaMock.planoAlimentar.findFirst.mockResolvedValue(null);
 
       await expect(
-        deletar("plano-1", "clinica-1")
+        excluirPlanoAlimentar("plano-1", "clinica-1")
       ).rejects.toThrow(new AppError("Plano alimentar não encontrado", 404));
       expect(prismaMock.planoAlimentar.delete).not.toHaveBeenCalled();
     });
@@ -184,7 +184,7 @@ describe("planos-alimentares.service", () => {
       prismaMock.planoAlimentar.findFirst.mockResolvedValue({ id: "plano-1" } as any);
       prismaMock.planoAlimentar.delete.mockResolvedValue({ id: "plano-1" } as any);
 
-      const result = await deletar("plano-1", "clinica-1");
+      const result = await excluirPlanoAlimentar("plano-1", "clinica-1");
 
       expect(prismaMock.planoAlimentar.delete).toHaveBeenCalledWith({
         where: { id: "plano-1" },

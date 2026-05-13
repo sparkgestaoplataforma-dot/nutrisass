@@ -2,7 +2,7 @@ import { prisma } from "../../../shared/providers/prisma.js";
 import { AppError } from "../../../shared/middlewares/errorHandler.js";
 import { getIO } from "../../../shared/providers/socket";
 
-export async function buscarNotificacoesService(
+export async function pegarNotificacoes(
   clinicaId: string,
   usuarioId: string,
 ) {
@@ -23,7 +23,7 @@ export async function buscarNotificacoesService(
   }
 }
 
-export async function criarNotificacaoEEmitir(data: {
+export async function criarNotificacao(data: {
   clinicaId: string;
   usuarioId: string;
   tipo: 'LEMBRETE_CONSULTA' | 'PACIENTE_CHEGOU' | 'SISTEMA';
@@ -51,7 +51,7 @@ export async function criarNotificacaoEEmitir(data: {
   }
 }
 
-export async function marcarComoLidaOuNaoLidaService(id: string) {
+export async function marcarNotificacaoComoLida(id: string) {
   try {
     const notificacao = await prisma.notificacao.findFirst({
       where: {
@@ -81,7 +81,7 @@ export async function marcarComoLidaOuNaoLidaService(id: string) {
   }
 }
 
-export async function marcarTodasComoLidaService(
+export async function marcarTodasNotificacoesComoLida(
   clinicaId: string,
   usuarioId: string,
 ) {

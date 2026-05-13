@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "../../../shared/providers/prisma.js";
 import { AppError } from "../../../shared/middlewares/errorHandler.js";
 
-export async function ListarUsuarios(clinicaId: string) {
+export async function pegarUsuarios(clinicaId: string) {
   const usuarios = await prisma.usuario.findMany({
     where: { clinicaId },
     select: {
@@ -17,7 +17,7 @@ export async function ListarUsuarios(clinicaId: string) {
   return usuarios;
 }
 
-export async function ListarTodosNutricionistas(clinicaId: string) {
+export async function pegarTodosNutricionistas(clinicaId: string) {
   const nutricionistas = await prisma.usuario.findMany({
     where: {
       clinicaId,
@@ -28,7 +28,7 @@ export async function ListarTodosNutricionistas(clinicaId: string) {
   return nutricionistas;
 }
 
-export async function CriarUsuario(clinicaId: string, data: any) {
+export async function criarUsuario(clinicaId: string, data: any) {
   const existente = await prisma.usuario.findUnique({
     where: { email: data.email },
   });
@@ -56,7 +56,7 @@ export async function CriarUsuario(clinicaId: string, data: any) {
   return usuario;
 }
 
-export async function EditarUsuario(id: string, clinicaId: string, body: any) {
+export async function editarUsuario(id: string, clinicaId: string, body: any) {
   const existente = await prisma.usuario.findFirst({
     where: { id, clinicaId },
   });
@@ -87,7 +87,7 @@ export async function EditarUsuario(id: string, clinicaId: string, body: any) {
   return usuario;
 }
 
-export async function ExcluirUsuario(id: string, clinicaId: string) {
+export async function excluirUsuario(id: string, clinicaId: string) {
   const existente = await prisma.usuario.findFirst({
     where: { id, clinicaId },
   });
@@ -106,7 +106,7 @@ export async function ExcluirUsuario(id: string, clinicaId: string) {
   return { message: "Usuário excluído" };
 }
 
-export async function EsqueciSenha(email: string) {
+export async function esqueciSenha(email: string) {
   const existente = await prisma.usuario.findUnique({
     where: { email },
   });
@@ -116,7 +116,7 @@ export async function EsqueciSenha(email: string) {
   return { email, found: !!existente };
 }
 
-export async function AlterarSenha(email: string, novaSenha: string) {
+export async function alterarSenha(email: string, novaSenha: string) {
   const senhaHash = await bcrypt.hash(novaSenha, 10);
   const atualizarSenha = await prisma.usuario.update({
     where: { email },

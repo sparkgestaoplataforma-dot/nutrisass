@@ -8,14 +8,14 @@ export async function listar(req: Request, res: Response) {
   const { data, usuarioId } = req.query;
 
   const dataStr = (data as string) || new Date().toISOString().split('T')[0];
-  const agendamentos = await service.ListarAgendaDia(dataStr, clinicaId, usuarioId as string);
+  const agendamentos = await service.pegarAgendamentosDia(dataStr, clinicaId, usuarioId as string);
 
   return res.json({ success: true, data: agendamentos });
 }
 
 export async function criar(req: Request, res: Response) {
   const clinicaId = getClinicaId(req);
-  const agendamento = await service.CriarAgendamento(req.body, req.user!.userId, clinicaId);
+  const agendamento = await service.criarAgendamento(req.body, req.user!.userId, clinicaId);
 
   getIO().emit('agenda:novo', agendamento);
 
@@ -24,7 +24,7 @@ export async function criar(req: Request, res: Response) {
 
 export async function editar(req: Request<{ id: string }>, res: Response) {
   const { id } = req.params;
-  const agendamento = await service.EditarAgendamento(id, req.body);
+  const agendamento = await service.editarAgendamento(id, req.body);
 
   getIO().emit('agenda:atualizado', agendamento);
 
@@ -33,7 +33,7 @@ export async function editar(req: Request<{ id: string }>, res: Response) {
 
 export async function alterarStatus(req: Request<{ id: string }>, res: Response) {
   const { id } = req.params;
-  const agendamento = await service.AlterarStatus(id, req.body);
+  const agendamento = await service.alterarStatusAgendamento(id, req.body);
 
   getIO().emit('agenda:status', agendamento);
 
@@ -42,7 +42,7 @@ export async function alterarStatus(req: Request<{ id: string }>, res: Response)
 
 export async function excluir(req: Request<{ id: string }>, res: Response) {
   const { id } = req.params;
-  await service.ExcluirAgendamento(id);
+  await service.excluirAgendamento(id);
 
   getIO().emit('agenda:excluido', { id });
 
