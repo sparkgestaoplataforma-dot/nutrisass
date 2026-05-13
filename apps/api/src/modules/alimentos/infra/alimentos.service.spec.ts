@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/shared/providers/__mocks__/prisma";
 import {
-  listar,
-  criar,
-  buscarPorId,
+  pegarAlimentos,
+  criarAlimento,
+  pegarAlimentoPorId,
 } from "./alimentos.service";
 import { AppError } from "@/shared/middlewares/errorHandler.js";
 
@@ -15,14 +15,14 @@ describe("alimentos.service", () => {
   const mockClinicaId = "clinica-1";
   const mockAlimentoId = "alimento-1";
 
-  describe("listar", () => {
+  describe("pegarAlimentos", () => {
     it("deve retornar uma lista de alimentos globais e da clinica", async () => {
       prismaMock.alimento.count.mockResolvedValue(1);
       prismaMock.alimento.findMany.mockResolvedValue([
         { id: mockAlimentoId, nome: "Arroz", clinicaId: null }
       ] as any);
 
-      const result = await listar(mockClinicaId);
+      const result = await pegarAlimentos(mockClinicaId);
 
       expect(prismaMock.alimento.count).toHaveBeenCalledWith({
         where: {
@@ -41,7 +41,7 @@ describe("alimentos.service", () => {
         { id: mockAlimentoId, nome: "Feijão" }
       ] as any);
 
-      await listar(mockClinicaId, "feijão");
+      await pegarAlimentos(mockClinicaId, "feijão");
 
       expect(prismaMock.alimento.count).toHaveBeenCalledWith({
         where: {
@@ -52,7 +52,7 @@ describe("alimentos.service", () => {
     });
   });
 
-  describe("criar", () => {
+  describe("criarAlimento", () => {
     it("deve criar um alimento vinculado à clínica", async () => {
       const payload = {
         nome: "Whey Protein",
@@ -68,7 +68,7 @@ describe("alimentos.service", () => {
         clinicaId: mockClinicaId
       } as any);
 
-      const result = await criar(mockClinicaId, payload);
+      const result = await criarAlimento(mockClinicaId, payload);
 
       expect(prismaMock.alimento.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -88,12 +88,12 @@ describe("alimentos.service", () => {
     });
   });
 
-  describe("buscarPorId", () => {
+  describe("pegarAlimentoPorId", () => {
     it("deve retornar um erro 404 se o alimento não existir ou não pertencer à clínica/global", async () => {
       prismaMock.alimento.findFirst.mockResolvedValue(null);
 
       await expect(
-        buscarPorId(mockAlimentoId, mockClinicaId)
+        pegarAlimentoPorId(mockAlimentoId, mockClinicaId)
       ).rejects.toThrow(new AppError("Alimento não encontrado", 404));
     });
 
@@ -103,7 +103,7 @@ describe("alimentos.service", () => {
         nome: "Arroz"
       } as any);
 
-      const result = await buscarPorId(mockAlimentoId, mockClinicaId);
+      const result = await pegarAlimentoPorId(mockAlimentoId, mockClinicaId);
 
       expect(prismaMock.alimento.findFirst).toHaveBeenCalledWith({
         where: {

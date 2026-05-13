@@ -31,6 +31,11 @@ export function AgendamentoModal({
     queryFn: () => listarPacientes(),
   });
 
+  // const { data: nutricionistasData } = useQuery({
+  //   queryKey: ['nutricionista-select'],
+  //   queryFn: () => 
+  // })
+
   const { data: convenios } = useQuery({
     queryKey: ['convenios-select'],
     queryFn: () => listarConvenios(),

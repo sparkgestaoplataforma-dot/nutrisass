@@ -1,4 +1,4 @@
-import { prisma } from "@/shared/providers/prisma";
+import { prisma } from "../../../shared/providers/prisma.js";
 
 type CategoriaSintomas = {
   categoria: string;

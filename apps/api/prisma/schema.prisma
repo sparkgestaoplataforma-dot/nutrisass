@@ -78,7 +78,8 @@ model Usuario {
   perfil       Perfil
   criadoEm     DateTime      @default(now()) @map("criado_em")
   atualizadoEm DateTime      @updatedAt @map("atualizado_em")
-  agendamentos Agendamento[]
+  agendamentosCriados Agendamento[] @relation("emissor")
+  consultasAgendadas  Agendamento[] @relation("nutricionista")
   notificacoes Notificacao[]
   planosAlimentares PlanoAlimentar[]
 
@@ -143,27 +144,34 @@ model Convenio {
 }
 
 model Agendamento {
-  id          String             @id @default(uuid())
-  clinicaId   String             @map("clinica_id")
-  clinica     Clinica            @relation(fields: [clinicaId], references: [id])
-  pacienteId  String             @map("paciente_id")
-  paciente    Paciente           @relation(fields: [pacienteId], references: [id])
-  usuarioId   String             @map("usuario_id")
-  usuario     Usuario            @relation(fields: [usuarioId], references: [id])
-  convenioId  String?            @map("convenio_id")
-  convenio    Convenio?          @relation(fields: [convenioId], references: [id])
-  dataHora    DateTime           @map("data_hora")
-  tipo        TipoAgendamento
-  status      StatusAgendamento  @default(AGENDADO)
-  encaixe     Boolean            @default(false)
-  observacao  String?
-  criadoEm    DateTime           @default(now()) @map("criado_em")
-  atualizadoEm DateTime          @updatedAt @map("atualizado_em")
+  id              String            @id @default(uuid())
+  clinicaId       String            @map("clinica_id")
+  clinica         Clinica           @relation(fields: [clinicaId], references: [id])
+  pacienteId      String            @map("paciente_id")
+  paciente        Paciente          @relation(fields: [pacienteId], references: [id])
+
+  usuarioId       String            @map("usuario_id")
+  usuario         Usuario           @relation("emissor", fields: [usuarioId], references: [id])
+  
+  nutricionistaId String            @map("nutricionista_id")
+  nutricionista   Usuario           @relation("nutricionista", fields: [nutricionistaId], references: [id]) 
+  
+  convenioId      String?           @map("convenio_id")
+  convenio        Convenio?         @relation(fields: [convenioId], references: [id])
+  
+  dataHora        DateTime          @map("data_hora")
+  tipo            TipoAgendamento
+  status          StatusAgendamento @default(AGENDADO)
+  encaixe         Boolean           @default(false)
+  observacao      String?
+  criadoEm        DateTime          @default(now()) @map("criado_em")
+  atualizadoEm    DateTime          @updatedAt @map("atualizado_em")
 
   @@index([clinicaId])
   @@index([dataHora])
   @@index([pacienteId])
   @@index([usuarioId])
+  @@index([nutricionistaId])
   @@map("agendamentos")
 }
 
@@ -357,6 +365,7 @@ model Notificacao {
   usuario       Usuario           @relation(fields: [usuarioId], references: [id])
   tipo          String
   titulo        String
+  mensagem      String?
   mensagemLida  Boolean           @default(false) @map("mensagem_lida")
   createAt      DateTime          @default(now()) @map("create_at")
 }

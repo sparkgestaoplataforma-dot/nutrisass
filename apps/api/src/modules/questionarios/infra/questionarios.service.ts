@@ -1,5 +1,5 @@
-import { prisma } from "@/shared/providers/prisma";
-import { AppError } from "@/shared/middlewares/errorHandler.js";
+import { prisma } from "../../../shared/providers/prisma.js";
+import { AppError } from "../../../shared/middlewares/errorHandler.js";
 import {
   CreateQuestionarioInput,
   CreateQuestionarioModuloInput,
@@ -7,7 +7,7 @@ import {
   LabelEscolhaItemInput,
   UpdateQuestionarioInput,
 } from "@nutricao/shared";
-import { criarQuestionarioPadraoParaClinica } from "../seed/default-questionario";
+import { criarQuestionarioPadraoParaClinica } from "../seed/default-questionario.js";
 
 type VersionamentoEstruturalResultado = {
   questionarioId: string;
@@ -158,7 +158,10 @@ export async function resolverQuestionarioParaMutacaoEstrutural(
   return { questionarioId: novoQuestionario.id, versionado: true };
 }
 
-export async function criar(clinicaId: string, data: CreateQuestionarioInput) {
+export async function criarQuestionario(
+  clinicaId: string,
+  data: CreateQuestionarioInput,
+) {
   const clinica = await prisma.clinica.findUnique({
     where: { id: clinicaId },
   });
@@ -186,7 +189,7 @@ export async function criar(clinicaId: string, data: CreateQuestionarioInput) {
   return questionario;
 }
 
-export async function listar(
+export async function pegarQuestionarios(
   clinicaId: string,
   params: ListarQuestionariosParams,
 ) {
@@ -251,14 +254,13 @@ export async function listar(
   };
 }
 
-export async function listarModulosComPerguntas(
+export async function pegarQuestionarioPorId(
   questionarioId: string,
   params: ListarQuestionarioCompletoParams,
 ) {
-  const questionario = await prisma.questionario.findFirst({
+  const questionario = await prisma.questionario.findUnique({
     where: {
       id: questionarioId,
-      ...(params.incluirDeletados ? {} : { ativo: true }),
     },
     include: {
       labelEscolha: {
@@ -276,7 +278,11 @@ export async function listarModulosComPerguntas(
   });
 
   if (!questionario) {
-    throw new AppError("Questionário não encontrado para a clínica", 404);
+    throw new AppError("Questionário não encontrado", 404);
+  }
+
+  if (!params.incluirDeletados && !questionario.ativo) {
+    throw new AppError("Este questionário não está mais ativo", 400);
   }
 
   return {
@@ -373,7 +379,7 @@ export async function excluirTituloEscolha(
   });
 }
 
-export async function editar(
+export async function editarQuestionario(
   clinicaId: string,
   questionarioId: string,
   data: UpdateQuestionarioInput,
@@ -417,7 +423,10 @@ export async function editar(
   return questionario;
 }
 
-export async function excluir(clinicaId: string, questionarioId: string) {
+export async function excluirQuestionario(
+  clinicaId: string,
+  questionarioId: string,
+) {
   const existente = await prisma.questionario.findFirst({
     where: { id: questionarioId, clinicaId },
     select: { id: true, ativo: true },

@@ -1,0 +1,224 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+.container {
+  position: relative;
+}
+
+.trigger {
+  @include flex-center;
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: $radius-md;
+  color: $gray-400;
+  transition: all $transition-smooth;
+
+  &:hover {
+    background: $gray-50;
+    color: $gray-700;
+  }
+}
+
+.badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  @include flex-center;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 4px;
+  background: $danger;
+  color: $white;
+  font-size: 0.625rem; // 10px
+  font-weight: $font-weight-bold;
+  border-radius: $radius-full;
+  border: 2px solid $white;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + $space-2);
+  right: 0;
+  width: 320px;
+  background: $white;
+  border-radius: $radius-lg;
+  border: 1px solid $gray-100;
+  box-shadow: $shadow-lg;
+  z-index: $z-dropdown;
+  overflow: hidden;
+  animation: slideIn $transition-smooth;
+
+  @media (max-width: $breakpoint-md) {
+    position: fixed;
+    top: $header-height + 8px;
+    right: $space-4;
+    left: $space-4;
+    width: auto;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header {
+  @include flex-between;
+  padding: $space-3 $space-4;
+  border-bottom: 1px solid $gray-50;
+  background: $gray-25;
+}
+
+.title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $gray-900;
+}
+
+.markAllBtn {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  font-size: $font-size-2xs;
+  font-weight: $font-weight-medium;
+  color: $primary;
+  transition: color $transition-fast;
+
+  &:hover {
+    color: $primary-dark;
+  }
+}
+
+.list {
+  max-height: 400px;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $gray-200;
+    border-radius: $radius-full;
+  }
+}
+
+.empty {
+  padding: $space-10 $space-4;
+  text-align: center;
+  color: $gray-400;
+  font-size: $font-size-xs;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  cursor: pointer;
+  transition: all $transition-fast;
+  position: relative;
+  border-bottom: 1px solid $gray-50;
+
+  &:hover {
+    background: $gray-25;
+  }
+
+  &.unread {
+    background: rgba($primary, 0.03);
+
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: $primary;
+    }
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.iconWrapper {
+  @include flex-center;
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-md;
+  flex-shrink: 0;
+}
+
+.iconCalendar {
+  background: rgba($info, 0.1);
+  color: $info;
+}
+
+.iconUser {
+  background: rgba($primary, 0.1);
+  color: $primary;
+}
+
+.iconInfo {
+  background: rgba($warning, 0.1);
+  color: $warning;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.itemTitle {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $gray-700;
+  margin-bottom: 2px;
+  line-height: 1.4;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  font-size: 0.625rem; // 10px
+  color: $gray-400;
+}
+
+.unreadDot {
+  width: 6px;
+  height: 6px;
+  background: $primary;
+  border-radius: 50%;
+  margin-top: 6px;
+}
+
+.footer {
+  padding: $space-2;
+  border-top: 1px solid $gray-50;
+  text-align: center;
+  background: $gray-25;
+}
+
+.viewAllBtn {
+  width: 100%;
+  padding: $space-2;
+  font-size: $font-size-2xs;
+  font-weight: $font-weight-medium;
+  color: $gray-500;
+  border-radius: $radius-sm;
+
+  &:hover {
+    background: $gray-100;
+    color: $gray-700;
+  }
+}

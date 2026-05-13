@@ -134,7 +134,7 @@ export async function criarAvaliacao(req: Request, res: Response) {
   const id = req.params.id as string;
   const questionarioId = req.params.questionarioId as string;
 
-  const avaliacao = await service.criarAvaliacao(id, questionarioId, payload);
+  const avaliacao = await service.criarAvaliacaoPaciente(id, questionarioId, payload);
 
   return res.status(201).json({
     success: true,
@@ -149,7 +149,7 @@ export async function buscarNomePorId(
 ) {
   const id = req.params.id as string;
 
-  const nome = await service.buscarNomePorId(id);
+  const nome = await service.pegarNomePacientePorId(id);
 
   return res.json({ success: true, data: { nome } });
 }
@@ -165,7 +165,7 @@ export async function listarAvaliacoes(
   const pageNum = Number(page);
   const limitNum = Number(limit);
 
-  const paginatedResult = await service.listarAvaliacoes(
+  const paginatedResult = await service.pegarAvaliacoesPaciente(
     id,
     clinicaId,
     pageNum,
