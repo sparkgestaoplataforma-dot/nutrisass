@@ -6,7 +6,7 @@ export async function criar(req: Request, res: Response) {
   const clinicaId = getClinicaId(req);
   const usuarioId = getUsuarioId(req);
 
-  const plano = await service.criar(clinicaId, usuarioId, req.body);
+  const plano = await service.criarPlanoAlimentar(clinicaId, usuarioId, req.body);
 
   return res.status(201).json({ success: true, data: plano });
 }
@@ -15,7 +15,7 @@ export async function listar(req: Request, res: Response) {
   const clinicaId = getClinicaId(req);
   const { pacienteId } = req.query;
 
-  const planos = await service.listar(clinicaId, pacienteId as string | undefined);
+  const planos = await service.pegarPlanosAlimentares(clinicaId, pacienteId as string | undefined);
 
   return res.json({ success: true, data: planos });
 }
@@ -24,7 +24,7 @@ export async function buscarPorId(req: Request<{ id: string }>, res: Response) {
   const clinicaId = getClinicaId(req);
   const { id } = req.params;
 
-  const plano = await service.buscarPorId(id, clinicaId);
+  const plano = await service.pegarPlanoAlimentarPorId(id, clinicaId);
 
   return res.json({ success: true, data: plano });
 }
@@ -33,7 +33,7 @@ export async function editar(req: Request<{ id: string }>, res: Response) {
   const clinicaId = getClinicaId(req);
   const { id } = req.params;
 
-  const plano = await service.atualizar(id, clinicaId, req.body);
+  const plano = await service.editarPlanoAlimentar(id, clinicaId, req.body);
 
   return res.json({ success: true, data: plano });
 }
@@ -42,7 +42,7 @@ export async function excluir(req: Request<{ id: string }>, res: Response) {
   const clinicaId = getClinicaId(req);
   const { id } = req.params;
 
-  await service.deletar(id, clinicaId);
+  await service.excluirPlanoAlimentar(id, clinicaId);
 
   return res.json({ success: true, message: "Plano alimentar excluído com sucesso" });
 }

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import * as service from "./questionarios.service";
+import * as service from "./questionarios.service.js";
 import { getClinicaId } from "../../../shared/middlewares/auth.js";
 import { AppError } from "../../../shared/middlewares/errorHandler.js";
 
@@ -37,7 +37,7 @@ export async function listar(req: Request, res: Response) {
   const page = parseNumberQuery(req.query.page, 1);
   const limit = parseNumberQuery(req.query.limit, 20);
 
-  const resultado = await service.listar(clinicaId, {
+  const resultado = await service.pegarQuestionarios(clinicaId, {
     incluirDeletados,
     page,
     limit,
@@ -50,7 +50,7 @@ export async function buscarPorId(req: Request<{ id: string }>, res: Response) {
   const { id } = req.params;
   const incluirDeletados = parseBooleanQuery(req.query.incluirDeletados);
 
-  const questionario = await service.listarModulosComPerguntas(id, {
+  const questionario = await service.pegarQuestionarioPorId(id, {
     incluirDeletados,
   });
 
@@ -118,7 +118,7 @@ export async function criar(req: Request, res: Response) {
   const payload = req.body as CreateQuestionarioInput;
   const clinicaId = getClinicaId(req);
 
-  const questionario = await service.criar(clinicaId, payload);
+  const questionario = await service.criarQuestionario(clinicaId, payload);
 
   return res.status(201).json({ success: true, data: questionario });
 }
@@ -170,7 +170,7 @@ export async function editar(req: Request<{ id: string }>, res: Response) {
   const { id } = req.params;
   const payload = req.body as UpdateQuestionarioInput;
 
-  const questionario = await service.editar(clinicaId, id, payload);
+  const questionario = await service.editarQuestionario(clinicaId, id, payload);
 
   return res.json({ success: true, data: questionario });
 }
@@ -179,7 +179,7 @@ export async function excluir(req: Request<{ id: string }>, res: Response) {
   const clinicaId = getClinicaId(req);
   const { id } = req.params;
 
-  await service.excluir(clinicaId, id);
+  await service.excluirQuestionario(clinicaId, id);
 
   return res.json({ success: true, message: "Questionário excluído" });
 }

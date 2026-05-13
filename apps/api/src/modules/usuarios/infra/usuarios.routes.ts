@@ -12,6 +12,7 @@ router.use(authMiddleware);
 router.use(roleGuard("ADMIN"));
 
 router.get("/", controller.listar);
+router.get("/nutricionistas/clinicaId/:clinicaId", controller.listarNutricionistas);
 router.post("/", validate(createUsuarioSchema), controller.criar);
 router.put("/:id", controller.editar);
 router.delete("/:id", controller.excluir);

@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../../../shared/providers/prisma.js';
-import { env } from '../../../config/env.js';
-import { AppError } from '../../../shared/middlewares/errorHandler.js';
+import { prisma } from '@/shared/providers/prisma.js';
+import { env } from '@/config/env.js';
+import { AppError } from '@/shared/middlewares/errorHandler.js';
 import { getClinicaId } from '../../../shared/middlewares/auth.js';
 import type { TokenPayload, AuthTokens } from '@nutricao/shared';
 

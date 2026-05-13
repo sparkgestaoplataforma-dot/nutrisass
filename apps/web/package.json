@@ -26,6 +26,7 @@
     "@tsparticles/react": "^3.0.0",
     "@tsparticles/slim": "^3.9.1",
     "axios": "1.13.6",
+    "date-fns": "^4.1.0",
     "devtools": "^8.42.0",
     "framer-motion": "^12.38.0",
     "jspdf": "^4.2.1",
@@ -37,7 +38,7 @@
     "react-number-format": "^5.4.5",
     "react-router-dom": "^7",
     "recharts": "^2.15.4",
-    "socket.io-client": "^4.8",
+    "socket.io-client": "^4.8.3",
     "zod": "^3.23",
     "zustand": "^5"
   },

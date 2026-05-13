@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useAuthStore } from '@/stores/authStore';
 
 export const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL ? '/api' : '/api', // Mantendo /api para usar o proxy do Vite em dev
 });
 
 api.interceptors.request.use((config) => {

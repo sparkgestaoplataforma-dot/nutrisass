@@ -14,6 +14,13 @@ export function initSocket(httpServer: HttpServer) {
   io.on('connection', (socket) => {
     console.log(`Socket connected: ${socket.id}`);
 
+    const usuarioId = socket.handshake.query.usuarioId as string
+
+    if (usuarioId){
+      socket.join(`user:${usuarioId}`);
+      console.log(`Usuário ${usuarioId} entrou na sala user:${usuarioId}`)
+    }
+
     socket.on('disconnect', () => {
       console.log(`Socket disconnected: ${socket.id}`);
     });

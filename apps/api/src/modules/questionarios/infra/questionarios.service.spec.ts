@@ -9,7 +9,7 @@ vi.mock("@/shared/providers/prisma", async () => {
 
 import { prisma } from "@/shared/providers/prisma";
 import type { DeepMockProxy } from "vitest-mock-extended";
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../../../../prisma/generated/client";
 
 import * as service from "./questionarios.service";
 
@@ -43,7 +43,7 @@ describe("Questionarios Service", () => {
         ativo: true,
       } as any);
 
-      const result = await service.criar(clinicaId, payload);
+      const result = await service.criarQuestionario(clinicaId, payload);
 
       expect(prismaMockStr.questionario.findFirst).toHaveBeenCalledWith({
         where: { clinicaId, nome: payload.nome, versao: 1 },
@@ -56,7 +56,7 @@ describe("Questionarios Service", () => {
 
       prismaMockStr.clinica.findUnique.mockResolvedValueOnce(null as any);
 
-      await expect(service.criar(clinicaId, payload)).rejects.toThrow(
+      await expect(service.criarQuestionario(clinicaId, payload)).rejects.toThrow(
         "Clínica não encontrada",
       );
     });
@@ -71,7 +71,7 @@ describe("Questionarios Service", () => {
         id: "existente",
       } as any);
 
-      await expect(service.criar(clinicaId, payload)).rejects.toThrow(
+      await expect(service.criarQuestionario(clinicaId, payload)).rejects.toThrow(
         "Esse questionário já existe",
       );
     });
@@ -86,7 +86,7 @@ describe("Questionarios Service", () => {
         ativo: true,
       } as any);
 
-      await service.excluir(clinicaId, questionarioId);
+      await service.excluirQuestionario(clinicaId, questionarioId);
 
       expect(prismaMockStr.questionario.update).toHaveBeenCalledWith({
         where: { id: questionarioId },
@@ -102,7 +102,7 @@ describe("Questionarios Service", () => {
         ativo: false,
       } as any);
 
-      await service.excluir(clinicaId, questionarioId);
+      await service.excluirQuestionario(clinicaId, questionarioId);
 
       expect(prismaMockStr.questionario.update).not.toHaveBeenCalled();
     });

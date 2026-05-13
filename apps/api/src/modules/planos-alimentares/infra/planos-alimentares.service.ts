@@ -2,7 +2,7 @@ import { prisma } from "../../../shared/providers/prisma.js";
 import { AppError } from "../../../shared/middlewares/errorHandler.js";
 import { CreatePlanoAlimentarInput, UpdatePlanoAlimentarInput } from "@nutricao/shared";
 
-export async function criar(
+export async function criarPlanoAlimentar(
   clinicaId: string,
   usuarioId: string,
   data: CreatePlanoAlimentarInput
@@ -80,7 +80,7 @@ export async function criar(
   return plano;
 }
 
-export async function listar(clinicaId: string, pacienteId?: string) {
+export async function pegarPlanosAlimentares(clinicaId: string, pacienteId?: string) {
   const where: any = { clinicaId };
   if (pacienteId) {
     where.pacienteId = pacienteId;
@@ -106,7 +106,7 @@ export async function listar(clinicaId: string, pacienteId?: string) {
   });
 }
 
-export async function buscarPorId(id: string, clinicaId: string) {
+export async function pegarPlanoAlimentarPorId(id: string, clinicaId: string) {
   const plano = await prisma.planoAlimentar.findFirst({
     where: { id, clinicaId },
     include: {
@@ -134,7 +134,7 @@ export async function buscarPorId(id: string, clinicaId: string) {
   return plano;
 }
 
-export async function atualizar(
+export async function editarPlanoAlimentar(
   id: string,
   clinicaId: string,
   data: UpdatePlanoAlimentarInput
@@ -221,7 +221,7 @@ export async function atualizar(
   });
 }
 
-export async function deletar(id: string, clinicaId: string) {
+export async function excluirPlanoAlimentar(id: string, clinicaId: string) {
   const existente = await prisma.planoAlimentar.findFirst({
     where: { id, clinicaId },
   });
