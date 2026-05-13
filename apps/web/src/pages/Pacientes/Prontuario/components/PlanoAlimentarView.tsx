@@ -17,6 +17,7 @@ interface Props {
   onEdit: () => void;
   onDelete: () => void;
   isDeleting?: boolean;
+  isNutricionista?: boolean;
 }
 
 const OBJETIVO_LABELS: Record<string, string> = {
@@ -27,7 +28,7 @@ const OBJETIVO_LABELS: Record<string, string> = {
   OUTRO: "Outro",
 };
 
-export function PlanoAlimentarView({ plano, onBack, onEdit, onDelete, isDeleting }: Props) {
+export function PlanoAlimentarView({ plano, onBack, onEdit, onDelete, isDeleting, isNutricionista = false }: Props) {
   // Track active option tab per refeição
   const [activeOpcoes, setActiveOpcoes] = useState<Record<string, number>>({});
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -86,17 +87,21 @@ export function PlanoAlimentarView({ plano, onBack, onEdit, onDelete, isDeleting
           )}
         </div>
         <div className={styles.viewActions}>
-          <button className={styles.editBtn} onClick={onEdit}>
-            <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={2} />
-            <span>Editar</span>
-          </button>
-          <button
-            className={styles.deleteBtn}
-            onClick={() => setIsDeleteModalOpen(true)}
-          >
-            <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={2} />
-            <span>Excluir</span>
-          </button>
+          {isNutricionista && (
+            <button className={styles.editBtn} onClick={onEdit}>
+              <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={2} />
+              <span>Editar</span>
+            </button>
+          )}
+          {isNutricionista && (
+            <button
+              className={styles.deleteBtn}
+              onClick={() => setIsDeleteModalOpen(true)}
+            >
+              <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={2} />
+              <span>Excluir</span>
+            </button>
+          )}
           <button
             className={styles.pdfBtn}
             onClick={() => window.open(`/pacientes/${plano.pacienteId}/planos/${plano.id}/pdf`, '_blank')}

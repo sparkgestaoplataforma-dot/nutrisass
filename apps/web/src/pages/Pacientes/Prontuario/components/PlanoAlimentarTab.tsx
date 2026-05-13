@@ -11,6 +11,7 @@ import styles from "./PlanoAlimentar.module.scss";
 
 interface Props {
   pacienteId: string;
+  isNutricionista?: boolean;
 }
 
 type Mode = "list" | "view" | "create" | "edit";
@@ -23,7 +24,7 @@ const OBJETIVO_LABELS: Record<string, string> = {
   OUTRO: "Outro",
 };
 
-export function PlanoAlimentarTab({ pacienteId }: Props) {
+export function PlanoAlimentarTab({ pacienteId, isNutricionista = false }: Props) {
   const [mode, setMode] = useState<Mode>("list");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const queryClient = useQueryClient();
@@ -95,6 +96,7 @@ export function PlanoAlimentarTab({ pacienteId }: Props) {
         onEdit={() => setMode("edit")}
         onDelete={() => deletarMutation.mutate()}
         isDeleting={deletarMutation.isPending}
+        isNutricionista={isNutricionista}
       />
     );
   }
@@ -102,8 +104,8 @@ export function PlanoAlimentarTab({ pacienteId }: Props) {
     return <div style={{ padding: "2rem" }}><Skeleton width="100%" height="200px" /></div>;
   }
 
-  // === CREATE MODE ===
-  if (mode === "create") {
+  // === CREATE MODE (nutricionista only) ===
+  if (mode === "create" && isNutricionista) {
     return (
       <PlanoAlimentarBuilder
         pacienteId={pacienteId}
@@ -114,8 +116,8 @@ export function PlanoAlimentarTab({ pacienteId }: Props) {
     );
   }
 
-  // === EDIT MODE ===
-  if (mode === "edit" && planoDetalhe) {
+  // === EDIT MODE (nutricionista only) ===
+  if (mode === "edit" && isNutricionista && planoDetalhe) {
     return (
       <PlanoAlimentarBuilder
         pacienteId={pacienteId}
@@ -138,10 +140,12 @@ export function PlanoAlimentarTab({ pacienteId }: Props) {
           <h2 className={styles.headerTitle}>Planos Alimentares</h2>
           <p className={styles.headerSubtitle}>Prescrições nutricionais do paciente</p>
         </div>
-        <button className={styles.newPlanBtn} onClick={() => setMode("create")}>
-          <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} />
-          Novo Plano
-        </button>
+        {isNutricionista && (
+          <button className={styles.newPlanBtn} onClick={() => setMode("create")}>
+            <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} />
+            Novo Plano
+          </button>
+        )}
       </div>
 
       {isLoading ? (

@@ -188,7 +188,7 @@ export function ProntuarioPage() {
             <p className={styles.subViewSubtitle}>{paciente?.nome}</p>
           </div>
         </div>
-        <PlanoAlimentarTab pacienteId={id!} />
+        <PlanoAlimentarTab pacienteId={id!} isNutricionista={isNutricionista} />
       </div>
     );
   }
