@@ -2,21 +2,15 @@ import { prisma } from "../../../shared/providers/prisma.js";
 import { AppError } from "../../../shared/middlewares/errorHandler.js";
 import { AlimentoInput } from "@nutricao/shared";
 
-export async function listar(clinicaId: string, q?: string, page: number = 1, limit: number = 20, tipo?: "taco" | "custom") {
+export async function listar(clinicaId: string, q?: string, page: number = 1, limit: number = 20) {
   const skip = (page - 1) * limit;
   
-  const where: any = {};
-
-  if (tipo === "taco") {
-    where.clinicaId = null;
-  } else if (tipo === "custom") {
-    where.clinicaId = clinicaId;
-  } else {
-    where.OR = [
+  const where: any = {
+    OR: [
       { clinicaId: null }, // Alimentos Globais (TACO)
       { clinicaId: clinicaId }, // Alimentos customizados da clínica
-    ];
-  }
+    ],
+  };
 
   if (q) {
     where.nome = { contains: q, mode: "insensitive" };
@@ -87,51 +81,4 @@ export async function buscarPorId(id: string, clinicaId: string) {
   }
 
   return alimento;
-}
-
-export async function atualizar(id: string, clinicaId: string, data: AlimentoInput) {
-  const alimento = await prisma.alimento.findFirst({
-    where: { id, clinicaId },
-  });
-
-  if (!alimento) {
-    throw new AppError("Alimento não encontrado ou não pertence a esta clínica", 404);
-  }
-
-  const { medidasCaseiras, ...alimentoData } = data;
-
-  const updated = await prisma.alimento.update({
-    where: { id },
-    data: {
-      ...alimentoData,
-      medidasCaseiras: {
-        deleteMany: {},
-        create: medidasCaseiras?.map(m => ({
-          nome: m.nome,
-          quantidadeEmGramas: m.quantidadeEmGramas,
-        })) || [],
-      },
-    },
-    include: {
-      medidasCaseiras: true,
-    },
-  });
-
-  return updated;
-}
-
-export async function excluir(id: string, clinicaId: string) {
-  const alimento = await prisma.alimento.findFirst({
-    where: { id, clinicaId },
-  });
-
-  if (!alimento) {
-    throw new AppError("Alimento não encontrado ou não pertence a esta clínica", 404);
-  }
-
-  await prisma.alimento.delete({
-    where: { id },
-  });
-
-  return { message: "Alimento excluído com sucesso" };
 }

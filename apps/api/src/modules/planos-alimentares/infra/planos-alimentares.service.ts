@@ -110,9 +110,7 @@ export async function buscarPorId(id: string, clinicaId: string) {
   const plano = await prisma.planoAlimentar.findFirst({
     where: { id, clinicaId },
     include: {
-      clinica: { select: { nome: true, logomarca: true } },
-      usuario: { select: { nome: true, email: true } },
-      paciente: { select: { id: true, nome: true, dataNascimento: true } },
+      paciente: { select: { id: true, nome: true } },
       refeicoes: {
         orderBy: { ordem: "asc" },
         include: {
