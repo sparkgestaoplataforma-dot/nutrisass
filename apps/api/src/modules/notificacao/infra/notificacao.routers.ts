@@ -5,10 +5,7 @@ import * as controller from "./notificacao.controller.js";
 const router = Router();
 router.use(authMiddleware);
 
-router.get(
-  "/clinica/:clinicaId/usuario/:usuarioId",
-  controller.buscar,
-);
+router.get("/clinica/:clinicaId/usuario/:usuarioId", controller.buscar);
 router.post(
   "clinica/:clinicaId/usuario/:usuarioId",
   controller.criarNotificacao,

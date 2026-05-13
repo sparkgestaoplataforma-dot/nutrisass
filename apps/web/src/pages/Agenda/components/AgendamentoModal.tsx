@@ -103,21 +103,6 @@ export function AgendamentoModal({
               )}
             </div>
 
-            <div className={styles.field}>
-              <label>Paciente</label>
-              <select {...register('pacienteId')}>
-                <option value="">Selecione um paciente</option>
-                {pacientesData?.data.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nome}
-                  </option>
-                ))}
-              </select>
-              {errors.pacienteId && (
-                <span className={styles.error}>{errors.pacienteId.message}</span>
-              )}
-            </div>
-
             <div className={styles.row}>
               <div className={styles.field}>
                 <label>Data e Hora</label>

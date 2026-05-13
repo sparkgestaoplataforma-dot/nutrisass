@@ -1,5 +1,5 @@
-import { prisma } from "@/shared/providers/prisma";
-import { AppError } from "@/shared/middlewares/errorHandler.js";
+import { prisma } from "../../../shared/providers/prisma.js";
+import { AppError } from "../../../shared/middlewares/errorHandler.js";
 import {
   CreateQuestionarioInput,
   CreateQuestionarioModuloInput,
@@ -7,7 +7,7 @@ import {
   LabelEscolhaItemInput,
   UpdateQuestionarioInput,
 } from "@nutricao/shared";
-import { criarQuestionarioPadraoParaClinica } from "../seed/default-questionario";
+import { criarQuestionarioPadraoParaClinica } from "../seed/default-questionario.js";
 
 type VersionamentoEstruturalResultado = {
   questionarioId: string;
@@ -158,7 +158,10 @@ export async function resolverQuestionarioParaMutacaoEstrutural(
   return { questionarioId: novoQuestionario.id, versionado: true };
 }
 
-export async function criarQuestionario(clinicaId: string, data: CreateQuestionarioInput) {
+export async function criarQuestionario(
+  clinicaId: string,
+  data: CreateQuestionarioInput,
+) {
   const clinica = await prisma.clinica.findUnique({
     where: { id: clinicaId },
   });
@@ -255,10 +258,9 @@ export async function pegarQuestionarioPorId(
   questionarioId: string,
   params: ListarQuestionarioCompletoParams,
 ) {
-  const questionario = await prisma.questionario.findFirst({
+  const questionario = await prisma.questionario.findUnique({
     where: {
       id: questionarioId,
-      ...(params.incluirDeletados ? {} : { ativo: true }),
     },
     include: {
       labelEscolha: {
@@ -276,7 +278,11 @@ export async function pegarQuestionarioPorId(
   });
 
   if (!questionario) {
-    throw new AppError("Questionário não encontrado para a clínica", 404);
+    throw new AppError("Questionário não encontrado", 404);
+  }
+
+  if (!params.incluirDeletados && !questionario.ativo) {
+    throw new AppError("Este questionário não está mais ativo", 400);
   }
 
   return {
@@ -417,7 +423,10 @@ export async function editarQuestionario(
   return questionario;
 }
 
-export async function excluirQuestionario(clinicaId: string, questionarioId: string) {
+export async function excluirQuestionario(
+  clinicaId: string,
+  questionarioId: string,
+) {
   const existente = await prisma.questionario.findFirst({
     where: { id: questionarioId, clinicaId },
     select: { id: true, ativo: true },
