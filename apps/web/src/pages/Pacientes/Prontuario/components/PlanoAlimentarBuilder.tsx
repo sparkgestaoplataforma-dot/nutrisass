@@ -143,6 +143,7 @@ export function PlanoAlimentarBuilder({
     initialData?.recomendacaoAguaMl?.toString() || "",
   );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [editingOpcao, setEditingOpcao] = useState<{ ruid: string; ouid: string } | null>(null);
 
   const [refeicoes, setRefeicoes] = useState<RefeicaoLocal[]>(() => {
     if (!initialData?.refeicoes?.length) return [];
@@ -221,6 +222,21 @@ export function PlanoAlimentarBuilder({
       }),
     );
   }, []);
+
+  const updateOpcaoNome = useCallback(
+    (ruid: string, ouid: string, nome: string) => {
+      setRefeicoes((prev) =>
+        prev.map((r) => {
+          if (r._uid !== ruid) return r;
+          const newOpcoes = r.opcoes.map((o) =>
+            o._uid === ouid ? { ...o, nome: nome.trim() || null } : o
+          );
+          return { ...r, opcoes: newOpcoes };
+        })
+      );
+    },
+    []
+  );
 
   const removeOpcao = useCallback((ruid: string, ouid: string) => {
     setRefeicoes((prev) =>
@@ -696,11 +712,37 @@ export function PlanoAlimentarBuilder({
                             >
                               <button
                                 className={`${styles.opcaoTabBuilder} ${idx === activeOpcIdx ? styles.active : ""}`}
-                                onClick={() =>
-                                  updateRefeicao(ref._uid, "_activeOpcao", idx)
-                                }
+                                onClick={() => {
+                                  if (idx === activeOpcIdx) {
+                                    setEditingOpcao({ ruid: ref._uid, ouid: opc._uid });
+                                  } else {
+                                    updateRefeicao(ref._uid, "_activeOpcao", idx);
+                                  }
+                                }}
                               >
-                                {opc.nome || `Opção ${idx + 1}`}
+                                {editingOpcao?.ruid === ref._uid && editingOpcao?.ouid === opc._uid ? (
+                                  <input
+                                    autoFocus
+                                    defaultValue={opc.nome || `Opção ${idx + 1}`}
+                                    onBlur={(e) => {
+                                      updateOpcaoNome(ref._uid, opc._uid, e.target.value);
+                                      setEditingOpcao(null);
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        updateOpcaoNome(ref._uid, opc._uid, e.currentTarget.value);
+                                        setEditingOpcao(null);
+                                      }
+                                      if (e.key === 'Escape') {
+                                        setEditingOpcao(null);
+                                      }
+                                    }}
+                                    style={{ width: '80px', background: 'transparent', border: 'none', outline: 'none', borderBottom: '1px solid currentColor', color: 'inherit', font: 'inherit', padding: 0 }}
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                ) : (
+                                  opc.nome || `Opção ${idx + 1}`
+                                )}
                               </button>
                               {ref.opcoes.length > 1 && (
                                 <button
