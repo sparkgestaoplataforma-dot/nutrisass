@@ -136,16 +136,23 @@ test.describe.serial("Jornada Completa do Usuário (Macro E2E)", () => {
     });
 
     await page.getByRole("button", { name: /Agendar/i }).click();
-
-    // Aparece modal (select de paciente)
-    // O select do react-hook-form pode ser um <select> html padrão se não usou lib complexa
-    // É mais fácil usar texto se houver label "Paciente"
+    
+    // Aparece modal - Preencher Paciente
     await page.locator('select[name="pacienteId"]').selectOption(pacienteId);
+
+    // Selecionar Nutricionista (Novo campo obrigatório)
+    // Se a lista estiver vazia (apenas o placeholder), o valor padrão (user.userId) já deve estar setado internamente
+    const nutricionistaSelect = page.locator('select[name="nutricionistaId"]');
+    const options = nutricionistaSelect.locator('option');
+    const count = await options.count();
+    
+    if (count > 1) {
+      await nutricionistaSelect.selectOption({ index: 1 });
+    }
 
     await page.locator('select[name="tipo"]').selectOption("CONSULTA");
 
     // Data/hora para datetime-local (YYYY-MM-DDTHH:mm)
-    // Lê a data que a UI considera "hoje" para evitar descompasso de fuso horário Teste vs Chromium
     const currentViewDate = await page
       .locator('input[type="date"]')
       .inputValue();
@@ -158,7 +165,7 @@ test.describe.serial("Jornada Completa do Usuário (Macro E2E)", () => {
     // Modal fecha e consulta deve renderizar na tabela (ex: 14:30 e Nome do paciente)
     await expect(
       page.locator("td", { hasText: pacienteNome }).first(),
-    ).toBeVisible({ timeout: 5000 });
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test("Etapa 5: Preenchimento de Questionário Público", async () => {

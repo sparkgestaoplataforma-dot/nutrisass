@@ -6,10 +6,12 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { CancelCircleIcon } from '@hugeicons/core-free-icons';
 import { createAgendamentoSchema, type CreateAgendamentoInput } from '@nutricao/shared';
 import { listarPacientes } from '@/services/pacientes';
+import { listarApenasNutricionistas } from '@/services/usuario';
 import { listarConvenios } from '@/services/convenios';
 import type { AgendamentoResponse } from '@/services/agenda';
 import { formatarParaInputDateTime } from '@/utils/date';
 import styles from './AgendamentoModal.module.scss';
+import { useAuthStore } from "@/stores/authStore";
 
 interface AgendamentoModalProps {
   dataSelecionada: string;
@@ -26,15 +28,19 @@ export function AgendamentoModal({
   onClose,
   isPending,
 }: AgendamentoModalProps) {
+  const {user} = useAuthStore();
   const { data: pacientesData } = useQuery({
     queryKey: ['pacientes-select'],
     queryFn: () => listarPacientes(),
   });
 
-  // const { data: nutricionistasData } = useQuery({
-  //   queryKey: ['nutricionista-select'],
-  //   queryFn: () => 
-  // })
+
+  const { data: nutricionistasData } = useQuery({
+    queryKey: ['nutricionista-select', user?.clinicaId],
+    queryFn: () => listarApenasNutricionistas(user!.clinicaId)
+  });
+
+  console.log("dados do nutricionista:", nutricionistasData);
 
   const { data: convenios } = useQuery({
     queryKey: ['convenios-select'],
@@ -52,6 +58,8 @@ export function AgendamentoModal({
       tipo: 'CONSULTA',
       status: 'AGENDADO',
       encaixe: false,
+      usuarioId: user?.userId,
+      nutricionistaId: user?.userId,
     },
   });
 
@@ -65,6 +73,8 @@ export function AgendamentoModal({
         status: agendamento.status as any,
         encaixe: agendamento.encaixe,
         observacao: agendamento.observacao || undefined,
+        usuarioId: user?.userId,
+        nutricionistaId: agendamento.nutricionistaId,
       });
     } else {
       reset({
@@ -72,9 +82,11 @@ export function AgendamentoModal({
         status: 'AGENDADO',
         encaixe: false,
         dataHora: `${dataSelecionada}T08:00`,
+        usuarioId: user?.userId,
+        nutricionistaId: user?.userId,
       });
     }
-  }, [agendamento, dataSelecionada, reset]);
+  }, [agendamento, dataSelecionada, reset, user?.userId]);
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -100,6 +112,21 @@ export function AgendamentoModal({
               </select>
               {errors.pacienteId && (
                 <span className={styles.error}>{errors.pacienteId.message}</span>
+              )}
+            </div>
+
+            <div className={styles.field}>
+              <label>Nutricionista</label>
+              <select {...register('nutricionistaId')}>
+                <option value="">Selecione um nutricionista</option>
+                {nutricionistasData?.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nome}
+                  </option>
+                ))}
+              </select>
+              {errors.nutricionistaId && (
+                <span className={styles.error}>{errors.nutricionistaId.message}</span>
               )}
             </div>
 

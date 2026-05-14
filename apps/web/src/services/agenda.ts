@@ -18,6 +18,8 @@ export interface AgendamentoResponse {
   status: string;
   encaixe: boolean;
   observacao: string | null;
+  nutricionistaId: string;
+  usuarioId: string;
 }
 
 export async function listarAgendaDia(data: string) {

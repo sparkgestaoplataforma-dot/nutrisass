@@ -10,7 +10,7 @@ import {
   Clock01Icon,
 } from "@hugeicons/core-free-icons";
 // import { useNotifications } from "@/hooks/useNotifications";
-import { Notification } from "@/services/notification";
+import { Notification } from "@/services/notificacao";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import styles from "./NotificationCenter.module.scss";
