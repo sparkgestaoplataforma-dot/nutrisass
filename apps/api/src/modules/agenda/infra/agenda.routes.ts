@@ -8,7 +8,7 @@ const router = Router();
 
 router.use(authMiddleware);
 
-router.get('/', controller.listar);
+router.get('/nutricionistaId/:nutricionistaId', controller.listar);
 router.post('/', validate(createAgendamentoSchema), controller.criar);
 router.put('/:id', validate(updateAgendamentoSchema), controller.editar);
 router.patch('/:id/status', validate(updateStatusSchema), controller.alterarStatus);

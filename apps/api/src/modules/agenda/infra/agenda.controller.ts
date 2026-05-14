@@ -6,9 +6,15 @@ import * as service from './agenda.service.js';
 export async function listar(req: Request, res: Response) {
   const clinicaId = getClinicaId(req);
   const { data, usuarioId } = req.query;
+  const { nutricionistaId } = req.params;
 
   const dataStr = (data as string) || new Date().toISOString().split('T')[0];
-  const agendamentos = await service.pegarAgendamentosDia(dataStr, clinicaId, usuarioId as string);
+  const agendamentos = await service.pegarAgendamentosDia(
+    dataStr, 
+    clinicaId, 
+    usuarioId as string, 
+    nutricionistaId as string
+  );
 
   return res.json({ success: true, data: agendamentos });
 }

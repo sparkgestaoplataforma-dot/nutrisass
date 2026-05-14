@@ -9,7 +9,9 @@ describe("dashboard.controller", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockReq = {
-      user: { clinicaId: "clinica-1" }
+      user: { clinicaId: "550e8400-e29b-41d4-a716-446655440000" },
+      params: { nutricionistaId: "550e8400-e29b-41d4-a716-446655440001" },
+      query: {}
     };
     mockRes = {
       json: vi.fn(),

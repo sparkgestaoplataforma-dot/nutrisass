@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { prisma } from "../../../shared/providers/prisma.js";
 import { AppError } from "../../../shared/middlewares/errorHandler.js";
 import type { CreateAgendamentoInput, UpdateAgendamentoInput, UpdateStatusInput } from "@nutricao/shared";
@@ -10,7 +11,14 @@ function parseLocalDate(date: string) {
   return new Date(year, month - 1, day);
 }
 
-export async function pegarAgendamentosDia(data: string, clinicaId: string, usuarioId?: string) {
+export async function pegarAgendamentosDia(data: string, clinicaId: string, usuarioId?: string, nutricionistaId?: string) {
+  const schema = z.object({
+    clinicaId: z.string().uuid("ID da clínica inválido"),
+    nutricionistaId: z.string().uuid("O ID do nutricionista é obrigatório para listar a agenda"),
+  });
+
+  const { clinicaId: vClinicaId, nutricionistaId: vNutricionistaId } = schema.parse({ clinicaId, nutricionistaId });
+
   const inicio = parseLocalDate(data);
   inicio.setHours(0, 0, 0, 0);
 
@@ -18,7 +26,8 @@ export async function pegarAgendamentosDia(data: string, clinicaId: string, usua
   fim.setHours(23, 59, 59, 999);
 
   const where: any = {
-    clinicaId,
+    clinicaId: vClinicaId,
+    nutricionistaId: vNutricionistaId,
     dataHora: { gte: inicio, lte: fim },
   };
 

@@ -8,10 +8,10 @@ import {
 } from '@/services/agenda';
 import type { CreateAgendamentoInput, UpdateAgendamentoInput, UpdateStatusInput } from '@nutricao/shared';
 
-export function useAgendaDia(data: string) {
+export function useAgendaDia(data: string, nutricionistaId:string) {
   return useQuery({
-    queryKey: ['agenda', data],
-    queryFn: () => listarAgendaDia(data),
+    queryKey: ['agenda', data, nutricionistaId],
+    queryFn: () => listarAgendaDia(data, nutricionistaId),
   });
 }
 

@@ -44,6 +44,26 @@
   }
 }
 
+.nutriFilter {
+  margin-left: 0.5rem;
+}
+
+.nutriSelect {
+  @include input-base;
+  font-size: $font-size-xs;
+  padding: 0.5rem 0.875rem;
+  width: auto;
+  min-width: 180px;
+  background-color: $white;
+  border-color: $gray-300;
+  cursor: pointer;
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 2px rgba($primary, 0.1);
+  }
+}
+
 .agendarBtn {
   @include btn;
 }

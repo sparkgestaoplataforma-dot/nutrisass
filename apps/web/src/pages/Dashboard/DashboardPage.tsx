@@ -11,8 +11,8 @@ import {
   PlayCircleIcon,
   ClockIcon,
 } from '@hugeicons/core-free-icons';
-import { api } from '@/services/api';
 import { useAuthStore } from '@/stores/authStore';
+import { pegarDadosDashboard } from '@/services/dashboard';
 import styles from './DashboardPage.module.scss';
 
 const statusLabels: Record<string, string> = {
@@ -48,16 +48,15 @@ function formatTime(dateStr: string): string {
   });
 }
 
+
 export function DashboardPage() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['dashboard'],
-    queryFn: async () => {
-      const { data } = await api.get('/dashboard');
-      return data.data;
-    },
+    queryKey: ['dashboard', user?.userId],
+    queryFn: () => pegarDadosDashboard(user!.userId),
+    enabled: !!user?.userId,
   });
 
   if (isLoading || !data) {
