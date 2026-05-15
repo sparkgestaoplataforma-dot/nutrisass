@@ -136,6 +136,7 @@ export function AgendaPage() {
               value={nutricionistaId}
               onChange={(e) => setNutricionistaId(e.target.value)}
             >
+              {user?.perfil === 'SECRETARIA' && <option value="">Todos os Nutricionistas</option>}
               {nutricionistas.map((n: any) => (
                 <option key={n.id} value={n.id}>{n.nome}</option>
               ))}

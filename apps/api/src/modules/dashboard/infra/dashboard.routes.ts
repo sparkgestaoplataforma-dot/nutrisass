@@ -5,6 +5,6 @@ import { getDashboard } from './dashboard.controller.js';
 const dashboardRoutes = Router();
 
 dashboardRoutes.use(authMiddleware);
-dashboardRoutes.get('/nutricionistaId/:nutricionistaId', getDashboard);
+dashboardRoutes.get('/', getDashboard);
 
 export { dashboardRoutes };

@@ -1,15 +1,23 @@
 import { z } from "zod";
 import { prisma } from "../../../shared/providers/prisma.js";
 
-export async function pegarDadosDashboard(clinicaId: string, nutricionistaId: string) {
+export async function pegarDadosDashboard(
+  clinicaId: string,
+  usuarioId?: string,
+  perfil?: string,
+) {
+  const isSecretaria = perfil === "SECRETARIA";
+
   const schema = z.object({
     clinicaId: z.string().uuid("ID da clínica inválido"),
-    nutricionistaId: z.string().uuid("O ID do nutricionista é obrigatório para o dashboard"),
+    usuarioId: isSecretaria
+      ? z.string().uuid().optional()
+      : z.string().uuid("O ID do usuário é obrigatório para o dashboard"),
   });
 
-  const { clinicaId: vClinicaId, nutricionistaId: vNutricionistaId } = schema.parse({ 
-    clinicaId, 
-    nutricionistaId 
+  const { clinicaId: vClinicaId, usuarioId: vUsuarioId } = schema.parse({
+    clinicaId,
+    usuarioId,
   });
 
   const hoje = new Date();
@@ -18,7 +26,20 @@ export async function pegarDadosDashboard(clinicaId: string, nutricionistaId: st
   amanha.setDate(amanha.getDate() + 1);
 
   const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-  const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0, 23, 59, 59, 999);
+  const fimMes = new Date(
+    hoje.getFullYear(),
+    hoje.getMonth() + 1,
+    0,
+    23,
+    59,
+    59,
+    999,
+  );
+
+  const whereAgenda: any = { clinicaId: vClinicaId };
+  if (vUsuarioId) {
+    whereAgenda.nutricionistaId = vUsuarioId;
+  }
 
   const [
     totalPacientes,
@@ -33,51 +54,52 @@ export async function pegarDadosDashboard(clinicaId: string, nutricionistaId: st
     prisma.paciente.count({ where: { clinicaId: vClinicaId } }),
 
     prisma.paciente.count({
-      where: { clinicaId: vClinicaId, criadoEm: { gte: inicioMes, lte: fimMes } },
+      where: {
+        clinicaId: vClinicaId,
+        criadoEm: { gte: inicioMes, lte: fimMes },
+      },
     }),
 
     prisma.agendamento.count({
-      where: { clinicaId: vClinicaId, nutricionistaId: vNutricionistaId, dataHora: { gte: hoje, lt: amanha } },
+      where: { ...whereAgenda, dataHora: { gte: hoje, lt: amanha } },
     }),
 
     prisma.agendamento.count({
-      where: { clinicaId: vClinicaId, nutricionistaId: vNutricionistaId, dataHora: { gte: inicioMes, lte: fimMes } },
+      where: { ...whereAgenda, dataHora: { gte: inicioMes, lte: fimMes } },
     }),
 
     prisma.agendamento.count({
       where: {
-        clinicaId: vClinicaId,
-        nutricionistaId: vNutricionistaId,
+        ...whereAgenda,
         dataHora: { gte: inicioMes, lte: fimMes },
-        status: 'REALIZADO',
+        status: "REALIZADO",
       },
     }),
 
     prisma.agendamento.count({
       where: {
-        clinicaId: vClinicaId,
-        nutricionistaId: vNutricionistaId,
+        ...whereAgenda,
         dataHora: { gte: inicioMes, lte: fimMes },
-        status: { in: ['CANCELADO', 'DESISTIU'] },
+        status: { in: ["CANCELADO", "DESISTIU"] },
       },
     }),
 
     prisma.agendamento.count({
       where: {
-        clinicaId: vClinicaId,
-        nutricionistaId: vNutricionistaId,
+        ...whereAgenda,
         dataHora: { gte: inicioMes, lte: fimMes },
-        status: 'NAO_COMPARECEU',
+        status: "NAO_COMPARECEU",
       },
     }),
 
     prisma.agendamento.findMany({
-      where: { clinicaId: vClinicaId, nutricionistaId: vNutricionistaId, dataHora: { gte: hoje, lt: amanha } },
+      where: { ...whereAgenda, dataHora: { gte: hoje, lt: amanha } },
       include: {
         paciente: { select: { id: true, nome: true, telefone: true } },
+        nutricionista: { select: { nome: true } },
         convenio: { select: { id: true, nome: true } },
       },
-      orderBy: { dataHora: 'asc' },
+      orderBy: { dataHora: "asc" },
       take: 20,
     }),
   ]);

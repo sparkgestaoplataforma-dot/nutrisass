@@ -1,5 +1,5 @@
-import { api } from './api';
-import type { ApiResponse } from '@nutricao/shared';
+import { api } from "./api";
+import type { ApiResponse } from "@nutricao/shared";
 
 export interface DashboardData {
   totalPacientes: number;
@@ -26,10 +26,10 @@ export interface DashboardData {
   }>;
 }
 
-export async function pegarDadosDashboard(nutricionistaId: string) {
-  const { data: res } = await api.get<ApiResponse<DashboardData>>(
-    `/dashboard/nutricionistaId/${nutricionistaId}`
-  );
-  
+export async function pegarDadosDashboard(nutricionistaId?: string) {
+  const { data: res } = await api.get<ApiResponse<DashboardData>>("/dashboard", {
+    params: { nutricionistaId },
+  });
+
   return res.data!;
 }

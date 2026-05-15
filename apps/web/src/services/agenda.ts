@@ -1,16 +1,24 @@
-import { api } from './api';
-import { formatarDataBrasilia } from '@/utils/date';
+import { api } from "./api";
+import { formatarDataBrasilia } from "@/utils/date";
 import type {
   ApiResponse,
   CreateAgendamentoInput,
   UpdateAgendamentoInput,
   UpdateStatusInput,
-} from '@nutricao/shared';
+} from "@nutricao/shared";
 
 export interface AgendamentoResponse {
   id: string;
   pacienteId: string;
-  paciente: { id: string; nome: string; telefone: string | null; email: string | null };
+  paciente: {
+    id: string;
+    nome: string;
+    telefone: string | null;
+    email: string | null;
+  };
+  nutricionista: {
+    nome: string;
+  };
   convenio: { id: string; nome: string } | null;
   dataHora: string;
   dataHoraFormatada?: string;
@@ -22,25 +30,25 @@ export interface AgendamentoResponse {
   usuarioId: string;
 }
 
-export async function listarAgendaDia(data: string, nutricionistaId: string) {
+export async function listarAgendaDia(data: string) {
   const { data: res } = await api.get<ApiResponse<AgendamentoResponse[]>>(
-    `/agendamentos/nutricionistaId/${nutricionistaId}`,
+    `/agendamentos`,
     { params: { data } },
   );
-  
+
   if (res.data) {
-    res.data = res.data.map(ag => ({
+    res.data = res.data.map((ag) => ({
       ...ag,
-      dataHoraFormatada: formatarDataBrasilia(ag.dataHora)
+      dataHoraFormatada: formatarDataBrasilia(ag.dataHora),
     }));
   }
-  
+
   return res.data!;
 }
 
 export async function criarAgendamento(input: CreateAgendamentoInput) {
   const { data: res } = await api.post<ApiResponse<AgendamentoResponse>>(
-    '/agendamentos',
+    "/agendamentos",
     input,
   );
 
@@ -51,7 +59,10 @@ export async function criarAgendamento(input: CreateAgendamentoInput) {
   return res.data!;
 }
 
-export async function editarAgendamento(id: string, input: UpdateAgendamentoInput) {
+export async function editarAgendamento(
+  id: string,
+  input: UpdateAgendamentoInput,
+) {
   const { data: res } = await api.put<ApiResponse<AgendamentoResponse>>(
     `/agendamentos/${id}`,
     input,

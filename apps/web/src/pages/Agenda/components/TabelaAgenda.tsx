@@ -63,6 +63,7 @@ export function TabelaAgenda({
           <tr>
             <th>Hora</th>
             <th>Paciente</th>
+            <th>Nutricionista</th>
             <th>Convênio</th>
             <th>Telefone</th>
             <th>Tipo</th>
@@ -86,6 +87,7 @@ export function TabelaAgenda({
                 </span>
                 {ag.encaixe && <span className={styles.encaixe}>Encaixe</span>}
               </td>
+              <td>{ag.nutricionista?.nome || "-"}</td>
               <td>{ag.convenio?.nome || "Particular"}</td>
               <td>{ag.paciente.telefone || "-"}</td>
               <td>{ag.tipo === "CONSULTA" ? "Consulta" : "Retorno"}</td>
