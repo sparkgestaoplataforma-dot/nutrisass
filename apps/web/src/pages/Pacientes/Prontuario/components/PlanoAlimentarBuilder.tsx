@@ -170,7 +170,8 @@ export function PlanoAlimentarBuilder({
           gorduras: a.gorduras,
           observacao: a.observacao,
           _basePer100: { cal: 0, prot: 0, carb: 0, gord: 0 },
-          _medidasCaseiras: [],
+          // Usa as medidas caseiras que já vêm da API via alimentoRel
+          _medidasCaseiras: a.alimentoRel?.medidasCaseiras ?? [],
         })),
       })),
     }));
@@ -757,14 +758,14 @@ export function PlanoAlimentarBuilder({
                               )}
                             </span>
                           ))}
-                          {ref.opcoes.length < 10 && (
-                            <button
-                              className={styles.addOpcaoBtn}
-                              onClick={() => addOpcao(ref._uid)}
-                            >
-                              + Opção
-                            </button>
-                          )}
+                          <button
+                            className={styles.addOpcaoBtn}
+                            onClick={() => addOpcao(ref._uid)}
+                            disabled={ref.opcoes.length >= 10}
+                            title={ref.opcoes.length >= 10 ? "O limite máximo é de 10 opções" : "Adicionar nova opção"}
+                          >
+                            + Opção
+                          </button>
                         </div>
 
                         {/* Alimento Search */}

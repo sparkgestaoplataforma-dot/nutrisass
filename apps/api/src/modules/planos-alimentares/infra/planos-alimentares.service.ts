@@ -69,7 +69,13 @@ export async function criarPlanoAlimentar(
           opcoes: {
             orderBy: { ordem: "asc" },
             include: {
-              alimentos: true,
+              alimentos: {
+                include: {
+                  alimentoRel: {
+                    include: { medidasCaseiras: true },
+                  },
+                },
+              },
             },
           },
         },
@@ -97,7 +103,13 @@ export async function pegarPlanosAlimentares(clinicaId: string, pacienteId?: str
           opcoes: {
             orderBy: { ordem: "asc" },
             include: {
-              alimentos: true,
+              alimentos: {
+                include: {
+                  alimentoRel: {
+                    include: { medidasCaseiras: true },
+                  },
+                },
+              },
             },
           },
         },
@@ -119,7 +131,13 @@ export async function pegarPlanoAlimentarPorId(id: string, clinicaId: string) {
           opcoes: {
             orderBy: { ordem: "asc" },
             include: {
-              alimentos: true,
+              alimentos: {
+                include: {
+                  alimentoRel: {
+                    include: { medidasCaseiras: true },
+                  },
+                },
+              },
             },
           },
         },
@@ -209,7 +227,13 @@ export async function editarPlanoAlimentar(
             opcoes: {
               orderBy: { ordem: "asc" },
               include: {
-                alimentos: true,
+                alimentos: {
+                  include: {
+                    alimentoRel: {
+                      include: { medidasCaseiras: true },
+                    },
+                  },
+                },
               },
             },
           },

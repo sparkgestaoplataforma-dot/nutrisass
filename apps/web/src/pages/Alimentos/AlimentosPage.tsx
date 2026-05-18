@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   AppleIcon,
@@ -15,6 +15,18 @@ import { api } from '@/services/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import styles from './AlimentosPage.module.scss';
 
+const UNIDADES_SUGERIDAS = [
+  "colher de sopa",
+  "colher de chá",
+  "xícara",
+  "copo (200ml)",
+  "fatia",
+  "unidade",
+  "porção",
+  "ml (mililitro)",
+  "l (litros)",
+];
+
 type Tab = 'taco' | 'meus';
 
 interface Alimento {
@@ -26,6 +38,7 @@ interface Alimento {
   carboidratos?: number;
   gorduras?: number;
   fibra?: number;
+  medidasCaseiras?: { id?: string; nome: string; quantidadeEmGramas: number }[];
 }
 
 interface AlimentosResponse {
@@ -54,7 +67,12 @@ export function AlimentosPage() {
     },
   });
 
-  const { register, handleSubmit, reset } = useForm<any>();
+  const { register, handleSubmit, reset, control } = useForm<any>();
+
+  const { fields: medidasFields, append: appendMedida, remove: removeMedida } = useFieldArray({
+    control,
+    name: 'medidasCaseiras',
+  });
 
   const mutation = useMutation({
     mutationFn: async (formData: any) => {
@@ -65,6 +83,10 @@ export function AlimentosPage() {
         carboidratos: formData.carboidratos ? Number(formData.carboidratos) : undefined,
         gorduras: formData.gorduras ? Number(formData.gorduras) : undefined,
         fibra: formData.fibra ? Number(formData.fibra) : undefined,
+        medidasCaseiras: formData.medidasCaseiras?.map((m: any) => ({
+          nome: m.nome,
+          quantidadeEmGramas: Number(m.quantidadeEmGramas),
+        })) || [],
       };
       if (editandoId) return api.put(`/alimentos/${editandoId}`, payload);
       return api.post('/alimentos', payload);
@@ -107,7 +129,8 @@ export function AlimentosPage() {
       proteinas: '',
       carboidratos: '',
       gorduras: '',
-      fibra: ''
+      fibra: '',
+      medidasCaseiras: []
     });
   }
 
@@ -120,7 +143,8 @@ export function AlimentosPage() {
       proteinas: al.proteinas ?? '',
       carboidratos: al.carboidratos ?? '',
       gorduras: al.gorduras ?? '',
-      fibra: al.fibra ?? ''
+      fibra: al.fibra ?? '',
+      medidasCaseiras: al.medidasCaseiras || []
     });
     setFormAberto(true);
   }
@@ -203,6 +227,94 @@ export function AlimentosPage() {
                 <input type="number" step="0.01" {...register('fibra')} placeholder="0.00" />
               </div>
             </div>
+
+            <div style={{ marginTop: '1.5rem', marginBottom: '1.5rem', background: '#F9FAFB', borderRadius: '0.75rem', border: '1px solid #E5E7EB', overflow: 'hidden' }}>
+              <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #E5E7EB', background: '#F3F4F6' }}>
+                <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: '#374151' }}>Medidas e Porções (Opcional)</h4>
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8rem', color: '#6B7280' }}>A tabela TACO usa como base 100g (ou 100ml). Configure as medidas caseiras para este alimento.</p>
+              </div>
+
+              <div style={{ padding: '1.25rem' }}>
+                {/* Pre-set units section */}
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 500, color: '#4B5563', display: 'block', marginBottom: '0.75rem' }}>
+                    Adicionar medida rápida:
+                  </label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {UNIDADES_SUGERIDAS.map(unidade => (
+                      <button 
+                        key={unidade}
+                        type="button" 
+                        onClick={() => appendMedida({ nome: unidade, quantidadeEmGramas: '' })}
+                        style={{ 
+                          background: '#fff', border: '1px solid #D1D5DB', borderRadius: '9999px', 
+                          padding: '0.35rem 0.85rem', fontSize: '0.75rem', color: '#374151',
+                          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onMouseOver={(e) => { e.currentTarget.style.borderColor = '#9CA3AF'; e.currentTarget.style.background = '#F9FAFB'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.borderColor = '#D1D5DB'; e.currentTarget.style.background = '#fff'; }}
+                      >
+                        <HugeiconsIcon icon={PlusSignIcon} size={12} strokeWidth={2} />
+                        {unidade}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Added measures list */}
+                {medidasFields.length > 0 && (
+                  <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '0.5rem', padding: '1rem', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '1rem' }}>
+                      Medidas configuradas:
+                    </label>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {medidasFields.map((field, index) => (
+                        <div key={field.id} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                          <div className={styles.field} style={{ flex: 1, marginBottom: 0 }}>
+                            <label style={{ fontSize: '0.7rem', color: '#6B7280', marginBottom: '0.25rem' }}>Nome da Medida</label>
+                            <input 
+                              list="unidades-sugeridas"
+                              {...register(`medidasCaseiras.${index}.nome` as const, { required: true })} 
+                              placeholder="Ex: colher de sopa, unidade..." 
+                              style={{ padding: '0.45rem 0.6rem', fontSize: '0.85rem', borderColor: '#D1D5DB' }} 
+                            />
+                          </div>
+                          <div className={styles.field} style={{ width: '120px', marginBottom: 0 }}>
+                            <label style={{ fontSize: '0.7rem', color: '#6B7280', marginBottom: '0.25rem' }}>Equiv. (g ou ml)</label>
+                            <input 
+                              type="number" step="0.01" min="0" 
+                              {...register(`medidasCaseiras.${index}.quantidadeEmGramas` as const, { required: true })} 
+                              placeholder="Ex: 15" 
+                              style={{ padding: '0.45rem 0.6rem', fontSize: '0.85rem', borderColor: '#D1D5DB' }} 
+                            />
+                          </div>
+                          <button type="button" onClick={() => removeMedida(index)} style={{ color: '#EF4444', height: '36px', marginTop: '1.25rem', padding: '0 0.25rem', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }} title="Remover medida">
+                            <HugeiconsIcon icon={Delete02Icon} size={18} strokeWidth={2} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Add custom blank measure button */}
+                <div style={{ marginTop: medidasFields.length > 0 ? '1rem' : 0, display: 'flex', justifyContent: 'center' }}>
+                  <button type="button" onClick={() => appendMedida({ nome: '', quantidadeEmGramas: '' })} style={{ background: 'transparent', border: '1px dashed #D1D5DB', color: '#4B5563', fontSize: '0.8rem', padding: '0.65rem 1rem', borderRadius: '0.5rem', display: 'flex', gap: '0.35rem', alignItems: 'center', cursor: 'pointer', width: '100%', justifyContent: 'center', transition: 'all 0.15s ease' }} onMouseOver={(e) => { e.currentTarget.style.borderColor = '#9CA3AF'; e.currentTarget.style.background = '#F9FAFB'; }} onMouseOut={(e) => { e.currentTarget.style.borderColor = '#D1D5DB'; e.currentTarget.style.background = 'transparent'; }}>
+                    <HugeiconsIcon icon={PlusSignIcon} size={14} strokeWidth={2} />
+                    Adicionar medida com outro nome
+                  </button>
+                </div>
+              </div>
+              
+              <datalist id="unidades-sugeridas">
+                {UNIDADES_SUGERIDAS.map((u) => (
+                  <option key={u} value={u} />
+                ))}
+              </datalist>
+            </div>
+
             <div className={styles.formActions}>
               <button type="button" className={styles.cancelBtn} onClick={fecharForm}>Cancelar</button>
               <button type="submit" className={styles.submitBtn} disabled={mutation.isPending}>

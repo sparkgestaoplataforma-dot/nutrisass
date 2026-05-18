@@ -38,6 +38,9 @@ export interface PlanoAlimentoAPI {
   carboidratos: number | null;
   gorduras: number | null;
   observacao: string | null;
+  alimentoRel?: {
+    medidasCaseiras: MedidaCaseira[];
+  } | null;
 }
 
 export interface PlanoOpcaoRefeicaoAPI {

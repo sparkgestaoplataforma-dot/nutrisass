@@ -613,9 +613,9 @@
 
 .addOpcaoBtn {
   padding: $space-1 $space-2;
-  font-size: $font-size-2xs;
+  font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
-  color: $gray-300;
+  color: $primary;
   background: none;
   border: none;
   cursor: pointer;
@@ -623,8 +623,14 @@
   margin-bottom: -2px;
   transition: color $transition-base;
 
-  &:hover {
-    color: $primary;
+  &:hover:not(:disabled) {
+    color: $primary-dark;
+  }
+  
+  &:disabled {
+    cursor: not-allowed;
+    color: $gray-400;
+    opacity: 0.6;
   }
 }
 
