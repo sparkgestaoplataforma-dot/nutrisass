@@ -258,13 +258,16 @@ export function PlanoAlimentarBuilder({
 
   const addAlimento = useCallback(
     (ruid: string, ouid: string, api: AlimentoAPI) => {
+      const defaultMeasure = api.medidasCaseiras?.find(
+        (m) => m.nome.toLowerCase() === "ml"
+      );
       const newAl: AlimentoLocal = {
         _uid: uid(),
         alimentoId: api.id,
-        medidaCaseiraId: null,
+        medidaCaseiraId: defaultMeasure ? defaultMeasure.id : null,
         alimento: api.nome,
         quantidade: 100,
-        unidade: "g",
+        unidade: defaultMeasure ? defaultMeasure.nome : "g",
         calorias: api.calorias,
         proteinas: api.proteinas,
         carboidratos: api.carboidratos,

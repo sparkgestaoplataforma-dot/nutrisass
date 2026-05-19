@@ -19,8 +19,19 @@ function calcularIdade(dataNascimento: string | Date | null | undefined): string
 }
 
 export function PlanoAlimentarPdfPage() {
-  const { id } = useParams<{ id: string }>();
+  const { pacienteId, id } = useParams<{ pacienteId: string; id: string }>();
   const navigate = useNavigate();
+
+  const handleBack = () => {
+    window.close();
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else if (pacienteId) {
+      navigate(`/pacientes/${pacienteId}`);
+    } else {
+      navigate('/pacientes');
+    }
+  };
 
   const { data: response, isLoading, error } = useQuery({
     queryKey: ['plano-alimentar', id],
@@ -64,7 +75,7 @@ export function PlanoAlimentarPdfPage() {
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>
         <h2>Erro ao carregar plano alimentar</h2>
-        <button onClick={() => navigate(-1)} className={styles.backBtn}>Voltar</button>
+        <button onClick={handleBack} className={styles.backBtn}>Voltar</button>
       </div>
     );
   }
@@ -80,7 +91,7 @@ export function PlanoAlimentarPdfPage() {
   return (
     <div className={styles.pdfContainer}>
       <div className={`${styles.controls} ${styles.noPrint}`}>
-        <button className={styles.backBtn} onClick={() => navigate(-1)}>
+        <button className={styles.backBtn} onClick={handleBack}>
           <HugeiconsIcon icon={ArrowLeft01Icon} size={18} />
           Voltar
         </button>
