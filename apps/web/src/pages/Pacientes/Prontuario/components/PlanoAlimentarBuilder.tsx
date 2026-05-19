@@ -789,10 +789,10 @@ export function PlanoAlimentarBuilder({
                                     Alimento
                                   </span>
                                   <span className={styles.alimentoRowHeaderCell}>
-                                    Medida
+                                    Qtd
                                   </span>
                                   <span className={styles.alimentoRowHeaderCell}>
-                                    Qtd
+                                    Medida
                                   </span>
                                   <span className={styles.alimentoRowHeaderCell}>
                                     Kcal
@@ -819,26 +819,6 @@ export function PlanoAlimentarBuilder({
                                   >
                                     {al.alimento}
                                   </span>
-                                  <select
-                                    className={styles.alimentoMiniSelect}
-                                    value={al.medidaCaseiraId || ""}
-                                    onChange={(e) =>
-                                      updateAlimento(
-                                        ref._uid,
-                                        opcaoAtiva._uid,
-                                        al._uid,
-                                        "medidaCaseiraId",
-                                        e.target.value || null,
-                                      )
-                                    }
-                                  >
-                                    <option value="">g</option>
-                                    {al._medidasCaseiras.map((mc) => (
-                                      <option key={mc.id} value={mc.id}>
-                                        {mc.nome}
-                                      </option>
-                                    ))}
-                                  </select>
                                   <input
                                     className={styles.alimentoMiniInput}
                                     type="number"
@@ -859,6 +839,26 @@ export function PlanoAlimentarBuilder({
                                       );
                                     }}
                                   />
+                                  <select
+                                    className={styles.alimentoMiniSelect}
+                                    value={al.medidaCaseiraId || ""}
+                                    onChange={(e) =>
+                                      updateAlimento(
+                                        ref._uid,
+                                        opcaoAtiva._uid,
+                                        al._uid,
+                                        "medidaCaseiraId",
+                                        e.target.value || null,
+                                      )
+                                    }
+                                  >
+                                    <option value="">g</option>
+                                    {al._medidasCaseiras.map((mc) => (
+                                      <option key={mc.id} value={mc.id}>
+                                        {mc.nome}
+                                      </option>
+                                    ))}
+                                  </select>
                                   <span className={styles.macroCell}>
                                     {al.calorias?.toFixed(0) || "0"}
                                   </span>
