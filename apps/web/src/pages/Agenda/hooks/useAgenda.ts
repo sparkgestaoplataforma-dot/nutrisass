@@ -15,7 +15,7 @@ import type {
 export function useAgendaDia(data: string, nutricionistaId: string) {
   return useQuery({
     queryKey: ["agenda", data, nutricionistaId],
-    queryFn: () => listarAgendaDia(data),
+    queryFn: () => listarAgendaDia(data, nutricionistaId),
   });
 }
 

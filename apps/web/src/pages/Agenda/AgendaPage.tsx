@@ -25,7 +25,9 @@ export function AgendaPage() {
   const {user} = useAuthStore();
 
   const [dataSelecionada, setDataSelecionada] = useState(formatDate(new Date()));
-  const [nutricionistaId, setNutricionistaId] = useState(user?.userId || "");
+  const [nutricionistaId, setNutricionistaId] = useState(
+    (user?.perfil === 'SECRETARIA' || user?.perfil === 'ADMIN') ? "" : (user?.userId || "")
+  );
   const [modalAberto, setModalAberto] = useState(false);
   const [agendamentoEditando, setAgendamentoEditando] =
     useState<AgendamentoResponse | null>(null);
@@ -136,7 +138,7 @@ export function AgendaPage() {
               value={nutricionistaId}
               onChange={(e) => setNutricionistaId(e.target.value)}
             >
-              {user?.perfil === 'SECRETARIA' && <option value="">Todos os Nutricionistas</option>}
+              {(user?.perfil === 'SECRETARIA' || user?.perfil === 'ADMIN') && <option value="">Todos os Nutricionistas</option>}
               {nutricionistas.map((n: any) => (
                 <option key={n.id} value={n.id}>{n.nome}</option>
               ))}

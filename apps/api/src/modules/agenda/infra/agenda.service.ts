@@ -42,10 +42,8 @@ export async function pegarAgendamentosDia(
     dataHora: { gte: inicio, lte: fim },
   };
 
-  if (usuarioPerfil !== "SECRETARIA") {
-    if (vUsuarioId) {
-      where.nutricionistaId = vUsuarioId;
-    }
+  if (vUsuarioId) {
+    where.nutricionistaId = vUsuarioId;
   }
 
   const agendamentos = await prisma.agendamento.findMany({
@@ -82,7 +80,7 @@ export async function criarAgendamento(
     data: {
       clinicaId,
       pacienteId: input.pacienteId,
-      usuarioId,
+      criadoPorId: input.criadoPorId,
       nutricionistaId: nutricionista.id,
       convenioId: input.convenioId || null,
       dataHora,
@@ -174,7 +172,7 @@ export async function alterarStatusAgendamento(
   if (novoStatus === "PRESENTE" && statusAnterior !== "PRESENTE") {
     await criarNotificacao({
       clinicaId: agendamento.clinicaId,
-      usuarioId: agendamento.usuarioId,
+      usuarioId: agendamento.criadoPorId,
       tipo: "PACIENTE_CHEGOU",
       titulo: "Paciente chegou",
       mensagem: `${agendamento.paciente.nome} confirmou presença para a consulta das ${format(agendamento.dataHora, "HH:mm")}.`,

@@ -30,7 +30,7 @@ export function AgendamentoModal({
   user
 }: AgendamentoModalProps) {
   const { data: pacientesData } = useQuery({
-    queryKey: ['pacientes-select'],
+    queryKey: ['pacientes', 'select'],
     queryFn: () => listarPacientes(),
   });
 
@@ -60,7 +60,7 @@ export function AgendamentoModal({
       tipo: 'CONSULTA',
       status: 'AGENDADO',
       encaixe: false,
-      usuarioId: user?.userId,
+      criadoPorId: user?.userId,
       nutricionistaId: user?.userId,
     },
   });
@@ -75,17 +75,17 @@ export function AgendamentoModal({
         status: agendamento.status as any,
         encaixe: agendamento.encaixe,
         observacao: agendamento.observacao || undefined,
-        usuarioId: user?.userId,
+        criadoPorId: user?.userId,
         nutricionistaId: agendamento.nutricionistaId,
       });
     } else {
-      const idUnico = (nutricionistasData?.length === 1 ? nutricionistasData[0].id : undefined) || "";
+      const idUnico = (user?.perfil === 'NUTRICIONISTA' ? user?.userId : (nutricionistasData?.length === 1 ? nutricionistasData[0].id : undefined)) || "";
       reset({
         tipo: 'CONSULTA',
         status: 'AGENDADO',
         encaixe: false,
         dataHora: `${dataSelecionada}T08:00`,
-        usuarioId: user?.userId || "",
+        criadoPorId: user?.userId || "",
         nutricionistaId: idUnico,
       });
     }
@@ -120,7 +120,15 @@ export function AgendamentoModal({
 
             <div className={styles.field}>
               <label>Nutricionista</label>
-              <select {...register('nutricionistaId')}>
+              <select
+                {...register('nutricionistaId')}
+                style={{
+                  pointerEvents: user?.perfil === 'NUTRICIONISTA' ? 'none' : 'auto',
+                  opacity: user?.perfil === 'NUTRICIONISTA' ? 0.7 : 1,
+                  backgroundColor: user?.perfil === 'NUTRICIONISTA' ? '#f5f5f5' : 'inherit',
+                }}
+                tabIndex={user?.perfil === 'NUTRICIONISTA' ? -1 : undefined}
+              >
                 <option value="" >Selecione um nutricionista</option>
                 {nutricionistasData?.map((profissional) => (
                   <option key={profissional.id} value={profissional.id}>

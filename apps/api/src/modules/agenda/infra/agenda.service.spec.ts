@@ -44,7 +44,7 @@ describe("agenda.service", () => {
       prismaMock.agendamento.create.mockResolvedValue({ id: "novo" } as any);
 
       const result = await criarAgendamento(
-        { pacienteId: mockPacienteId, nutricionistaId: mockUsuarioId, dataHora: "2026-05-12T10:00:00Z" } as any,
+        { pacienteId: mockPacienteId, criadoPorId: mockUsuarioId, nutricionistaId: mockUsuarioId, dataHora: "2026-05-12T10:00:00Z" } as any,
         mockUsuarioId,
         mockClinicaId
       );
@@ -70,7 +70,7 @@ describe("agenda.service", () => {
   describe("alterarStatusAgendamento", () => {
     it("deve alterar o status", async () => {
       prismaMock.agendamento.findUnique.mockResolvedValue({ id: mockAgendamentoId, status: "AGENDADO", paciente: { nome: "Teste" } } as any);
-      prismaMock.agendamento.update.mockResolvedValue({ id: mockAgendamentoId, status: "PRESENTE", clinicaId: mockClinicaId, usuarioId: mockUsuarioId, dataHora: new Date(), paciente: { nome: "Teste" } } as any);
+      prismaMock.agendamento.update.mockResolvedValue({ id: mockAgendamentoId, status: "PRESENTE", clinicaId: mockClinicaId, criadoPorId: mockUsuarioId, dataHora: new Date(), paciente: { nome: "Teste" } } as any);
 
       const result = await alterarStatusAgendamento(mockAgendamentoId, { status: "PRESENTE" });
 
