@@ -69,7 +69,13 @@ export async function criarPlanoAlimentar(
           opcoes: {
             orderBy: { ordem: "asc" },
             include: {
-              alimentos: true,
+              alimentos: {
+                include: {
+                  alimentoRel: {
+                    include: { medidasCaseiras: true },
+                  },
+                },
+              },
             },
           },
         },
@@ -97,7 +103,13 @@ export async function pegarPlanosAlimentares(clinicaId: string, pacienteId?: str
           opcoes: {
             orderBy: { ordem: "asc" },
             include: {
-              alimentos: true,
+              alimentos: {
+                include: {
+                  alimentoRel: {
+                    include: { medidasCaseiras: true },
+                  },
+                },
+              },
             },
           },
         },
@@ -110,14 +122,22 @@ export async function pegarPlanoAlimentarPorId(id: string, clinicaId: string) {
   const plano = await prisma.planoAlimentar.findFirst({
     where: { id, clinicaId },
     include: {
-      paciente: { select: { id: true, nome: true } },
+      clinica: { select: { nome: true, logomarca: true } },
+      usuario: { select: { nome: true, email: true } },
+      paciente: { select: { id: true, nome: true, dataNascimento: true } },
       refeicoes: {
         orderBy: { ordem: "asc" },
         include: {
           opcoes: {
             orderBy: { ordem: "asc" },
             include: {
-              alimentos: true,
+              alimentos: {
+                include: {
+                  alimentoRel: {
+                    include: { medidasCaseiras: true },
+                  },
+                },
+              },
             },
           },
         },
@@ -207,7 +227,13 @@ export async function editarPlanoAlimentar(
             opcoes: {
               orderBy: { ordem: "asc" },
               include: {
-                alimentos: true,
+                alimentos: {
+                  include: {
+                    alimentoRel: {
+                      include: { medidasCaseiras: true },
+                    },
+                  },
+                },
               },
             },
           },

@@ -8,6 +8,7 @@ import {
   BarChartIcon,
   SettingsIcon,
   Cancel01Icon,
+  AppleIcon,
 } from '@hugeicons/core-free-icons';
 import { useAuthStore } from '@/stores/authStore';
 import styles from './Sidebar.module.scss';
@@ -17,6 +18,7 @@ const navItems = [
   { to: '/agenda', label: 'Agenda', icon: CalendarIcon },
   { to: '/pacientes', label: 'Pacientes', icon: UserGroupIcon },
   { to: '/exames', label: 'Exames', icon: TestTubeIcon },
+  { to: '/alimentos', label: 'Alimentos', icon: AppleIcon },
   { to: '/relatorios', label: 'Relatórios', icon: BarChartIcon },
   { to: '/configuracoes', label: 'Configurações', icon: SettingsIcon },
 ];

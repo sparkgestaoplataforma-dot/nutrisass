@@ -1,0 +1,1124 @@
+@use "../../../../styles/variables" as *;
+@use "../../../../styles/mixins" as *;
+
+// ==========================================
+// PlanoAlimentar — Tab (Lista)
+// ==========================================
+
+.tabContainer {
+  width: 100%;
+}
+
+.headerRow {
+  @include flex-between;
+  margin-bottom: $space-5;
+}
+
+.headerTitle {
+  @include heading-lg;
+}
+
+.headerSubtitle {
+  @include text-sm;
+  margin-top: $space-1;
+}
+
+.newPlanBtn {
+  @include btn;
+  gap: $space-2;
+  box-shadow: 0 2px 8px rgba($primary, 0.3);
+
+  &:hover {
+    box-shadow: 0 4px 14px rgba($primary, 0.4);
+  }
+}
+
+// ==========================================
+// Lista de Planos (Cards)
+// ==========================================
+
+.planosList {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.planoCard {
+  @include card-hover;
+  padding: $space-4 $space-5;
+  cursor: pointer;
+  transition: all $transition-smooth;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.planoCardHeader {
+  @include flex-between;
+  margin-bottom: $space-3;
+}
+
+.planoCardTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-bold;
+  color: $gray-900;
+}
+
+.planoCardDate {
+  font-size: $font-size-2xs;
+  color: $gray-400;
+}
+
+.planoCardBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin-bottom: $space-3;
+}
+
+.objetivoBadge {
+  @include badge($primary-light, $primary-dark);
+}
+
+.planoCardMacros {
+  display: flex;
+  gap: $space-4;
+  padding-top: $space-3;
+  border-top: 1px solid $gray-100;
+}
+
+.macroItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-1;
+}
+
+.macroValue {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $gray-800;
+}
+
+.macroLabel {
+  font-size: $font-size-2xs;
+  color: $gray-400;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.emptyState {
+  @include flex-center;
+  flex-direction: column;
+  gap: $space-3;
+  padding: $space-12 $space-4;
+  color: $gray-400;
+
+  svg {
+    opacity: 0.3;
+  }
+}
+
+.emptyTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $gray-500;
+}
+
+.emptyText {
+  font-size: $font-size-sm;
+  color: $gray-400;
+  text-align: center;
+  max-width: 300px;
+}
+
+// ==========================================
+// View (Read-Only)
+// ==========================================
+
+.viewContainer {
+  width: 100%;
+}
+
+.viewHeader {
+  @include flex-between;
+  margin-bottom: $space-5;
+  flex-wrap: wrap;
+  gap: $space-3;
+}
+
+.viewTitle {
+  @include heading-lg;
+}
+
+.viewActions {
+  display: flex;
+  gap: $space-2;
+}
+
+.editBtn {
+  @include btn($primary, $white);
+}
+
+.deleteBtn {
+  @include btn-ghost($danger);
+  color: $danger;
+  border-color: rgba($danger, 0.2);
+
+  &:hover {
+    background: rgba($danger, 0.05);
+    border-color: rgba($danger, 0.3);
+    opacity: 1;
+  }
+}
+
+.pdfBtn {
+  @include btn-ghost($primary);
+}
+
+.backBtn {
+  @include btn-ghost;
+  margin-bottom: $space-4;
+}
+
+// Metas Header
+.metasBar {
+  @include card;
+  padding: $space-4 $space-5;
+  margin-bottom: $space-5;
+}
+
+.metasTitle {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $gray-400;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: $space-3;
+}
+
+.metasGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: $space-4;
+}
+
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+.metaLabelRow {
+  @include flex-between;
+}
+
+.metaLabel {
+  font-size: $font-size-2xs;
+  font-weight: $font-weight-semibold;
+  color: $gray-500;
+}
+
+.metaNumbers {
+  font-size: $font-size-2xs;
+  color: $gray-400;
+}
+
+.metaProgressBar {
+  width: 100%;
+  height: 6px;
+  background: $gray-100;
+  border-radius: $radius-full;
+  overflow: hidden;
+}
+
+.metaProgressFill {
+  height: 100%;
+  border-radius: $radius-full;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(90deg, $primary, $primary-dark);
+
+  &.over {
+    background: linear-gradient(90deg, $warning, $orange);
+  }
+}
+
+// Refeição View Card
+.refeicaoViewCard {
+  @include card;
+  padding: $space-4 $space-5;
+  margin-bottom: $space-3;
+}
+
+.refeicaoViewHeader {
+  @include flex-between;
+  margin-bottom: $space-3;
+  padding-bottom: $space-3;
+  border-bottom: 1px solid $gray-100;
+}
+
+.refeicaoViewName {
+  font-size: $font-size-base;
+  font-weight: $font-weight-bold;
+  color: $gray-900;
+}
+
+.refeicaoViewHorario {
+  @include badge($info-light, $info);
+}
+
+// Opções Tabs (View)
+.opcoesTabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid $gray-100;
+  margin-bottom: $space-3;
+}
+
+.opcaoTab {
+  padding: $space-2 $space-4;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $gray-400;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: all $transition-base;
+
+  &:hover {
+    color: $gray-600;
+  }
+
+  &.active {
+    color: $primary-dark;
+    border-bottom-color: $primary;
+  }
+}
+
+// Tabela de alimentos
+.alimentosTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 680px;
+
+  th,
+  td {
+    padding: $space-2 $space-3;
+    text-align: left;
+    font-size: $font-size-xs;
+    border-bottom: 1px solid $gray-50;
+  }
+
+  th {
+    font-weight: $font-weight-semibold;
+    color: $gray-400;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: $font-size-2xs;
+    background: $gray-25;
+  }
+
+  td {
+    color: $gray-700;
+  }
+}
+
+.totaisRow {
+  td {
+    font-weight: $font-weight-bold;
+    color: $gray-900;
+    background: $gray-50;
+    border-top: 2px solid $gray-200;
+  }
+}
+
+// Total Diário
+.totalDiarioCard {
+  @include card;
+  padding: $space-4 $space-5;
+  margin-top: $space-4;
+  background: linear-gradient(135deg, $primary-50, $primary-light);
+  border-color: rgba($primary, 0.2);
+}
+
+.totalDiarioTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $primary-dark;
+  margin-bottom: $space-3;
+}
+
+.totalDiarioGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $space-4;
+}
+
+.totalDiarioItem {
+  text-align: center;
+}
+
+.totalDiarioValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $primary-dark;
+}
+
+.totalDiarioLabel {
+  font-size: $font-size-2xs;
+  color: $gray-500;
+  margin-top: $space-1;
+}
+
+.aguaRecomendacao {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  margin-top: $space-3;
+  padding-top: $space-3;
+  border-top: 1px solid rgba($primary, 0.15);
+  font-size: $font-size-sm;
+  color: $info;
+  font-weight: $font-weight-semibold;
+}
+
+// ==========================================
+// Builder (Edição / Criação)
+// ==========================================
+
+.builderContainer {
+  width: 100%;
+}
+
+.builderHeader {
+  @include card;
+  padding: $space-5;
+  margin-bottom: $space-5;
+}
+
+.builderRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-4;
+  margin-bottom: $space-4;
+}
+
+.builderRowFull {
+  margin-bottom: $space-4;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+.fieldLabel {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $gray-600;
+}
+
+.fieldInput {
+  @include input-base;
+}
+
+.fieldSelect {
+  @include input-base;
+  cursor: pointer;
+}
+
+.fieldTextarea {
+  @include input-base;
+  min-height: 60px;
+  resize: vertical;
+}
+
+// Metas Builder
+.metasBuilderSection {
+  margin-top: $space-4;
+  padding-top: $space-4;
+  border-top: 1px solid $gray-100;
+}
+
+.metasBuilderTitle {
+  @include label;
+  margin-bottom: $space-3;
+}
+
+.metasBuilderGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: $space-3;
+}
+
+.metaInput {
+  @include input-base;
+  text-align: center;
+  font-size: $font-size-xs;
+}
+
+// Refeições Builder
+.refeicoesSection {
+  margin-bottom: $space-5;
+}
+
+.addRefeicaoBtn {
+  @include btn-ghost;
+  width: 100%;
+  padding: $space-3;
+  border-style: dashed;
+  border-width: 2px;
+  color: $gray-400;
+  gap: $space-2;
+  margin-top: $space-3;
+
+  &:hover {
+    border-color: $primary;
+    color: $primary;
+    background: $primary-50;
+  }
+}
+
+// Refeição Card (Builder)
+.refeicaoCard {
+  @include card;
+  margin-bottom: $space-3;
+  overflow: visible;
+  transition:
+    box-shadow $transition-smooth,
+    border-color $transition-smooth;
+
+  &.dragging {
+    box-shadow: $shadow-xl;
+    border-color: $primary;
+    opacity: 0.92;
+  }
+}
+
+.refeicaoHeader {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  background: $gray-25;
+  border-bottom: 1px solid $gray-100;
+}
+
+.dragHandle {
+  display: flex;
+  align-items: center;
+  cursor: grab;
+  color: $gray-300;
+  padding: $space-1;
+  border-radius: $radius-sm;
+  transition: all $transition-base;
+
+  &:hover {
+    color: $gray-500;
+    background: $gray-100;
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.refeicaoNameInput {
+  @include input-base;
+  flex: 1;
+  font-weight: $font-weight-semibold;
+  font-size: $font-size-sm;
+  padding: $space-1 $space-2;
+  border: 1px solid transparent;
+  background: transparent;
+
+  &:hover {
+    border-color: $gray-200;
+    background: $white;
+  }
+
+  &:focus {
+    border-color: $primary;
+    background: $white;
+    box-shadow: $shadow-focus;
+  }
+}
+
+.refeicaoTimeInput {
+  @include input-base;
+  width: 130px;
+  font-size: $font-size-xs;
+  padding: $space-1 $space-2;
+  text-align: center;
+}
+
+.removeRefeicaoBtn {
+  @include flex-center;
+  width: 28px;
+  height: 28px;
+  border-radius: $radius-sm;
+  border: none;
+  background: transparent;
+  color: $gray-400;
+  cursor: pointer;
+  transition: all $transition-base;
+
+  &:hover {
+    background: rgba($danger, 0.1);
+    color: $danger;
+  }
+}
+
+// Corpo da Refeição
+.refeicaoBody {
+  padding: $space-4;
+  overflow: visible;
+  position: relative;
+}
+
+// Builder Opções Tabs
+.opcoesTabsBuilder {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border-bottom: 2px solid $gray-100;
+  margin-bottom: $space-3;
+}
+
+.opcaoTabBuilder {
+  padding: $space-2 $space-3;
+  font-size: $font-size-2xs;
+  font-weight: $font-weight-semibold;
+  color: $gray-400;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: all $transition-base;
+
+  &:hover {
+    color: $gray-600;
+  }
+
+  &.active {
+    color: $primary-dark;
+    border-bottom-color: $primary;
+  }
+}
+
+.addOpcaoBtn {
+  padding: $space-1 $space-2;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $primary;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: auto;
+  margin-bottom: -2px;
+  transition: color $transition-base;
+
+  &:hover:not(:disabled) {
+    color: $primary-dark;
+  }
+  
+  &:disabled {
+    cursor: not-allowed;
+    color: $gray-400;
+    opacity: 0.6;
+  }
+}
+
+.removeOpcaoBtn {
+  @include flex-center;
+  width: 18px;
+  height: 18px;
+  border-radius: $radius-full;
+  border: none;
+  background: transparent;
+  color: $gray-300;
+  cursor: pointer;
+  font-size: $font-size-2xs;
+  margin-left: $space-1;
+  transition: all $transition-base;
+
+  &:hover {
+    background: rgba($danger, 0.1);
+    color: $danger;
+  }
+}
+
+// Alimento Search
+.alimentoSearchWrapper {
+  position: relative;
+  margin-bottom: $space-3;
+}
+
+.alimentoSearchInput {
+  @include input-base;
+  padding-left: 2rem;
+  font-size: $font-size-xs;
+}
+
+.searchIcon {
+  position: absolute;
+  left: $space-3;
+  top: 50%;
+  transform: translateY(-50%);
+  color: $gray-400;
+  pointer-events: none;
+}
+
+.searchDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $radius-md;
+  box-shadow: $shadow-lg;
+  z-index: $z-modal;
+  max-height: 240px;
+  overflow-y: auto;
+  @include scrollbar;
+}
+
+.searchItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $space-2 $space-3;
+  cursor: pointer;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: $primary-50;
+  }
+}
+
+.searchItemName {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $gray-800;
+}
+
+.searchItemGrupo {
+  font-size: $font-size-2xs;
+  color: $gray-400;
+}
+
+.searchItemMacros {
+  font-size: $font-size-2xs;
+  color: $gray-400;
+  white-space: nowrap;
+}
+
+.searchLoading,
+.searchEmpty {
+  padding: $space-3;
+  text-align: center;
+  font-size: $font-size-xs;
+  color: $gray-400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+}
+
+.searchSpinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid $gray-200;
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: searchSpin 0.6s linear infinite;
+}
+
+.searchSpinnerLg {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid $gray-200;
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: searchSpin 0.6s linear infinite;
+}
+
+@keyframes searchSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Alimentos List (Builder)
+.alimentosGridContainer {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: $space-2;
+}
+
+.alimentoRow {
+  display: grid;
+  grid-template-columns: 1fr 80px 140px 70px 70px 70px 70px 32px;
+  min-width: 680px;
+  gap: $space-2;
+  align-items: center;
+  padding: $space-2 0;
+  border-bottom: 1px solid $gray-50;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.alimentoRowHeader {
+  composes: alimentoRow;
+  padding-bottom: $space-2;
+  border-bottom: 1px solid $gray-200;
+}
+
+.alimentoRowHeaderCell {
+  font-size: $font-size-2xs;
+  font-weight: $font-weight-semibold;
+  color: $gray-400;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.alimentoName {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $gray-800;
+  @include truncate;
+}
+
+.alimentoMiniInput {
+  @include input-base;
+  font-size: $font-size-2xs;
+  padding: $space-1 $space-1;
+  text-align: center;
+  min-width: 0;
+}
+
+.alimentoMiniSelect {
+  @include input-base;
+  font-size: $font-size-2xs;
+  padding: $space-1 $space-2;
+  cursor: pointer;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.macroCell {
+  font-size: $font-size-2xs;
+  color: $gray-500;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.removeAlimentoBtn {
+  @include flex-center;
+  width: 24px;
+  height: 24px;
+  border-radius: $radius-sm;
+  border: none;
+  background: transparent;
+  color: $gray-300;
+  cursor: pointer;
+  transition: all $transition-base;
+
+  &:hover {
+    background: rgba($danger, 0.1);
+    color: $danger;
+  }
+}
+
+// Refeição Totais
+.refeicaoTotais {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-4;
+  padding: $space-2 $space-3;
+  background: $gray-50;
+  border-radius: $radius-sm;
+  margin-top: $space-2;
+}
+
+.refeicaoTotalItem {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  font-size: $font-size-2xs;
+}
+
+.refeicaoTotalLabel {
+  color: $gray-400;
+  font-weight: $font-weight-medium;
+}
+
+.refeicaoTotalValue {
+  color: $gray-800;
+  font-weight: $font-weight-bold;
+  font-variant-numeric: tabular-nums;
+}
+
+// Builder Footer
+.builderFooter {
+  @include card;
+  padding: $space-4 $space-5;
+  margin-top: $space-4;
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.builderFooterTotals {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $space-4;
+
+  @media (min-width: 768px) {
+    display: flex;
+    gap: $space-5;
+  }
+}
+
+.footerTotalItem {
+  text-align: center;
+}
+
+.footerTotalValue {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $primary-dark;
+}
+
+.footerTotalLabel {
+  font-size: $font-size-2xs;
+  color: $gray-400;
+  text-transform: uppercase;
+}
+
+.builderFooterActions {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.cancelBtn {
+  @include btn-ghost;
+  width: 100%;
+  
+  @media (min-width: 768px) {
+    width: auto;
+  }
+}
+
+.saveBtn {
+  @include btn;
+  box-shadow: 0 2px 8px rgba($primary, 0.3);
+  width: 100%;
+  
+  @media (min-width: 768px) {
+    width: auto;
+  }
+
+  &:hover {
+    box-shadow: 0 4px 14px rgba($primary, 0.4);
+  }
+}
+
+// Progress bars in builder
+.builderMetasProgress {
+  @include card;
+  padding: $space-4 $space-5;
+  margin-bottom: $space-4;
+}
+
+.builderMetasProgressTitle {
+  @include label;
+  margin-bottom: $space-3;
+}
+
+.builderMetasProgressGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $space-4;
+}
+
+// Observações view
+.observacoesView {
+  @include card;
+  padding: $space-4 $space-5;
+  margin-bottom: $space-4;
+  background: $gray-25;
+}
+
+.observacoesLabel {
+  @include label;
+  margin-bottom: $space-2;
+}
+
+.observacoesText {
+  font-size: $font-size-sm;
+  color: $gray-700;
+  line-height: $line-height-relaxed;
+  white-space: pre-wrap;
+}
+
+// ==========================================
+// Utility / Overlay
+// ==========================================
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.06);
+  z-index: $z-overlay;
+}
+
+// DnD overlay item
+.dragOverlay {
+  opacity: 0.9;
+  transform: rotate(1.5deg);
+  box-shadow: $shadow-xl;
+}
+
+// Error Banner
+.errorBanner {
+  background-color: #fee2e2;
+  color: #991b1b;
+  padding: $space-3 $space-4;
+  border-radius: $radius-md;
+  margin-bottom: $space-4;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  border: 1px solid #f87171;
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+// ==========================================
+// Modal Styles
+// ==========================================
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  @include flex-center;
+  z-index: $z-modal + 10;
+  padding: $space-4;
+}
+
+.modalContent {
+  @include card;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: $space-6;
+  box-shadow: $shadow-xl;
+  animation: modalSlideUp $transition-smooth;
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modalHeader {
+  @include flex-between;
+  margin-bottom: $space-5;
+
+  h3 {
+    @include heading-md;
+    margin: 0;
+  }
+}
+
+.modalCloseBtn {
+  background: none;
+  border: none;
+  color: $gray-400;
+  cursor: pointer;
+  padding: $space-1;
+  border-radius: $radius-sm;
+  transition: all $transition-fast;
+
+  &:hover {
+    color: $gray-700;
+    background: $gray-100;
+  }
+}
+
+.modalForm {
+  @include flex-col;
+  gap: $space-4;
+}
+
+.modalMacrosGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: $space-3;
+}
+
+.modalField {
+  @include flex-col;
+  gap: $space-1;
+
+  label {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $gray-600;
+  }
+
+  input {
+    @include input-base;
+    font-size: $font-size-sm;
+    padding: $space-2 $space-3;
+  }
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $space-3;
+  margin-top: $space-2;
+}
+
+.modalCancelBtn {
+  @include btn-ghost;
+}
+
+.modalSubmitBtn {
+  @include btn;
+}

@@ -2,15 +2,27 @@ import { prisma } from "../../../shared/providers/prisma.js";
 import { AppError } from "../../../shared/middlewares/errorHandler.js";
 import { AlimentoInput } from "@nutricao/shared";
 
-export async function pegarAlimentos(clinicaId: string, q?: string, page: number = 1, limit: number = 20) {
+export async function pegarAlimentos(
+  clinicaId: string,
+  q?: string,
+  page: number = 1,
+  limit: number = 20,
+  tipo?: "taco" | "custom",
+) {
   const skip = (page - 1) * limit;
-  
-  const where: any = {
-    OR: [
+
+  const where: any = {};
+
+  if (tipo === "taco") {
+    where.clinicaId = null;
+  } else if (tipo === "custom") {
+    where.clinicaId = clinicaId;
+  } else {
+    where.OR = [
       { clinicaId: null }, // Alimentos Globais (TACO)
       { clinicaId: clinicaId }, // Alimentos customizados da clínica
-    ],
-  };
+    ];
+  }
 
   if (q) {
     where.nome = { contains: q, mode: "insensitive" };
@@ -47,12 +59,14 @@ export async function criarAlimento(clinicaId: string, data: AlimentoInput) {
     data: {
       ...alimentoData,
       clinicaId, // Sempre vincula à clínica, apenas o seed cria alimentos globais
-      medidasCaseiras: medidasCaseiras ? {
-        create: medidasCaseiras.map(m => ({
-          nome: m.nome,
-          quantidadeEmGramas: m.quantidadeEmGramas,
-        }))
-      } : undefined,
+      medidasCaseiras: medidasCaseiras
+        ? {
+            create: medidasCaseiras.map((m) => ({
+              nome: m.nome,
+              quantidadeEmGramas: m.quantidadeEmGramas,
+            })),
+          }
+        : undefined,
     },
     include: {
       medidasCaseiras: true,
@@ -66,10 +80,7 @@ export async function pegarAlimentoPorId(id: string, clinicaId: string) {
   const alimento = await prisma.alimento.findFirst({
     where: {
       id,
-      OR: [
-        { clinicaId: null },
-        { clinicaId: clinicaId },
-      ],
+      OR: [{ clinicaId: null }, { clinicaId: clinicaId }],
     },
     include: {
       medidasCaseiras: true,
@@ -81,4 +92,62 @@ export async function pegarAlimentoPorId(id: string, clinicaId: string) {
   }
 
   return alimento;
+}
+
+export async function atualizar(
+  id: string,
+  clinicaId: string,
+  data: AlimentoInput,
+) {
+  const alimento = await prisma.alimento.findFirst({
+    where: { id, clinicaId },
+  });
+
+  if (!alimento) {
+    throw new AppError(
+      "Alimento não encontrado ou não pertence a esta clínica",
+      404,
+    );
+  }
+
+  const { medidasCaseiras, ...alimentoData } = data;
+
+  const updated = await prisma.alimento.update({
+    where: { id },
+    data: {
+      ...alimentoData,
+      medidasCaseiras: {
+        deleteMany: {},
+        create:
+          medidasCaseiras?.map((m) => ({
+            nome: m.nome,
+            quantidadeEmGramas: m.quantidadeEmGramas,
+          })) || [],
+      },
+    },
+    include: {
+      medidasCaseiras: true,
+    },
+  });
+
+  return updated;
+}
+
+export async function excluir(id: string, clinicaId: string) {
+  const alimento = await prisma.alimento.findFirst({
+    where: { id, clinicaId },
+  });
+
+  if (!alimento) {
+    throw new AppError(
+      "Alimento não encontrado ou não pertence a esta clínica",
+      404,
+    );
+  }
+
+  await prisma.alimento.delete({
+    where: { id },
+  });
+
+  return { message: "Alimento excluído com sucesso" };
 }

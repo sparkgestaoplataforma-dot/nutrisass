@@ -1179,6 +1179,390 @@ async function main() {
     );
   }
 
+  // ====== PLANOS ALIMENTARES ======
+  const nutriUser = await prisma.usuario.findFirst({
+    where: { email: "nutri@nutricao.com", clinicaId: clinica.id },
+  });
+
+  if (isabela && olimpia && carlos && nutriUser) {
+    console.log("Recriando planos alimentares elaborados de teste...");
+    for (const pac of [isabela, olimpia, carlos]) {
+      // Remove os planos anteriores para rodar o seed limpo
+      await prisma.planoAlimentar.deleteMany({ where: { pacienteId: pac.id } });
+
+      // Plano 1: Emagrecimento
+      await prisma.planoAlimentar.create({
+        data: {
+          clinicaId: clinica.id,
+          usuarioId: nutriUser.id,
+          pacienteId: pac.id,
+          titulo: "Plano de Emagrecimento Saudável",
+          objetivo: "EMAGRECIMENTO",
+          metaCalorias: 1550,
+          metaProteinas: 130,
+          metaCarboidratos: 140,
+          metaGorduras: 45,
+          recomendacaoAguaMl: 2500,
+          observacoes: "Focar em hidratação e mastigar devagar.",
+          refeicoes: {
+            create: [
+              {
+                nome: "Café da Manhã",
+                horario: "08:00",
+                ordem: 0,
+                opcoes: {
+                  create: [
+                    {
+                      nome: "Opção 1 (Pão com Ovo)",
+                      ordem: 0,
+                      alimentos: {
+                        create: [
+                          {
+                            alimento: "Pão de forma integral",
+                            quantidade: 2,
+                            unidade: "Fatia",
+                            calorias: 120,
+                            proteinas: 6,
+                            carboidratos: 20,
+                            gorduras: 1.5,
+                          },
+                          {
+                            alimento: "Ovo de galinha cozido",
+                            quantidade: 2,
+                            unidade: "Unidade",
+                            calorias: 140,
+                            proteinas: 13,
+                            carboidratos: 1,
+                            gorduras: 10,
+                          },
+                          {
+                            alimento: "Café sem açúcar",
+                            quantidade: 1,
+                            unidade: "Xícara",
+                            calorias: 2,
+                            proteinas: 0,
+                            carboidratos: 0.5,
+                            gorduras: 0,
+                          },
+                        ],
+                      },
+                    },
+                    {
+                      nome: "Opção 2 (Iogurte e Fruta)",
+                      ordem: 1,
+                      alimentos: {
+                        create: [
+                          {
+                            alimento: "Iogurte Natural Desnatado",
+                            quantidade: 1,
+                            unidade: "Pote (170g)",
+                            calorias: 70,
+                            proteinas: 7,
+                            carboidratos: 10,
+                            gorduras: 0,
+                          },
+                          {
+                            alimento: "Mamão Papaia",
+                            quantidade: 0.5,
+                            unidade: "Unidade",
+                            calorias: 60,
+                            proteinas: 1,
+                            carboidratos: 14,
+                            gorduras: 0,
+                          },
+                          {
+                            alimento: "Aveia em flocos",
+                            quantidade: 2,
+                            unidade: "Colher de sopa",
+                            calorias: 105,
+                            proteinas: 4,
+                            carboidratos: 17,
+                            gorduras: 2,
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                nome: "Almoço",
+                horario: "12:30",
+                ordem: 1,
+                opcoes: {
+                  create: [
+                    {
+                      nome: "Opção Padrão",
+                      ordem: 0,
+                      alimentos: {
+                        create: [
+                          {
+                            alimento: "Arroz integral cozido",
+                            quantidade: 100,
+                            unidade: "g",
+                            calorias: 110,
+                            proteinas: 3,
+                            carboidratos: 23,
+                            gorduras: 1,
+                          },
+                          {
+                            alimento: "Feijão carioca cozido",
+                            quantidade: 80,
+                            unidade: "g",
+                            calorias: 60,
+                            proteinas: 4,
+                            carboidratos: 11,
+                            gorduras: 0.5,
+                          },
+                          {
+                            alimento: "Peito de frango grelhado",
+                            quantidade: 120,
+                            unidade: "g",
+                            calorias: 190,
+                            proteinas: 36,
+                            carboidratos: 0,
+                            gorduras: 4,
+                          },
+                          {
+                            alimento: "Salada de folhas verdes",
+                            quantidade: 1,
+                            unidade: "À vontade",
+                            calorias: 15,
+                            proteinas: 1,
+                            carboidratos: 3,
+                            gorduras: 0,
+                          },
+                          {
+                            alimento: "Azeite de oliva extra virgem",
+                            quantidade: 1,
+                            unidade: "Colher de sobremesa",
+                            calorias: 45,
+                            proteinas: 0,
+                            carboidratos: 0,
+                            gorduras: 5,
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                nome: "Lanche da Tarde",
+                horario: "16:00",
+                ordem: 2,
+                opcoes: {
+                  create: [
+                    {
+                      nome: "Opção Prática",
+                      ordem: 0,
+                      alimentos: {
+                        create: [
+                          {
+                            alimento: "Maçã Fuji",
+                            quantidade: 1,
+                            unidade: "Unidade média",
+                            calorias: 70,
+                            proteinas: 0.5,
+                            carboidratos: 19,
+                            gorduras: 0.3,
+                          },
+                          {
+                            alimento: "Castanha de caju",
+                            quantidade: 15,
+                            unidade: "g",
+                            calorias: 85,
+                            proteinas: 2.5,
+                            carboidratos: 4.5,
+                            gorduras: 7,
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                nome: "Jantar",
+                horario: "19:30",
+                ordem: 3,
+                opcoes: {
+                  create: [
+                    {
+                      nome: "Opção Leve",
+                      ordem: 0,
+                      alimentos: {
+                        create: [
+                          {
+                            alimento: "Filé de Tilápia grelhada",
+                            quantidade: 150,
+                            unidade: "g",
+                            calorias: 145,
+                            proteinas: 30,
+                            carboidratos: 0,
+                            gorduras: 2.5,
+                          },
+                          {
+                            alimento: "Brócolis cozido",
+                            quantidade: 80,
+                            unidade: "g",
+                            calorias: 28,
+                            proteinas: 2.5,
+                            carboidratos: 5,
+                            gorduras: 0.3,
+                          },
+                          {
+                            alimento: "Batata doce cozida",
+                            quantidade: 100,
+                            unidade: "g",
+                            calorias: 86,
+                            proteinas: 1.5,
+                            carboidratos: 20,
+                            gorduras: 0.1,
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      });
+
+      // Plano 2: Hipertrofia
+      await prisma.planoAlimentar.create({
+        data: {
+          clinicaId: clinica.id,
+          usuarioId: nutriUser.id,
+          pacienteId: pac.id,
+          titulo: "Plano de Hipertrofia (Ganho de Massa)",
+          objetivo: "HIPERTROFIA",
+          metaCalorias: 2800,
+          metaProteinas: 180,
+          metaCarboidratos: 350,
+          metaGorduras: 80,
+          recomendacaoAguaMl: 3500,
+          observacoes:
+            "Treino de força intenso 5x na semana. Manter sono regulado.",
+          refeicoes: {
+            create: [
+              {
+                nome: "Pré-Treino",
+                horario: "06:30",
+                ordem: 0,
+                opcoes: {
+                  create: [
+                    {
+                      nome: "Vitamina Proteica",
+                      ordem: 0,
+                      alimentos: {
+                        create: [
+                          {
+                            alimento: "Banana Prata",
+                            quantidade: 2,
+                            unidade: "Unidade",
+                            calorias: 140,
+                            proteinas: 2,
+                            carboidratos: 36,
+                            gorduras: 0,
+                          },
+                          {
+                            alimento: "Leite Integral",
+                            quantidade: 300,
+                            unidade: "ml",
+                            calorias: 180,
+                            proteinas: 9,
+                            carboidratos: 14,
+                            gorduras: 9,
+                          },
+                          {
+                            alimento: "Aveia em flocos",
+                            quantidade: 40,
+                            unidade: "g",
+                            calorias: 150,
+                            proteinas: 6,
+                            carboidratos: 22,
+                            gorduras: 3,
+                          },
+                          {
+                            alimento: "Whey Protein Concentrado",
+                            quantidade: 30,
+                            unidade: "g",
+                            calorias: 120,
+                            proteinas: 24,
+                            carboidratos: 3,
+                            gorduras: 2,
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                nome: "Pós-Treino (Almoço)",
+                horario: "12:00",
+                ordem: 1,
+                opcoes: {
+                  create: [
+                    {
+                      nome: "Almoço Reforçado",
+                      ordem: 0,
+                      alimentos: {
+                        create: [
+                          {
+                            alimento: "Arroz Branco Cozido",
+                            quantidade: 250,
+                            unidade: "g",
+                            calorias: 325,
+                            proteinas: 6,
+                            carboidratos: 72,
+                            gorduras: 0.5,
+                          },
+                          {
+                            alimento: "Feijão Preto Cozido",
+                            quantidade: 150,
+                            unidade: "g",
+                            calorias: 115,
+                            proteinas: 7,
+                            carboidratos: 20,
+                            gorduras: 1,
+                          },
+                          {
+                            alimento: "Carne Moída (Patinho)",
+                            quantidade: 150,
+                            unidade: "g",
+                            calorias: 200,
+                            proteinas: 33,
+                            carboidratos: 0,
+                            gorduras: 7,
+                          },
+                          {
+                            alimento: "Azeite de oliva extra virgem",
+                            quantidade: 1,
+                            unidade: "Colher de sopa",
+                            calorias: 110,
+                            proteinas: 0,
+                            carboidratos: 0,
+                            gorduras: 12,
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      });
+    }
+  }
+
+  await seedMedidasLiquidas();
+
   console.log("Seed executado com sucesso!");
   console.log(`Clínica: ${clinica.nome} (${clinica.id})`);
   console.log(
@@ -1186,6 +1570,81 @@ async function main() {
   );
   console.log("Senha padrão: 123456");
   console.log("Questionário QRM criado com respostas para 3 pacientes");
+}
+
+async function seedMedidasLiquidas() {
+  console.log("\nSemeando/Atualizando medidas de alimentos líquidos...");
+  const alimentos = await prisma.alimento.findMany({
+    where: { clinicaId: null },
+    include: { medidasCaseiras: true },
+  });
+
+  const liquidTerms = [
+    "suco",
+    "bebida láctea",
+    "bebida lactea",
+    "leite, de vaca, desnatado, uht",
+    "leite, de vaca, integral",
+    "leite, de cabra",
+    "leite, de vaca, achocolatado",
+    "leite, fermentado",
+    "refrigerante",
+    "café",
+    "chá",
+    "cerveja",
+    "vinho",
+    "caldo",
+    "água",
+    "agua",
+  ];
+
+  let totalCriadas = 0;
+
+  for (const alimento of alimentos) {
+    const nomeLower = alimento.nome.toLowerCase();
+    const grupoLower = alimento.grupo ? alimento.grupo.toLowerCase() : "";
+
+    const isLiquid =
+      grupoLower.includes("bebidas") ||
+      liquidTerms.some(
+        (term) =>
+          nomeLower.includes(term) &&
+          !nomeLower.includes("pó") &&
+          !nomeLower.includes("condensado"),
+      );
+
+    if (isLiquid) {
+      const medidasLiquidas = [
+        { nome: "ml", quantidadeEmGramas: 1 },
+        { nome: "Copo (200ml)", quantidadeEmGramas: 200 },
+        { nome: "Xícara (240ml)", quantidadeEmGramas: 240 },
+        { nome: "Lata (350ml)", quantidadeEmGramas: 350 },
+        { nome: "Garrafa (500ml)", quantidadeEmGramas: 500 },
+        { nome: "l", quantidadeEmGramas: 1000 },
+      ];
+
+      for (const med of medidasLiquidas) {
+        const existe = alimento.medidasCaseiras.some(
+          (m) => m.nome.toLowerCase() === med.nome.toLowerCase(),
+        );
+
+        if (!existe) {
+          await prisma.medidaCaseira.create({
+            data: {
+              alimentoId: alimento.id,
+              nome: med.nome,
+              quantidadeEmGramas: med.quantidadeEmGramas,
+            },
+          });
+          totalCriadas++;
+        }
+      }
+    }
+  }
+
+  console.log(
+    `Medidas caseiras líquidas prontas! ${totalCriadas} novas medidas criadas.`,
+  );
 }
 
 main()

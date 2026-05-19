@@ -30,7 +30,7 @@ describe("alimentos.controller", () => {
 
       await controller.listar(req as Request, res as Response);
 
-      expect(service.pegarAlimentos).toHaveBeenCalledWith("clinica-1", undefined, 1, 20);
+      expect(service.pegarAlimentos).toHaveBeenCalledWith("clinica-1", undefined, 1, 20, undefined);
       expect(res.json).toHaveBeenCalledWith({ success: true, ...mockResult });
     });
 
@@ -40,7 +40,7 @@ describe("alimentos.controller", () => {
 
       await controller.listar(req as Request, res as Response);
 
-      expect(service.pegarAlimentos).toHaveBeenCalledWith("clinica-1", "arroz", 2, 10);
+      expect(service.pegarAlimentos).toHaveBeenCalledWith("clinica-1", "arroz", 2, 10, undefined);
     });
   });
 
