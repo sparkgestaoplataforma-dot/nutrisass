@@ -23,6 +23,12 @@ export async function pegarTodosNutricionistas(clinicaId: string) {
       clinicaId,
       perfil: "NUTRICIONISTA",
     },
+    select:{
+      id: true,
+      nome:true,
+      perfil:true
+    },
+    orderBy: {nome: "asc" }
   });
 
   return nutricionistas;
@@ -124,4 +130,4 @@ export async function alterarSenha(email: string, novaSenha: string) {
   });
 
   return { email, senhaAtualizada: !!atualizarSenha };
-}
+}

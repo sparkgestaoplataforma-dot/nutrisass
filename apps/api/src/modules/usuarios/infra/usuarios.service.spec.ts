@@ -57,6 +57,12 @@ describe("usuarios.service", () => {
           clinicaId: mockClinicaId,
           perfil: "NUTRICIONISTA",
         },
+        select: {
+          id: true,
+          nome: true,
+          perfil: true,
+        },
+        orderBy: { nome: "asc" },
       });
       expect(result).toHaveLength(1);
     });

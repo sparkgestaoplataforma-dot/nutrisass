@@ -4,8 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { CancelCircleIcon } from '@hugeicons/core-free-icons';
-import { createAgendamentoSchema, type CreateAgendamentoInput } from '@nutricao/shared';
+import { createAgendamentoSchema, type CreateAgendamentoInput, type TokenPayload } from '@nutricao/shared';
 import { listarPacientes } from '@/services/pacientes';
+import { listarApenasNutricionistas } from '@/services/usuario';
 import { listarConvenios } from '@/services/convenios';
 import type { AgendamentoResponse } from '@/services/agenda';
 import { formatarParaInputDateTime } from '@/utils/date';
@@ -17,6 +18,7 @@ interface AgendamentoModalProps {
   onSubmit: (data: CreateAgendamentoInput) => void;
   onClose: () => void;
   isPending: boolean;
+  user: TokenPayload;
 }
 
 export function AgendamentoModal({
@@ -25,16 +27,22 @@ export function AgendamentoModal({
   onSubmit,
   onClose,
   isPending,
+  user
 }: AgendamentoModalProps) {
   const { data: pacientesData } = useQuery({
-    queryKey: ['pacientes-select'],
+    queryKey: ['pacientes', 'select'],
     queryFn: () => listarPacientes(),
   });
 
-  // const { data: nutricionistasData } = useQuery({
-  //   queryKey: ['nutricionista-select'],
-  //   queryFn: () => 
-  // })
+
+  const { data: nutricionistasData } = useQuery({
+    queryKey: ['nutricionista-select', user?.clinicaId],
+    queryFn: () => listarApenasNutricionistas(user!.clinicaId)
+
+});
+
+
+  console.log("dados do nutricionista:", nutricionistasData);
 
   const { data: convenios } = useQuery({
     queryKey: ['convenios-select'],
@@ -52,6 +60,8 @@ export function AgendamentoModal({
       tipo: 'CONSULTA',
       status: 'AGENDADO',
       encaixe: false,
+      criadoPorUsuarioId: user?.userId,
+      nutricionistaId: user?.userId,
     },
   });
 
@@ -65,16 +75,21 @@ export function AgendamentoModal({
         status: agendamento.status as any,
         encaixe: agendamento.encaixe,
         observacao: agendamento.observacao || undefined,
+        criadoPorUsuarioId: user?.userId,
+        nutricionistaId: agendamento.nutricionistaId,
       });
     } else {
+      const idUnico = (user?.perfil === 'NUTRICIONISTA' ? user?.userId : (nutricionistasData?.length === 1 ? nutricionistasData[0].id : undefined)) || "";
       reset({
         tipo: 'CONSULTA',
         status: 'AGENDADO',
         encaixe: false,
         dataHora: `${dataSelecionada}T08:00`,
+        criadoPorUsuarioId: user?.userId || "",
+        nutricionistaId: idUnico,
       });
     }
-  }, [agendamento, dataSelecionada, reset]);
+  }, [agendamento, dataSelecionada, reset, user?.userId, nutricionistasData]);
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -100,6 +115,29 @@ export function AgendamentoModal({
               </select>
               {errors.pacienteId && (
                 <span className={styles.error}>{errors.pacienteId.message}</span>
+              )}
+            </div>
+
+            <div className={styles.field}>
+              <label>Nutricionista</label>
+              <select
+                {...register('nutricionistaId')}
+                style={{
+                  pointerEvents: user?.perfil === 'NUTRICIONISTA' ? 'none' : 'auto',
+                  opacity: user?.perfil === 'NUTRICIONISTA' ? 0.7 : 1,
+                  backgroundColor: user?.perfil === 'NUTRICIONISTA' ? '#f5f5f5' : 'inherit',
+                }}
+                tabIndex={user?.perfil === 'NUTRICIONISTA' ? -1 : undefined}
+              >
+                <option value="" >Selecione um nutricionista</option>
+                {nutricionistasData?.map((profissional) => (
+                  <option key={profissional.id} value={profissional.id}>
+                        {profissional.nome}
+                  </option>
+                ))}
+              </select>
+              {errors.nutricionistaId && (
+                <span className={styles.error}>{errors.nutricionistaId.message}</span>
               )}
             </div>
 

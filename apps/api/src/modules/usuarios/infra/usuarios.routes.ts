@@ -9,12 +9,14 @@ router.post("/esqueci-senha", controller.esqueciSenha);
 router.post("/redefinir-senha", controller.alterarSenha);
 
 router.use(authMiddleware);
-router.use(roleGuard("ADMIN"));
 
-router.get("/", controller.listar);
-router.get("/nutricionistas/clinicaId/:clinicaId", controller.listarNutricionistas);
-router.post("/", validate(createUsuarioSchema), controller.criar);
-router.put("/:id", controller.editar);
-router.delete("/:id", controller.excluir);
+// Listagem de nutricionistas (todos os perfis precisam para filtros de UI)
+router.get("/nutricionistas/clinicaId/:clinicaId", roleGuard("ADMIN", "NUTRICIONISTA", "SECRETARIA"), controller.listarNutricionistas);
+
+// Gerenciamento de usuários (ADMIN e SECRETARIA)
+router.get("/", roleGuard("ADMIN", "SECRETARIA"), controller.listar);
+router.post("/", validate(createUsuarioSchema), roleGuard("ADMIN", "SECRETARIA"), controller.criar);
+router.put("/:id", roleGuard("ADMIN", "SECRETARIA"), controller.editar);
+router.delete("/:id", roleGuard("ADMIN"), controller.excluir);
 
 export { router as usuariosRoutes };

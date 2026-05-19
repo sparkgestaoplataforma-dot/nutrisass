@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowLeft01Icon, ArrowRight01Icon, PlusSignIcon } from '@hugeicons/core-free-icons';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/services/api';
 import {
   useAgendaDia,
   useCriarAgendamento,
@@ -15,18 +16,32 @@ import { AgendamentoModal } from './components/AgendamentoModal';
 import type { AgendamentoResponse } from '@/services/agenda';
 import type { CreateAgendamentoInput } from '@nutricao/shared';
 import styles from './AgendaPage.module.scss';
-
+import { useAuthStore } from "@/stores/authStore";
 function formatDate(date: Date) {
   return date.toISOString().split('T')[0];
 }
 
 export function AgendaPage() {
+  const {user} = useAuthStore();
+
   const [dataSelecionada, setDataSelecionada] = useState(formatDate(new Date()));
+  const [nutricionistaId, setNutricionistaId] = useState(
+    (user?.perfil === 'SECRETARIA' || user?.perfil === 'ADMIN') ? "" : (user?.userId || "")
+  );
   const [modalAberto, setModalAberto] = useState(false);
   const [agendamentoEditando, setAgendamentoEditando] =
     useState<AgendamentoResponse | null>(null);
 
-  const { data: agendamentos = [], isLoading } = useAgendaDia(dataSelecionada);
+  const { data: nutricionistas = [] } = useQuery({
+    queryKey: ['nutricionistas-list', user?.clinicaId],
+    queryFn: async () => {
+      const { data } = await api.get(`/usuarios/nutricionistas/clinicaId/${user?.clinicaId}`);
+      return data.data;
+    },
+    enabled: !!user?.clinicaId,
+  });
+
+  const { data: agendamentos = [], isLoading } = useAgendaDia(dataSelecionada, nutricionistaId);
   const criarMutation = useCriarAgendamento(dataSelecionada);
   const editarMutation = useEditarAgendamento(dataSelecionada);
   const statusMutation = useAlterarStatus(dataSelecionada);
@@ -115,6 +130,20 @@ export function AgendaPage() {
           >
             Hoje
           </button>
+          
+          <div className={styles.nutriFilter}>
+            <select 
+              id="nutricionista-filter"
+              className={styles.nutriSelect}
+              value={nutricionistaId}
+              onChange={(e) => setNutricionistaId(e.target.value)}
+            >
+              {(user?.perfil === 'SECRETARIA' || user?.perfil === 'ADMIN') && <option value="">Todos os Nutricionistas</option>}
+              {nutricionistas.map((n: any) => (
+                <option key={n.id} value={n.id}>{n.nome}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <button
@@ -154,7 +183,7 @@ export function AgendaPage() {
         />
       )}
 
-      {modalAberto && (
+      {modalAberto && user && (
         <AgendamentoModal
           dataSelecionada={dataSelecionada}
           agendamento={agendamentoEditando}
@@ -164,6 +193,7 @@ export function AgendaPage() {
             setAgendamentoEditando(null);
           }}
           isPending={criarMutation.isPending || editarMutation.isPending}
+          user={user}
         />
       )}
     </div>

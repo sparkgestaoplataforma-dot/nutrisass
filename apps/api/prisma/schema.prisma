@@ -150,9 +150,9 @@ model Agendamento {
   pacienteId      String            @map("paciente_id")
   paciente        Paciente          @relation(fields: [pacienteId], references: [id])
 
-  usuarioId       String            @map("usuario_id")
-  usuario         Usuario           @relation("emissor", fields: [usuarioId], references: [id])
-  
+  criadoPorUsuarioId String            @map("criado_por_usuario_id")
+  criadoPor          Usuario           @relation("emissor", fields: [criadoPorUsuarioId], references: [id])
+
   nutricionistaId String            @map("nutricionista_id")
   nutricionista   Usuario           @relation("nutricionista", fields: [nutricionistaId], references: [id]) 
   
@@ -170,7 +170,7 @@ model Agendamento {
   @@index([clinicaId])
   @@index([dataHora])
   @@index([pacienteId])
-  @@index([usuarioId])
+  @@index([criadoPorUsuarioId])
   @@index([nutricionistaId])
   @@map("agendamentos")
 }

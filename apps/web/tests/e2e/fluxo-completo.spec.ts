@@ -73,6 +73,22 @@ test.describe.serial("Jornada Completa do Usuário (Macro E2E)", () => {
     }
   });
 
+  test("Etapa 2.5: Cadastro de Nutricionista via Configurações", async () => {
+    await page.goto("/configuracoes");
+    await page.getByRole("button", { name: "Usuários" }).click();
+    await page.getByRole("button", { name: "Novo Usuário" }).click();
+
+    await page.locator('input[name="nome"]').fill("Nutricionista de Teste");
+    await page.locator('input[name="email"]').fill(`nutri-${timestamp}@e2etest.com`);
+    await page.locator('input[name="senha"]').fill("123456");
+    await page.locator('select[name="perfil"]').selectOption("NUTRICIONISTA");
+
+    await page.getByRole("button", { name: "Cadastrar" }).click();
+
+    // Validar se apareceu na tabela
+    await expect(page.getByText("Nutricionista de Teste").first()).toBeVisible();
+  });
+
   test("Etapa 3: Cadastro de Paciente via Dashboard", async () => {
     // A partir do Dashboard, clica no menu Pacientes
     await page
@@ -136,16 +152,25 @@ test.describe.serial("Jornada Completa do Usuário (Macro E2E)", () => {
     });
 
     await page.getByRole("button", { name: /Agendar/i }).click();
-
-    // Aparece modal (select de paciente)
-    // O select do react-hook-form pode ser um <select> html padrão se não usou lib complexa
-    // É mais fácil usar texto se houver label "Paciente"
+    
+    // Aparece modal - Preencher Paciente
     await page.locator('select[name="pacienteId"]').selectOption(pacienteId);
+
+    // Selecionar Nutricionista (Novo campo obrigatório)
+    const nutricionistaSelect = page.locator('select[name="nutricionistaId"]');
+    
+    // Esperar as opções carregarem (pelo menos o placeholder + 1 nutri)
+    await expect(nutricionistaSelect.locator('option')).toHaveCount(2, { timeout: 10000 });
+
+    const currentValue = await nutricionistaSelect.inputValue();
+    if (!currentValue || currentValue === "") {
+      await nutricionistaSelect.selectOption({ index: 1 });
+    }
+    await expect(nutricionistaSelect).not.toHaveValue("");
 
     await page.locator('select[name="tipo"]').selectOption("CONSULTA");
 
     // Data/hora para datetime-local (YYYY-MM-DDTHH:mm)
-    // Lê a data que a UI considera "hoje" para evitar descompasso de fuso horário Teste vs Chromium
     const currentViewDate = await page
       .locator('input[type="date"]')
       .inputValue();
@@ -155,10 +180,15 @@ test.describe.serial("Jornada Completa do Usuário (Macro E2E)", () => {
 
     await page.locator("form").getByRole("button", { name: "Agendar" }).click();
 
+    // Como agendamos para o "Nutricionista de Teste", precisamos mudar o filtro da página
+    // para que a agenda desse nutricionista seja carregada e o agendamento apareça.
+    const pageFilter = page.locator('#nutricionista-filter');
+    await pageFilter.selectOption({ label: "Nutricionista de Teste" });
+
     // Modal fecha e consulta deve renderizar na tabela (ex: 14:30 e Nome do paciente)
     await expect(
       page.locator("td", { hasText: pacienteNome }).first(),
-    ).toBeVisible({ timeout: 5000 });
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test("Etapa 5: Preenchimento de Questionário Público", async () => {

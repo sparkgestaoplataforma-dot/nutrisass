@@ -19,10 +19,10 @@ describe("agenda.service", () => {
     vi.clearAllMocks();
   });
 
-  const mockClinicaId = "clinica-1";
-  const mockUsuarioId = "usuario-1";
-  const mockPacienteId = "paciente-1";
-  const mockAgendamentoId = "agendamento-1";
+  const mockClinicaId = "550e8400-e29b-41d4-a716-446655440000";
+  const mockUsuarioId = "550e8400-e29b-41d4-a716-446655440001";
+  const mockPacienteId = "550e8400-e29b-41d4-a716-446655440002";
+  const mockAgendamentoId = "550e8400-e29b-41d4-a716-446655440003";
 
   describe("pegarAgendamentosDia", () => {
     it("deve retornar a agenda do dia", async () => {
@@ -30,7 +30,7 @@ describe("agenda.service", () => {
         { id: mockAgendamentoId, dataHora: new Date() },
       ] as any);
 
-      const result = await pegarAgendamentosDia("2026-05-12", mockClinicaId, mockUsuarioId);
+      const result = await pegarAgendamentosDia("2026-05-12", mockClinicaId, mockUsuarioId, mockUsuarioId);
 
       expect(prismaMock.agendamento.findMany).toHaveBeenCalled();
       expect(result).toHaveLength(1);
@@ -44,7 +44,7 @@ describe("agenda.service", () => {
       prismaMock.agendamento.create.mockResolvedValue({ id: "novo" } as any);
 
       const result = await criarAgendamento(
-        { pacienteId: mockPacienteId, nutricionistaId: mockUsuarioId, dataHora: "2026-05-12T10:00:00Z" } as any,
+        { pacienteId: mockPacienteId, criadoPorUsuarioId: mockUsuarioId, nutricionistaId: mockUsuarioId, dataHora: "2026-05-12T10:00:00Z" } as any,
         mockUsuarioId,
         mockClinicaId
       );
@@ -70,7 +70,7 @@ describe("agenda.service", () => {
   describe("alterarStatusAgendamento", () => {
     it("deve alterar o status", async () => {
       prismaMock.agendamento.findUnique.mockResolvedValue({ id: mockAgendamentoId, status: "AGENDADO", paciente: { nome: "Teste" } } as any);
-      prismaMock.agendamento.update.mockResolvedValue({ id: mockAgendamentoId, status: "PRESENTE", clinicaId: mockClinicaId, usuarioId: mockUsuarioId, dataHora: new Date(), paciente: { nome: "Teste" } } as any);
+      prismaMock.agendamento.update.mockResolvedValue({ id: mockAgendamentoId, status: "PRESENTE", clinicaId: mockClinicaId, criadoPorUsuarioId: mockUsuarioId, dataHora: new Date(), paciente: { nome: "Teste" } } as any);
 
       const result = await alterarStatusAgendamento(mockAgendamentoId, { status: "PRESENTE" });
 

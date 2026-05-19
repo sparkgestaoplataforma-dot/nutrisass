@@ -9,7 +9,9 @@ describe("dashboard.controller", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockReq = {
-      user: { clinicaId: "clinica-1" }
+      user: { clinicaId: "550e8400-e29b-41d4-a716-446655440000", userId: "550e8400-e29b-41d4-a716-446655440002", perfil: "NUTRICIONISTA" },
+      params: { nutricionistaId: "550e8400-e29b-41d4-a716-446655440001" },
+      query: {}
     };
     mockRes = {
       json: vi.fn(),
@@ -34,6 +36,30 @@ describe("dashboard.controller", () => {
         data: expect.objectContaining({
           totalPacientes: 10,
           agendaHoje: 5,
+        })
+      }));
+    });
+
+    it("deve permitir SECRETARIA visualizar dashboard da clínica toda", async () => {
+      mockReq.user.perfil = "SECRETARIA";
+      delete mockReq.params.nutricionistaId; // Sem nutricionistaId
+
+      prismaMock.paciente.count.mockResolvedValue(100);
+      prismaMock.agendamento.count.mockResolvedValue(20);
+      prismaMock.agendamento.findMany.mockResolvedValue([] as any);
+
+      await getDashboard(mockReq, mockRes);
+
+      expect(prismaMock.agendamento.count).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.not.objectContaining({
+          nutricionistaId: expect.any(String)
+        })
+      }));
+
+      expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({
+          totalPacientes: 100
         })
       }));
     });
