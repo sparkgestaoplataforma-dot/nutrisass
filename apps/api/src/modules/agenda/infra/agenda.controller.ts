@@ -32,7 +32,7 @@ export async function criar(req: Request, res: Response) {
   const clinicaId = getClinicaId(req);
 
   // Garantir que o emissor do agendamento é o usuário autenticado
-  if (req.body.criadoPorId !== req.user!.userId) {
+  if (req.body.criadoPorUsuarioId !== req.user!.userId) {
     throw new AppError("O emissor do agendamento deve ser o usuário logado", 403);
   }
 

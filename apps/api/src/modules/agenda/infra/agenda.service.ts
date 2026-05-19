@@ -80,7 +80,7 @@ export async function criarAgendamento(
     data: {
       clinicaId,
       pacienteId: input.pacienteId,
-      criadoPorId: input.criadoPorId,
+      criadoPorUsuarioId: input.criadoPorUsuarioId,
       nutricionistaId: nutricionista.id,
       convenioId: input.convenioId || null,
       dataHora,
@@ -172,7 +172,7 @@ export async function alterarStatusAgendamento(
   if (novoStatus === "PRESENTE" && statusAnterior !== "PRESENTE") {
     await criarNotificacao({
       clinicaId: agendamento.clinicaId,
-      usuarioId: agendamento.criadoPorId,
+      usuarioId: agendamento.criadoPorUsuarioId,
       tipo: "PACIENTE_CHEGOU",
       titulo: "Paciente chegou",
       mensagem: `${agendamento.paciente.nome} confirmou presença para a consulta das ${format(agendamento.dataHora, "HH:mm")}.`,

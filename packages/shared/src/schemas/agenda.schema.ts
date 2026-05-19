@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const createAgendamentoSchema = z.object({
   pacienteId: z.string().uuid('Paciente é obrigatório'),
-  criadoPorId: z.string().uuid('Usuário emissor do agendamento é obrigatório'),
+  criadoPorUsuarioId: z.string().uuid('Usuário emissor do agendamento é obrigatório'),
   nutricionistaId: z.string().uuid('Nutricionista é obrigatório'),
   convenioId: z.preprocess((val) => (val === "" ? undefined : val), z.string().uuid().optional()),
   dataHora: z.string().min(1, 'Data e hora são obrigatórios'),

@@ -60,7 +60,7 @@ export function AgendamentoModal({
       tipo: 'CONSULTA',
       status: 'AGENDADO',
       encaixe: false,
-      criadoPorId: user?.userId,
+      criadoPorUsuarioId: user?.userId,
       nutricionistaId: user?.userId,
     },
   });
@@ -75,7 +75,7 @@ export function AgendamentoModal({
         status: agendamento.status as any,
         encaixe: agendamento.encaixe,
         observacao: agendamento.observacao || undefined,
-        criadoPorId: user?.userId,
+        criadoPorUsuarioId: user?.userId,
         nutricionistaId: agendamento.nutricionistaId,
       });
     } else {
@@ -85,7 +85,7 @@ export function AgendamentoModal({
         status: 'AGENDADO',
         encaixe: false,
         dataHora: `${dataSelecionada}T08:00`,
-        criadoPorId: user?.userId || "",
+        criadoPorUsuarioId: user?.userId || "",
         nutricionistaId: idUnico,
       });
     }

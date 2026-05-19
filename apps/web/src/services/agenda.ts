@@ -27,7 +27,7 @@ export interface AgendamentoResponse {
   encaixe: boolean;
   observacao: string | null;
   nutricionistaId: string;
-  criadoPorId: string;
+  criadoPorUsuarioId: string;
 }
 
 export async function listarAgendaDia(data: string, nutricionistaId?: string) {
