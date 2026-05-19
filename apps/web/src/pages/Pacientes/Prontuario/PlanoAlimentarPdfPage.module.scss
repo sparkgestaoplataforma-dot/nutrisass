@@ -13,10 +13,19 @@
     padding: 0;
     max-width: 100%;
     margin: 0;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
     
     .noPrint {
       display: none !important;
     }
+  }
+}
+
+@media print {
+  html, body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
 
@@ -28,7 +37,7 @@
 }
 
 .printBtn {
-  background: #4f46e5;
+  background: #059669;
   color: white;
   border: none;
   padding: 8px 16px;
@@ -40,7 +49,7 @@
   gap: 8px;
 
   &:hover {
-    background: #4338ca;
+    background: #047857;
   }
 }
 
@@ -91,7 +100,7 @@
   h2 {
     font-size: 20px;
     font-weight: 600;
-    color: #4f46e5;
+    color: #047857;
     margin: 0 0 4px 0;
   }
 
@@ -150,7 +159,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #4f46e5;
+  background: #047857;
   color: white;
   padding: 12px 16px;
   border-radius: 6px 6px 0 0;
@@ -177,18 +186,41 @@
   padding: 16px;
 }
 
-.opcao {
-  margin-bottom: 16px;
+.opcaoWrapper {
+  display: flex;
+  flex-direction: column;
+}
 
-  &:last-child {
-    margin-bottom: 0;
+.ouDivider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 16px 0;
+  color: #9ca3af;
+  font-weight: 600;
+  font-size: 12px;
+  
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px dashed #d1d5db;
   }
+
+  span {
+    padding: 0 16px;
+    background: white;
+  }
+}
+
+.opcao {
+  margin-bottom: 0;
 }
 
 .opcaoTitle {
   font-size: 14px;
   font-weight: 600;
-  color: #4b5563;
+  color: #065f46;
   margin: 0 0 8px 0;
 }
 
@@ -219,7 +251,6 @@
   .colQtde { width: 80px; }
   .colMedida { width: 150px; }
   .colAlimento { width: auto; }
-  .colObs { width: 150px; color: #6b7280; font-style: italic; }
 }
 
 .observacoesGlobal {

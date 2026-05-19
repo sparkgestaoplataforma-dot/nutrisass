@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -28,16 +28,39 @@ export function PlanoAlimentarPdfPage() {
     enabled: !!id,
   });
 
-  useEffect(() => {
-    // Automatically trigger print dialog when data is loaded, optionally
-    // But since users might want to see it first, we'll let them click the print button.
-  }, [response]);
+  const plano = response?.data;
+
+  const totaisMedios = useMemo(() => {
+    if (!plano) return { cal: 0, prot: 0, carb: 0, gord: 0 };
+    let cal = 0, prot = 0, carb = 0, gord = 0;
+    
+    plano.refeicoes.forEach(ref => {
+      if (!ref.opcoes || ref.opcoes.length === 0) return;
+      
+      let refCal = 0, refProt = 0, refCarb = 0, refGord = 0;
+      
+      ref.opcoes.forEach(opc => {
+        refCal += opc.alimentos.reduce((acc, al) => acc + (al.calorias || 0), 0);
+        refProt += opc.alimentos.reduce((acc, al) => acc + (al.proteinas || 0), 0);
+        refCarb += opc.alimentos.reduce((acc, al) => acc + (al.carboidratos || 0), 0);
+        refGord += opc.alimentos.reduce((acc, al) => acc + (al.gorduras || 0), 0);
+      });
+      
+      // Soma a média das opções dessa refeição
+      cal += refCal / ref.opcoes.length;
+      prot += refProt / ref.opcoes.length;
+      carb += refCarb / ref.opcoes.length;
+      gord += refGord / ref.opcoes.length;
+    });
+    
+    return { cal, prot, carb, gord };
+  }, [plano]);
 
   if (isLoading) {
     return <div style={{ padding: '40px', textAlign: 'center' }}>Carregando dados do plano...</div>;
   }
 
-  if (error || !response?.data) {
+  if (error || !plano) {
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>
         <h2>Erro ao carregar plano alimentar</h2>
@@ -46,7 +69,6 @@ export function PlanoAlimentarPdfPage() {
     );
   }
 
-  const plano = response.data;
   const paciente = plano.paciente;
   const clinica = plano.clinica;
   const usuario = plano.usuario;
@@ -115,31 +137,37 @@ export function PlanoAlimentarPdfPage() {
             
             <div className={styles.opcoes}>
               {ref.opcoes.map((opc, idx) => (
-                <div key={opc.id} className={styles.opcao}>
-                  {ref.opcoes.length > 1 && (
-                    <h4 className={styles.opcaoTitle}>{opc.nome || `Opção ${idx + 1}`}</h4>
-                  )}
-                  
-                  <table className={styles.table}>
-                    <thead>
-                      <tr>
-                        <th className={styles.colQtde}>Qtde</th>
-                        <th className={styles.colMedida}>Medida</th>
-                        <th className={styles.colAlimento}>Alimento</th>
-                        <th className={styles.colObs}>Observação</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {opc.alimentos.map((al) => (
-                        <tr key={al.id}>
-                          <td>{al.quantidade}</td>
-                          <td>{al.unidade}</td>
-                          <td>{al.alimento}</td>
-                          <td>{al.observacao || ''}</td>
+                <div key={opc.id} className={styles.opcaoWrapper}>
+                  <div className={styles.opcao}>
+                    {ref.opcoes.length > 1 && (
+                      <h4 className={styles.opcaoTitle}>{opc.nome || `Opção ${idx + 1}`}</h4>
+                    )}
+                    
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th className={styles.colQtde}>Qtde</th>
+                          <th className={styles.colMedida}>Medida</th>
+                          <th className={styles.colAlimento}>Alimento</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {opc.alimentos.map((al) => (
+                          <tr key={al.id}>
+                            <td>{al.quantidade}</td>
+                            <td>{al.unidade}</td>
+                            <td>{al.alimento}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  {idx < ref.opcoes.length - 1 && (
+                    <div className={styles.ouDivider}>
+                      <span>OU</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -147,30 +175,32 @@ export function PlanoAlimentarPdfPage() {
         ))}
       </div>
 
-      <div className={styles.patientSection} style={{ marginTop: '32px', background: '#eff6ff' }}>
-        <h3 style={{ width: '100%', margin: '0 0 16px 0', fontSize: '16px', color: '#1e40af' }}>Resumo Diário (Médio)</h3>
+      <div className={styles.patientSection} style={{ marginTop: '32px', background: '#f0fdf4', border: '1px solid #a7f3d0' }}>
+        <h3 style={{ width: '100%', margin: '0 0 16px 0', fontSize: '16px', color: '#065f46' }}>
+          Resumo Diário (Média de todas as opções)
+        </h3>
         <div className={styles.infoGroup}>
-          <label>Calorias</label>
-          <span style={{ color: '#1e40af' }}>
-            {Math.round(plano.refeicoes.reduce((acc, r) => acc + (r.opcoes[0]?.alimentos.reduce((sum, al) => sum + (al.calorias || 0), 0) || 0), 0))} kcal
+          <label style={{ color: '#065f46', opacity: 0.8 }}>Calorias</label>
+          <span style={{ color: '#047857', fontSize: '18px', fontWeight: 700 }}>
+            {totaisMedios.cal.toFixed(1)} kcal
           </span>
         </div>
         <div className={styles.infoGroup}>
-          <label>Proteínas</label>
-          <span style={{ color: '#1e40af' }}>
-            {Math.round(plano.refeicoes.reduce((acc, r) => acc + (r.opcoes[0]?.alimentos.reduce((sum, al) => sum + (al.proteinas || 0), 0) || 0), 0))} g
+          <label style={{ color: '#065f46', opacity: 0.8 }}>Proteínas</label>
+          <span style={{ color: '#047857', fontSize: '18px', fontWeight: 700 }}>
+            {totaisMedios.prot.toFixed(1)} g
           </span>
         </div>
         <div className={styles.infoGroup}>
-          <label>Carboidratos</label>
-          <span style={{ color: '#1e40af' }}>
-            {Math.round(plano.refeicoes.reduce((acc, r) => acc + (r.opcoes[0]?.alimentos.reduce((sum, al) => sum + (al.carboidratos || 0), 0) || 0), 0))} g
+          <label style={{ color: '#065f46', opacity: 0.8 }}>Carboidratos</label>
+          <span style={{ color: '#047857', fontSize: '18px', fontWeight: 700 }}>
+            {totaisMedios.carb.toFixed(1)} g
           </span>
         </div>
         <div className={styles.infoGroup}>
-          <label>Gorduras</label>
-          <span style={{ color: '#1e40af' }}>
-            {Math.round(plano.refeicoes.reduce((acc, r) => acc + (r.opcoes[0]?.alimentos.reduce((sum, al) => sum + (al.gorduras || 0), 0) || 0), 0))} g
+          <label style={{ color: '#065f46', opacity: 0.8 }}>Gorduras</label>
+          <span style={{ color: '#047857', fontSize: '18px', fontWeight: 700 }}>
+            {totaisMedios.gord.toFixed(1)} g
           </span>
         </div>
       </div>
