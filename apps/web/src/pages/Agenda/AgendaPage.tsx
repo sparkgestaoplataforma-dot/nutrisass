@@ -18,9 +18,8 @@ import type { CreateAgendamentoInput } from '@nutricao/shared';
 import styles from './AgendaPage.module.scss';
 import { useAuthStore } from "@/stores/authStore";
 function formatDate(date: Date) {
-  return date.toISOString().split('T')[0];
+  return date.toLocaleDateString('sv-SE');
 }
-
 export function AgendaPage() {
   const {user} = useAuthStore();
 
