@@ -1,15 +1,14 @@
 import { useEffect, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { Socket } from 'socket.io-client';
+import { socket } from '@/services/socket';
 
 export function useSocket() {
-  const socketRef = useRef<Socket | null>(null);
+  const socketRef = useRef<Socket | null>(socket);
 
   useEffect(() => {
-    socketRef.current = io('/', { path: '/socket.io' });
-
-    return () => {
-      socketRef.current?.disconnect();
-    };
+    if (!socket.connected) {
+      socket.connect();
+    }
   }, []);
 
   return socketRef;
