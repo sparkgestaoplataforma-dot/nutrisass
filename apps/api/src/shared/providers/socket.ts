@@ -17,8 +17,8 @@ export function initSocket(httpServer: HttpServer) {
     const usuarioId = socket.handshake.query.usuarioId as string
 
     if (usuarioId){
-      socket.join(`user:${usuarioId}`);
-      console.log(`Usuário ${usuarioId} entrou na sala user:${usuarioId}`)
+      socket.join(`usuario:${usuarioId}`);
+      console.log(`Usuário ${usuarioId} entrou na sala usuario:${usuarioId}`)
     }
 
     socket.on('disconnect', () => {

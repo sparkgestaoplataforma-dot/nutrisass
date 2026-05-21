@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -14,6 +14,8 @@ import {
 } from "@hugeicons/core-free-icons";
 import { useAuthStore } from "@/stores/authStore";
 import { api } from "@/services/api";
+import { alterarStatus } from "@/services/agenda";
+import type { UpdateStatusInput } from "@nutricao/shared";
 import { pegarDadosDashboard } from "@/services/dashboard";
 import styles from "./DashboardPage.module.scss";
 
@@ -63,6 +65,7 @@ function formatTime(dateStr: string): string {
 }
 
 export function DashboardPage() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const [nutricionistaId, setNutricionistaId] = useState<string | undefined>(
@@ -85,6 +88,29 @@ export function DashboardPage() {
     queryFn: () => pegarDadosDashboard(nutricionistaId),
     enabled: !!user?.clinicaId,
   });
+
+  const { mutate: updateStatus } = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: UpdateStatusInput["status"] }) =>
+      alterarStatus(id, { status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["agenda"] });
+    },
+  });
+
+  const [openStatusId, setOpenStatusId] = useState<string | null>(null);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleClickOutside = useCallback((e: MouseEvent) => {
+    if (statusDropdownRef.current && !statusDropdownRef.current.contains(e.target as Node)) {
+      setOpenStatusId(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [handleClickOutside]);
 
   if (isLoading || !data) {
     return (
@@ -255,11 +281,39 @@ export function DashboardPage() {
                             {ag.paciente.nome}
                           </h4>
                           <div className={styles.appointmentMeta}>
-                            <span
-                              className={`${styles.badge} ${styles[`badge_${statusColors[ag.status] || "blue"}`]}`}
-                            >
-                              {statusLabels[ag.status] || ag.status}
-                            </span>
+                            <div className={styles.statusDropdownWrapper} ref={openStatusId === ag.id ? statusDropdownRef : undefined}>
+                              <button
+                                type="button"
+                                className={`${styles.statusTrigger} ${styles[`badge_${statusColors[ag.status] || "blue"}`]}`}
+                                onClick={() => setOpenStatusId(openStatusId === ag.id ? null : ag.id)}
+                              >
+                                <span className={`${styles.statusDot} ${styles[`dot_${statusColors[ag.status] || "blue"}`]}`} />
+                                {statusLabels[ag.status] || ag.status}
+                                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ marginLeft: 2 }}>
+                                  <path d="M2.5 4L5 6.5L7.5 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                              </button>
+                              {openStatusId === ag.id && (
+                                <div className={styles.statusMenu}>
+                                  {Object.entries(statusLabels).map(([key, label]) => (
+                                    <button
+                                      key={key}
+                                      type="button"
+                                      className={`${styles.statusMenuItem} ${ag.status === key ? styles.statusMenuItemActive : ""}`}
+                                      onClick={() => {
+                                        if (key !== ag.status) {
+                                          updateStatus({ id: ag.id, status: key as UpdateStatusInput["status"] });
+                                        }
+                                        setOpenStatusId(null);
+                                      }}
+                                    >
+                                      <span className={`${styles.statusDot} ${styles[`dot_${statusColors[key] || "blue"}`]}`} />
+                                      {label}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                             <span className={styles.badgeType}>
                               {tipoLabels[ag.tipo] || ag.tipo}
                             </span>

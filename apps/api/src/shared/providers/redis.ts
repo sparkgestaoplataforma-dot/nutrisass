@@ -38,4 +38,19 @@ export async function redisDel(key: string): Promise<void> {
   try { await redis.del(key); } catch {}
 }
 
+export async function redisLPush(key: string, value: string): Promise<number> {
+  if (!redis) return 0;
+  try { return await redis.lpush(key, value); } catch { return 0; }
+}
+
+export async function redisLRange(key: string, start: number, stop: number): Promise<string[]> {
+  if (!redis) return [];
+  try { return await redis.lrange(key, start, stop); } catch { return []; }
+}
+
+export async function redisLTrim(key: string, start: number, stop: number): Promise<void> {
+  if (!redis) return;
+  try { await redis.ltrim(key, start, stop); } catch {}
+}
+
 export { redis };

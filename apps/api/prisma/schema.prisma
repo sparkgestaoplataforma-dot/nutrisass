@@ -61,7 +61,6 @@ model Clinica {
   questionarios Questionario[]
   examesBase   ExameBase[]
   avaliacoes   Avaliacao[]
-  notificacoes Notificacao[]
   planosAlimentares PlanoAlimentar[]
   alimentosCustomizados Alimento[]
 
@@ -80,7 +79,6 @@ model Usuario {
   atualizadoEm DateTime      @updatedAt @map("atualizado_em")
   agendamentosCriados Agendamento[] @relation("emissor")
   consultasAgendadas  Agendamento[] @relation("nutricionista")
-  notificacoes Notificacao[]
   planosAlimentares PlanoAlimentar[]
 
   @@index([clinicaId])
@@ -357,18 +355,6 @@ model SolicitacaoExameItem {
   @@map("solicitacoes_exames_itens")
 }
 
-model Notificacao {
-  id            String            @id @default(uuid())
-  clinicaId     String            @map("clinica_id")
-  clinica       Clinica           @relation(fields: [clinicaId], references: [id])
-  usuarioId     String            @map("usuario_id")
-  usuario       Usuario           @relation(fields: [usuarioId], references: [id])
-  tipo          String
-  titulo        String
-  mensagem      String?
-  mensagemLida  Boolean           @default(false) @map("mensagem_lida")
-  createAt      DateTime          @default(now()) @map("create_at")
-}
 model PlanoAlimentar {
   id                 String          @id @default(uuid())
   clinicaId          String          @map("clinica_id")

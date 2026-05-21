@@ -1,26 +1,20 @@
-import { api } from './api';
+import { api } from "@/services/api";
+import type { ApiResponse } from "@nutricao/shared";
 
-export interface Notification {
+export interface Notificacao {
   id: string;
-  clinicaId: string;
-  usuarioId: string;
-  tipo: 'LEMBRETE_CONSULTA' | 'PACIENTE_CHEGOU' | 'SISTEMA';
+  tipo: string;
   titulo: string;
-  mensagemLida: boolean;
-  createAt: string;
-  updatedAt: string;
+  mensagem: string;
+  agendamentoId: string;
+  createdAt: string;
 }
 
-export const ListarTodasNotificacoesNaoLidas = async (clinicaId: string, usuarioId: string) => {
-    const { data } = await api.get(`/notificacao/clinica/${clinicaId}/usuario/${usuarioId}`);
-    return data.data;
-  };
-  
-//   async markAsRead(id: string): Promise<void> {
-//     await api.put(`/notificacao/${id}`);
-//   },
+export async function getNotificacoesUsuario(): Promise<Notificacao[]> {
+  const { data } = await api.get<ApiResponse<Notificacao[]>>("/notificacoes/usuario");
+  return data.data!;
+}
 
-//   async markAllAsRead(clinicaId: string, usuarioId: string): Promise<void> {
-//     await api.put(`/notificacao/clinica/${clinicaId}/usuario/${usuarioId}`);
-//   }
-// };
+export async function limparNotificacoesUsuario(): Promise<void> {
+  await api.delete("/notificacoes/usuario");
+}
