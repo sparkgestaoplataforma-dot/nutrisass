@@ -24,3 +24,14 @@ export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
 }
+
+export type NotificationType = "AGENDAMENTO" | "SISTEMA" | "USUARIO";
+
+export interface Notificacao {
+  id: string;
+  tipo: NotificationType;
+  titulo: string;
+  mensagem: string;
+  agendamentoId?: string;
+  createdAt: string;
+}

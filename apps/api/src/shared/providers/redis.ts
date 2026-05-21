@@ -12,14 +12,45 @@ try {
     },
   });
 
-  redis.on('error', () => {});
-} catch {
+  redis.on('error', (err) => {
+    console.error('[Redis] Erro de conexão:', err.message);
+  });
+
+  redis.on('connect', () => {
+    console.log('[Redis] Conectado com sucesso');
+  });
+} catch (err) {
+  console.error('[Redis] Falha ao inicializar:', err);
   redis = null;
 }
 
 export async function redisGet(key: string): Promise<string | null> {
   if (!redis) return null;
-  try { return await redis.get(key); } catch { return null; }
+  try {
+    return await redis.get(key);
+  } catch (err) {
+    console.error(`[Redis] Erro ao GET "${key}":`, err);
+    return null;
+  }
+}
+
+export async function redisLRange(key: string, inicio: number, fim: number): Promise<string[]> {
+  if (!redis) return [];
+  try {
+    return await redis.lrange(key, inicio, fim);
+  } catch (err) {
+    console.error(`[Redis] Erro ao LRANGE "${key}":`, err);
+    return [];
+  }
+}
+
+export async function redisLPush(key: string, value: string): Promise<void> {
+  if (!redis) return;
+  try {
+    await redis.lpush(key, value);
+  } catch (err) {
+    console.error(`[Redis] Erro ao LPUSH "${key}":`, err);
+  }
 }
 
 export async function redisSet(key: string, value: string, mode?: string, duration?: number): Promise<void> {
@@ -30,27 +61,18 @@ export async function redisSet(key: string, value: string, mode?: string, durati
     } else {
       await redis.set(key, value);
     }
-  } catch {}
+  } catch (err) {
+    console.error(`[Redis] Erro ao SET "${key}":`, err);
+  }
 }
 
 export async function redisDel(key: string): Promise<void> {
   if (!redis) return;
-  try { await redis.del(key); } catch {}
-}
-
-export async function redisLPush(key: string, value: string): Promise<number> {
-  if (!redis) return 0;
-  try { return await redis.lpush(key, value); } catch { return 0; }
-}
-
-export async function redisLRange(key: string, start: number, stop: number): Promise<string[]> {
-  if (!redis) return [];
-  try { return await redis.lrange(key, start, stop); } catch { return []; }
-}
-
-export async function redisLTrim(key: string, start: number, stop: number): Promise<void> {
-  if (!redis) return;
-  try { await redis.ltrim(key, start, stop); } catch {}
+  try {
+    await redis.del(key);
+  } catch (err) {
+    console.error(`[Redis] Erro ao DEL "${key}":`, err);
+  }
 }
 
 export { redis };

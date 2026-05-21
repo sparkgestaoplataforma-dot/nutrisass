@@ -7,6 +7,7 @@ import { AppError } from "../../../shared/middlewares/errorHandler.js";
 import * as service from "./agenda.service.js";
 import { redisSet, redisLPush } from "@/shared/providers/redis.js";
 import { enviarNotificacaoIndividual } from "@/modules/notificacoes/infra/notificacoes.controller.js";
+import { prisma } from "../../../shared/providers/prisma.js";
 
 function getMensagemIntuitiva(status: string, nomePaciente: string, dataFormatada: string): string {
   switch (status?.toUpperCase()) {
@@ -57,12 +58,11 @@ export async function listar(req: Request, res: Response) {
 export async function criar(req: Request, res: Response) {
   const clinicaId = getClinicaId(req);
 
-  // Garantir que o emissor do agendamento é o usuário autenticado
+
   if (req.body.criadoPorUsuarioId !== req.user!.userId) {
     throw new AppError("O emissor do agendamento deve ser o usuário logado", 403);
   }
 
-  // Se o usuário for nutricionista, ele só pode criar agendamentos para si mesmo
   if (req.user!.perfil === "NUTRICIONISTA") {
     if (req.body.nutricionistaId !== req.user!.userId) {
       throw new AppError("Nutricionista só pode criar agendamentos para si mesmo", 403);
@@ -78,11 +78,11 @@ export async function criar(req: Request, res: Response) {
     dateStyle: "short",
     timeStyle: "short"
   }).format(new Date(agendamento.dataHora));
-  
+
   const notificacaoId = crypto.randomUUID();
   const notificacaoData = {
     id: notificacaoId,
-    tipo: "AGENDAMENTO",
+    tipo: "AGENDAMENTO" as const,
     titulo: "Novo agendamento",
     mensagem: `Novo agendamento marcado para o dia ${dataFormatada} com o paciente ${agendamento.paciente.nome}.`,
     agendamentoId: agendamento.id,
@@ -90,35 +90,17 @@ export async function criar(req: Request, res: Response) {
   }
 
   await enviarNotificacaoIndividual(notificacaoId, req.user!.userId, agendamento.nutricionistaId, notificacaoData);
-
-  // await redisSet(
-  //   `notificacao:${notificacaoId}`,
-  //   JSON.stringify(notificacaoData)
-  // );
-
-  // if (req.user?.userId === agendamento.nutricionistaId) {
-  //   getIO()
-  //     .to(`usuario:${req.user!.userId}`)
-  //     .emit("agenda:novo", notificacaoData);
-  //   await redisLPush(`usuario:${req.user!.userId}:notificacoes`, notificacaoId);
-  //   return res.status(201).json({ success: true, data: agendamento });
-
-  // }
-  // getIO()
-  //   .to(`usuario:${req.user!.userId}`)
-  //   .emit("agenda:novo", notificacaoData);
-
-  // getIO()
-  //   .to(`usuario:${agendamento.nutricionistaId}`)
-  //   .emit("agenda:novo", notificacaoData);
-
-  // await redisLPush(`usuario:${req.user!.userId}:notificacoes`, notificacaoId);
-  // await redisLPush(`usuario:${agendamento.nutricionistaId}:notificacoes`, notificacaoId);
   return res.status(201).json({ success: true, data: agendamento });
 }
 
 export async function editar(req: Request<{ id: string }>, res: Response) {
   const { id } = req.params;
+  
+  const agendamentoOriginal = await prisma.agendamento.findUnique({ where: { id } });
+  if (!agendamentoOriginal) {
+    throw new AppError("Agendamento não encontrado", 404);
+  }
+
   const agendamento = await service.editarAgendamento(id, req.body);
 
   const dataFormatada = new Intl.DateTimeFormat("pt-BR", {
@@ -129,12 +111,15 @@ export async function editar(req: Request<{ id: string }>, res: Response) {
   let titulo = "Agendamento atualizado";
   let mensagem = `Os detalhes do agendamento do paciente ${agendamento.paciente.nome} para o dia ${dataFormatada} foram atualizados.`;
 
-  if (req.body.status && req.body.dataHora) {
+  const statusMudou = req.body.status && agendamentoOriginal.status !== agendamento.status;
+  const dataMudou = req.body.dataHora && agendamentoOriginal.dataHora.getTime() !== agendamento.dataHora.getTime();
+
+  if (statusMudou && dataMudou) {
     mensagem = `O agendamento foi reagendado para ${dataFormatada} e o status alterado para ${agendamento.status}. Paciente: ${agendamento.paciente.nome}.`;
-  } else if (req.body.status) {
+  } else if (statusMudou) {
     titulo = "Status do agendamento atualizado";
     mensagem = getMensagemIntuitiva(agendamento.status, agendamento.paciente.nome, dataFormatada);
-  } else if (req.body.dataHora) {
+  } else if (dataMudou) {
     titulo = "Agendamento reagendado";
     mensagem = `O agendamento do paciente ${agendamento.paciente.nome} foi reagendado para o dia ${dataFormatada}.`;
   }
@@ -142,7 +127,7 @@ export async function editar(req: Request<{ id: string }>, res: Response) {
   const notificacaoId = crypto.randomUUID();
   const notificacaoData = {
     id: notificacaoId,
-    tipo: "AGENDAMENTO",
+    tipo: "AGENDAMENTO" as const,
     titulo,
     mensagem,
     agendamentoId: agendamento.id,
@@ -170,7 +155,7 @@ export async function alterarStatus(
   const notificacaoId = crypto.randomUUID();
   const notificacaoData = {
     id: notificacaoId,
-    tipo: "AGENDAMENTO",
+    tipo: "AGENDAMENTO" as const,
     titulo: "Status do agendamento atualizado",
     mensagem: getMensagemIntuitiva(agendamento.status, agendamento.paciente.nome, dataFormatada),
     agendamentoId: agendamento.id,
@@ -195,7 +180,7 @@ export async function excluir(req: Request<{ id: string }>, res: Response) {
   const notificacaoId = crypto.randomUUID();
   const notificacaoData = {
     id: notificacaoId,
-    tipo: "AGENDAMENTO",
+    tipo: "AGENDAMENTO" as const,
     titulo: "Agendamento excluído",
     mensagem: `O agendamento do dia ${dataFormatada} foi cancelado/excluído. Paciente: ${agendamento.paciente.nome}.`,
     agendamentoId: agendamento.id,

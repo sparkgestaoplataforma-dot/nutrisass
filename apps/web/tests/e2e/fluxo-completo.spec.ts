@@ -152,13 +152,13 @@ test.describe.serial("Jornada Completa do Usuário (Macro E2E)", () => {
     });
 
     await page.getByRole("button", { name: /Agendar/i }).click();
-    
+
     // Aparece modal - Preencher Paciente
     await page.locator('select[name="pacienteId"]').selectOption(pacienteId);
 
     // Selecionar Nutricionista (Novo campo obrigatório)
     const nutricionistaSelect = page.locator('select[name="nutricionistaId"]');
-    
+
     // Esperar as opções carregarem (pelo menos o placeholder + 1 nutri)
     await expect(nutricionistaSelect.locator('option')).toHaveCount(2, { timeout: 10000 });
 
@@ -189,6 +189,27 @@ test.describe.serial("Jornada Completa do Usuário (Macro E2E)", () => {
     await expect(
       page.locator("td", { hasText: pacienteNome }).first(),
     ).toBeVisible({ timeout: 10000 });
+  });
+
+  test("Etapa 4.5: Validar e Limpar Notificações de Agendamento", async () => {
+    // A notificação pode demorar alguns instantes via WebSocket ou Polling
+    // Procurar o botão do sino de notificação e clicar
+    const bellButton = page.locator('button[aria-label="Notificações"], button:has(.lucide-bell), button:has-text("Notificações")').first();
+    await expect(bellButton).toBeVisible({ timeout: 10000 });
+    await bellButton.click();
+
+    // Validar que o painel exibe "Novo Agendamento" ou nome do paciente
+    const panel = page.locator('[role="dialog"], .notificacoes-panel, div').filter({ hasText: "Agendamento" }).first();
+    await expect(panel).toBeVisible({ timeout: 10000 });
+
+    // Clicar para limpar as notificações
+    const btnLimpar = page.getByRole('button', { name: /Limpar/i }).first();
+    if (await btnLimpar.isVisible()) {
+      await btnLimpar.click();
+    }
+
+    // Fechar painel (clicando fora ou no botão novamente)
+    await bellButton.click();
   });
 
   test("Etapa 5: Preenchimento de Questionário Público", async () => {

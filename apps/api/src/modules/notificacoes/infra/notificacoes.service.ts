@@ -1,9 +1,10 @@
-import { redisGet, redisLRange, redisDel } from "@/shared/providers/redis"
+import { redisGet, redisLRange, redisDel } from "@/shared/providers/redis";
+import type { Notificacao } from "@nutricao/shared";
 
-export const limparNotificacoesUsuario = async (userId: string) => {
-    const iDNotificacoesDoUsuario = await redisLRange(`usuario:${userId}:notificacoes`, 0, -1);
-    if (iDNotificacoesDoUsuario && iDNotificacoesDoUsuario.length > 0) {
-        for (const id of iDNotificacoesDoUsuario) {
+export async function limparNotificacoesUsuario(userId: string): Promise<boolean> {
+    const idNotificacoes = await redisLRange(`usuario:${userId}:notificacoes`, 0, -1);
+    if (idNotificacoes.length > 0) {
+        for (const id of idNotificacoes) {
             await redisDel(`notificacao:${id}`);
         }
         await redisDel(`usuario:${userId}:notificacoes`);
@@ -11,16 +12,15 @@ export const limparNotificacoesUsuario = async (userId: string) => {
     return true;
 }
 
-export const listarnotificacoesUsuario = async (userId: string) => {
+export async function listarNotificacoesUsuario(userId: string): Promise<Notificacao[]> {
+    const idNotificacoes = await redisLRange(`usuario:${userId}:notificacoes`, 0, 20);
 
-    const iDNotificacoesDoUsuario = await redisLRange(`usuario:${userId}:notificacoes`, 0, 20);
-
-    const notificacoesDoUsuario = await Promise.all(
-        iDNotificacoesDoUsuario!.map(async (notificacaoId) => {
-            const notificacao = await redisGet(`notificacao:${notificacaoId}`)
-            return notificacao ? JSON.parse(notificacao) : null
+    const notificacoes = await Promise.all(
+        idNotificacoes.map(async (notificacaoId) => {
+            const raw = await redisGet(`notificacao:${notificacaoId}`);
+            return raw ? (JSON.parse(raw) as Notificacao) : null;
         })
-    )
+    );
 
-    return notificacoesDoUsuario.filter(Boolean);
+    return notificacoes.filter((n): n is Notificacao => n !== null);
 }
