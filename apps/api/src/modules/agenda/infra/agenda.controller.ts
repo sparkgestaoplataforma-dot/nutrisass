@@ -86,6 +86,7 @@ export async function criar(req: Request, res: Response) {
     titulo: "Novo agendamento",
     mensagem: `Novo agendamento marcado para o dia ${dataFormatada} com o paciente ${agendamento.paciente.nome}.`,
     agendamentoId: agendamento.id,
+    pacienteId: agendamento.pacienteId,
     createdAt: new Date().toISOString()
   }
 
@@ -131,6 +132,7 @@ export async function editar(req: Request<{ id: string }>, res: Response) {
     titulo,
     mensagem,
     agendamentoId: agendamento.id,
+    pacienteId: agendamento.pacienteId,
     createdAt: new Date().toISOString()
   };
 
@@ -159,6 +161,7 @@ export async function alterarStatus(
     titulo: "Status do agendamento atualizado",
     mensagem: getMensagemIntuitiva(agendamento.status, agendamento.paciente.nome, dataFormatada),
     agendamentoId: agendamento.id,
+    pacienteId: agendamento.pacienteId,
     createdAt: new Date().toISOString()
   };
 
@@ -184,6 +187,7 @@ export async function excluir(req: Request<{ id: string }>, res: Response) {
     titulo: "Agendamento excluído",
     mensagem: `O agendamento do dia ${dataFormatada} foi cancelado/excluído. Paciente: ${agendamento.paciente.nome}.`,
     agendamentoId: agendamento.id,
+    pacienteId: agendamento.pacienteId,
     createdAt: new Date().toISOString()
   };
 

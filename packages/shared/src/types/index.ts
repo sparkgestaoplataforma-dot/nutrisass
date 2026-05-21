@@ -33,5 +33,7 @@ export interface Notificacao {
   titulo: string;
   mensagem: string;
   agendamentoId?: string;
+  pacienteId?: string;
   createdAt: string;
+  lida?: boolean;
 }

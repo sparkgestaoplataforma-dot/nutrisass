@@ -5,7 +5,6 @@ import { useAuthStore } from "@/stores/authStore";
 import { useLogout } from "@/hooks/useAuth";
 import { NotificationCenter } from "../Notifications/NotificationCenter";
 import styles from "./Header.module.scss";
-import { useQuery } from "@tanstack/react-query";
 
 const pageTitles: Record<string, string> = {
   "/": "Início",

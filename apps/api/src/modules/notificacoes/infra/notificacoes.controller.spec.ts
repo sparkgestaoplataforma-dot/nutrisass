@@ -105,15 +105,15 @@ describe("notificacoes.controller", () => {
       createdAt: "2026-01-01T00:00:00Z"
     };
 
-    it("deve enviar para ambos quando userId !== nutricionistaId", async () => {
+    it("deve enviar para ambos quando userId !== nutricionistaId mas persistir apenas para o nutricionista", async () => {
       await enviarNotificacaoIndividual("notif-1", "user-1", "nutri-1", mockNotificacao);
 
-      expect(redisProvider.redisSet).toHaveBeenCalledWith("notificacao:notif-1", JSON.stringify(mockNotificacao));
+      expect(redisProvider.redisSet).toHaveBeenCalledWith("notificacao:notif-1", JSON.stringify(mockNotificacao), "EX", 2592000);
+      expect(redisProvider.redisLPush).toHaveBeenCalledTimes(1);
+      expect(redisProvider.redisLPush).toHaveBeenCalledWith("usuario:nutri-1:notificacoes", "notif-1");
       expect(mockTo).toHaveBeenCalledWith("usuario:user-1");
       expect(mockTo).toHaveBeenCalledWith("usuario:nutri-1");
       expect(mockEmit).toHaveBeenCalledWith(SOCKET_EVENTS.AGENDA_NOVO, mockNotificacao);
-      expect(redisProvider.redisLPush).toHaveBeenCalledWith("usuario:user-1:notificacoes", "notif-1");
-      expect(redisProvider.redisLPush).toHaveBeenCalledWith("usuario:nutri-1:notificacoes", "notif-1");
     });
 
     it("deve enviar apenas para o próprio quando userId === nutricionistaId", async () => {
@@ -137,7 +137,7 @@ describe("notificacoes.controller", () => {
     it("deve persistir no Redis e emitir para a room da clínica", async () => {
       await enviarNotificacaoClinica("notif-c1", "clinica-1", mockNotificacao);
 
-      expect(redisProvider.redisSet).toHaveBeenCalledWith("notificacao:notif-c1", JSON.stringify(mockNotificacao));
+      expect(redisProvider.redisSet).toHaveBeenCalledWith("notificacao:notif-c1", JSON.stringify(mockNotificacao), "EX", 2592000);
       expect(redisProvider.redisLPush).toHaveBeenCalledWith("clinica:clinica-1:notificacoes", "notif-c1");
       expect(mockTo).toHaveBeenCalledWith("clinica:clinica-1");
       expect(mockEmit).toHaveBeenCalledWith(SOCKET_EVENTS.AGENDA_NOVO, mockNotificacao);
