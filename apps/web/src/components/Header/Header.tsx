@@ -30,11 +30,11 @@ interface HeaderProps {
   onMenuClick: () => void;
 }
 
+
 export function Header({ onMenuClick }: HeaderProps) {
   const location = useLocation();
   const user = useAuthStore((s) => s.user);
   const { mutate: logout } = useLogout();
-
   const basePath = "/" + (location.pathname.split("/")[1] || "");
   const title = pageTitles[basePath] || "NutriSaaS";
   const subtitle = pageSubtitles[basePath] || "";

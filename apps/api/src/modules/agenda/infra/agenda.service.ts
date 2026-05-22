@@ -6,9 +6,7 @@ import type {
   UpdateAgendamentoInput,
   UpdateStatusInput,
 } from "@nutricao/shared";
-import { criarNotificacao } from "../../notificacao/infra/notificacao.service.js";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+
 
 function parseLocalDate(date: string) {
   const [year, month, day] = date.split("-").map(Number);
@@ -95,15 +93,7 @@ export async function criarAgendamento(
     },
   });
 
-  await criarNotificacao({
-    clinicaId,
-    usuarioId: nutricionista.id,
-    tipo: "LEMBRETE_CONSULTA",
-    titulo: "Novo agendamento criado",
-    mensagem: `${paciente.nome} agendou uma consulta com ${nutricionista.nome} para ${format(dataHora, "dd/MM 'às' HH:mm", { locale: ptBR })}.`,
-  }).catch((err) =>
-    console.error("Falha ao emitir notificação de agendamento:", err),
-  );
+
 
   return agendamento;
 }
@@ -169,18 +159,6 @@ export async function alterarStatusAgendamento(
     },
   });
 
-  if (novoStatus === "PRESENTE" && statusAnterior !== "PRESENTE") {
-    await criarNotificacao({
-      clinicaId: agendamento.clinicaId,
-      usuarioId: agendamento.criadoPorUsuarioId,
-      tipo: "PACIENTE_CHEGOU",
-      titulo: "Paciente chegou",
-      mensagem: `${agendamento.paciente.nome} confirmou presença para a consulta das ${format(agendamento.dataHora, "HH:mm")}.`,
-    }).catch((err) =>
-      console.error("Falha ao emitir notificação de presença:", err),
-    );
-  }
-
   return agendamento;
 }
 
@@ -191,6 +169,9 @@ export async function excluirAgendamento(id: string) {
     throw new AppError("Agendamento não encontrado", 404);
   }
 
-  await prisma.agendamento.delete({ where: { id } });
-  return { message: "Agendamento excluído" };
+  const deleted = await prisma.agendamento.delete({ 
+    where: { id },
+    include: { paciente: { select: { nome: true } } }
+  });
+  return deleted;
 }

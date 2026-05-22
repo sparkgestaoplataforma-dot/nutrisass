@@ -8,11 +8,7 @@ import {
   excluirAgendamento,
 } from "./agenda.service";
 import { AppError } from "@/shared/middlewares/errorHandler";
-import * as notificacaoService from "../../notificacao/infra/notificacao.service";
 
-vi.mock("../../notificacao/infra/notificacao.service", () => ({
-  criarNotificacao: vi.fn().mockResolvedValue({}),
-}));
 
 describe("agenda.service", () => {
   beforeEach(() => {
@@ -50,7 +46,6 @@ describe("agenda.service", () => {
       );
 
       expect(prismaMock.agendamento.create).toHaveBeenCalled();
-      expect(notificacaoService.criarNotificacao).toHaveBeenCalled();
       expect(result.id).toBe("novo");
     });
   });
@@ -75,7 +70,6 @@ describe("agenda.service", () => {
       const result = await alterarStatusAgendamento(mockAgendamentoId, { status: "PRESENTE" });
 
       expect(prismaMock.agendamento.update).toHaveBeenCalled();
-      expect(notificacaoService.criarNotificacao).toHaveBeenCalled();
       expect(result.status).toBe("PRESENTE");
     });
   });

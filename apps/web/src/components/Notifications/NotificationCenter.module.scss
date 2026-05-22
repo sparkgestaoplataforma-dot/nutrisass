@@ -222,3 +222,41 @@
     color: $gray-700;
   }
 }
+
+.toast {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  background: $white;
+  box-shadow: $shadow-lg;
+  border-radius: $radius-md;
+  padding: $space-3 $space-4;
+  display: flex;
+  align-items: flex-start;
+  gap: $space-3;
+  width: 350px;
+  border-left: 4px solid $primary;
+  animation: slideDown 0.3s ease-out, fadeOut 0.3s ease-in 4.7s forwards;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

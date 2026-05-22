@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  output = "./generated/client"
+  output   = "./generated/client"
 }
 
 datasource db {
@@ -44,84 +44,82 @@ enum ObjetivoPlano {
 }
 
 model Clinica {
-  id           String        @id @default(uuid())
-  nome         String
-  cnpj         String?       @unique
-  telefone     String?
-  email        String?
-  endereco     String?
-  logomarca    String?
-  ativa        Boolean       @default(true)
-  criadoEm     DateTime      @default(now()) @map("criado_em")
-  atualizadoEm DateTime      @updatedAt @map("atualizado_em")
-  usuarios     Usuario[]
-  pacientes    Paciente[]
-  convenios    Convenio[]
-  agendamentos Agendamento[]
-  questionarios Questionario[]
-  examesBase   ExameBase[]
-  avaliacoes   Avaliacao[]
-  notificacoes Notificacao[]
-  planosAlimentares PlanoAlimentar[]
+  id                    String           @id @default(uuid())
+  nome                  String
+  cnpj                  String?          @unique
+  telefone              String?
+  email                 String?
+  endereco              String?
+  logomarca             String?
+  ativa                 Boolean          @default(true)
+  criadoEm              DateTime         @default(now()) @map("criado_em")
+  atualizadoEm          DateTime         @updatedAt @map("atualizado_em")
+  usuarios              Usuario[]
+  pacientes             Paciente[]
+  convenios             Convenio[]
+  agendamentos          Agendamento[]
+  questionarios         Questionario[]
+  examesBase            ExameBase[]
+  avaliacoes            Avaliacao[]
+  planosAlimentares     PlanoAlimentar[]
   alimentosCustomizados Alimento[]
 
   @@map("clinicas")
 }
 
 model Usuario {
-  id           String        @id @default(uuid())
-  clinicaId    String        @map("clinica_id")
-  clinica      Clinica       @relation(fields: [clinicaId], references: [id])
-  nome         String
-  email        String        @unique
-  senha        String
-  perfil       Perfil
-  criadoEm     DateTime      @default(now()) @map("criado_em")
-  atualizadoEm DateTime      @updatedAt @map("atualizado_em")
-  agendamentosCriados Agendamento[] @relation("emissor")
-  consultasAgendadas  Agendamento[] @relation("nutricionista")
-  notificacoes Notificacao[]
-  planosAlimentares PlanoAlimentar[]
+  id                  String           @id @default(uuid())
+  clinicaId           String           @map("clinica_id")
+  clinica             Clinica          @relation(fields: [clinicaId], references: [id])
+  nome                String
+  email               String           @unique
+  senha               String
+  perfil              Perfil
+  criadoEm            DateTime         @default(now()) @map("criado_em")
+  atualizadoEm        DateTime         @updatedAt @map("atualizado_em")
+  agendamentosCriados Agendamento[]    @relation("emissor")
+  consultasAgendadas  Agendamento[]    @relation("nutricionista")
+  planosAlimentares   PlanoAlimentar[]
 
   @@index([clinicaId])
   @@map("usuarios")
 }
 
 model Paciente {
-  id               String                 @id @default(uuid())
-  clinicaId        String                 @map("clinica_id")
-  clinica          Clinica                @relation(fields: [clinicaId], references: [id])
-  nome             String
-  email            String?
-  telefone         String?
-  whatsapp         String?
-  sexo             Sexo?
-  dataNascimento   DateTime?              @map("data_nascimento")
-  identidade       String?
-  ufIdentidade     String?                @map("uf_identidade")
-  orgaoExpedidor   String?                @map("orgao_expedidor")
-  cpf              String?
-  endereco         String?
-  bairro           String?
-  municipio        String?
-  uf               String?
-  cep              String?
-  profissao        String?
-  escolaridade     String?
-  nomeMae          String?                @map("nome_mae")
-  convenioId       String?                @map("convenio_id")
-  convenio         Convenio?              @relation(fields: [convenioId], references: [id])
-  numeroCarteira   String?                @map("numero_carteira")
-  validadeCarteira DateTime?              @map("validade_carteira")
-  criadoEm         DateTime               @default(now()) @map("criado_em")
-  atualizadoEm     DateTime               @updatedAt @map("atualizado_em")
-  agendamentos     Agendamento[]
-  evolucoes        EvolucaoClinica[]
-  medidas          Medida[]
-  solicitacoes     SolicitacaoExame[]
+  id                      String             @id @default(uuid())
+  clinicaId               String             @map("clinica_id")
+  clinica                 Clinica            @relation(fields: [clinicaId], references: [id])
+  nome                    String
+  email                   String?
+  telefone                String?
+  whatsapp                String?
+  sexo                    Sexo?
+  dataNascimento          DateTime?          @map("data_nascimento")
+  identidade              String?
+  ufIdentidade            String?            @map("uf_identidade")
+  orgaoExpedidor          String?            @map("orgao_expedidor")
+  cpf                     String?
+  endereco                String?
+  bairro                  String?
+  municipio               String?
+  uf                      String?
+  cep                     String?
+  profissao               String?
+  escolaridade            String?
+  nomeMae                 String?            @map("nome_mae")
+  convenioId              String?            @map("convenio_id")
+  convenio                Convenio?          @relation(fields: [convenioId], references: [id])
+  numeroCarteira          String?            @map("numero_carteira")
+  validadeCarteira        DateTime?          @map("validade_carteira")
+  criadoEm                DateTime           @default(now()) @map("criado_em")
+  atualizadoEm            DateTime           @updatedAt @map("atualizado_em")
+  agendamentos            Agendamento[]
+  evolucoes               EvolucaoClinica[]
+  medidas                 Medida[]
+  solicitacoes            SolicitacaoExame[]
   avaliacoesQuestionarios Avaliacao[]
-  respostasQuestionarios Resposta[]
-  planosAlimentares PlanoAlimentar[]
+  respostasQuestionarios  Resposta[]
+  planosAlimentares       PlanoAlimentar[]
 
   @@index([clinicaId])
   @@map("pacientes")
@@ -144,28 +142,28 @@ model Convenio {
 }
 
 model Agendamento {
-  id              String            @id @default(uuid())
-  clinicaId       String            @map("clinica_id")
-  clinica         Clinica           @relation(fields: [clinicaId], references: [id])
-  pacienteId      String            @map("paciente_id")
-  paciente        Paciente          @relation(fields: [pacienteId], references: [id])
+  id         String   @id @default(uuid())
+  clinicaId  String   @map("clinica_id")
+  clinica    Clinica  @relation(fields: [clinicaId], references: [id])
+  pacienteId String   @map("paciente_id")
+  paciente   Paciente @relation(fields: [pacienteId], references: [id])
 
-  criadoPorUsuarioId String            @map("criado_por_usuario_id")
-  criadoPor          Usuario           @relation("emissor", fields: [criadoPorUsuarioId], references: [id])
+  criadoPorUsuarioId String  @map("criado_por_usuario_id")
+  criadoPor          Usuario @relation("emissor", fields: [criadoPorUsuarioId], references: [id])
 
-  nutricionistaId String            @map("nutricionista_id")
-  nutricionista   Usuario           @relation("nutricionista", fields: [nutricionistaId], references: [id]) 
-  
-  convenioId      String?           @map("convenio_id")
-  convenio        Convenio?         @relation(fields: [convenioId], references: [id])
-  
-  dataHora        DateTime          @map("data_hora")
-  tipo            TipoAgendamento
-  status          StatusAgendamento @default(AGENDADO)
-  encaixe         Boolean           @default(false)
-  observacao      String?
-  criadoEm        DateTime          @default(now()) @map("criado_em")
-  atualizadoEm    DateTime          @updatedAt @map("atualizado_em")
+  nutricionistaId String  @map("nutricionista_id")
+  nutricionista   Usuario @relation("nutricionista", fields: [nutricionistaId], references: [id])
+
+  convenioId String?   @map("convenio_id")
+  convenio   Convenio? @relation(fields: [convenioId], references: [id])
+
+  dataHora     DateTime          @map("data_hora")
+  tipo         TipoAgendamento
+  status       StatusAgendamento @default(AGENDADO)
+  encaixe      Boolean           @default(false)
+  observacao   String?
+  criadoEm     DateTime          @default(now()) @map("criado_em")
+  atualizadoEm DateTime          @updatedAt @map("atualizado_em")
 
   @@index([clinicaId])
   @@index([dataHora])
@@ -238,8 +236,8 @@ model Modulo {
   criadoEm       DateTime     @default(now()) @map("criado_em")
   atualizadoEm   DateTime     @updatedAt @map("atualizado_em")
 
-  @@index([questionarioId])
   @@unique([questionarioId, ordem])
+  @@index([questionarioId])
   @@map("questionarios_modulos")
 }
 
@@ -253,8 +251,8 @@ model Pergunta {
   criadoEm     DateTime   @default(now()) @map("criado_em")
   atualizadoEm DateTime   @updatedAt @map("atualizado_em")
 
-  @@index([moduloId])
   @@unique([moduloId, ordem])
+  @@index([moduloId])
   @@map("questionarios_questoes")
 }
 
@@ -262,11 +260,11 @@ model LabelEscolha {
   id             String       @id @default(uuid())
   questionarioId String       @map("questionario_id")
   questionario   Questionario @relation(fields: [questionarioId], references: [id], onDelete: Cascade)
-  label         String
+  label          String
   nota           Int
 
-  @@index([questionarioId])
   @@unique([questionarioId, nota])
+  @@index([questionarioId])
   @@map("questionarios_titulos_escolha")
 }
 
@@ -301,14 +299,14 @@ model Avaliacao {
 }
 
 model Resposta {
-  id         String    @id @default(uuid())
-  nota       Int
-  avaliacaoId String   @map("avaliacao_id")
-  avaliacao  Avaliacao @relation(fields: [avaliacaoId], references: [id], onDelete: Cascade)
-  perguntaId String    @map("pergunta_id")
-  pergunta   Pergunta  @relation(fields: [perguntaId], references: [id])
-  pacienteId String    @map("paciente_id")
-  paciente   Paciente  @relation(fields: [pacienteId], references: [id])
+  id          String    @id @default(uuid())
+  nota        Int
+  avaliacaoId String    @map("avaliacao_id")
+  avaliacao   Avaliacao @relation(fields: [avaliacaoId], references: [id], onDelete: Cascade)
+  perguntaId  String    @map("pergunta_id")
+  pergunta    Pergunta  @relation(fields: [perguntaId], references: [id])
+  pacienteId  String    @map("paciente_id")
+  paciente    Paciente  @relation(fields: [pacienteId], references: [id])
 
   @@index([avaliacaoId])
   @@index([perguntaId])
@@ -346,29 +344,17 @@ model SolicitacaoExame {
 }
 
 model SolicitacaoExameItem {
-  id             String           @id @default(uuid())
-  solicitacaoId  String           @map("solicitacao_id")
-  solicitacao    SolicitacaoExame @relation(fields: [solicitacaoId], references: [id], onDelete: Cascade)
-  exameBaseId    String           @map("exame_base_id")
-  exameBase      ExameBase        @relation(fields: [exameBaseId], references: [id])
-  dataResultado  DateTime?        @map("data_resultado")
-  resultado      String?
+  id            String           @id @default(uuid())
+  solicitacaoId String           @map("solicitacao_id")
+  solicitacao   SolicitacaoExame @relation(fields: [solicitacaoId], references: [id], onDelete: Cascade)
+  exameBaseId   String           @map("exame_base_id")
+  exameBase     ExameBase        @relation(fields: [exameBaseId], references: [id])
+  dataResultado DateTime?        @map("data_resultado")
+  resultado     String?
 
   @@map("solicitacoes_exames_itens")
 }
 
-model Notificacao {
-  id            String            @id @default(uuid())
-  clinicaId     String            @map("clinica_id")
-  clinica       Clinica           @relation(fields: [clinicaId], references: [id])
-  usuarioId     String            @map("usuario_id")
-  usuario       Usuario           @relation(fields: [usuarioId], references: [id])
-  tipo          String
-  titulo        String
-  mensagem      String?
-  mensagemLida  Boolean           @default(false) @map("mensagem_lida")
-  createAt      DateTime          @default(now()) @map("create_at")
-}
 model PlanoAlimentar {
   id                 String          @id @default(uuid())
   clinicaId          String          @map("clinica_id")
@@ -394,7 +380,6 @@ model PlanoAlimentar {
   @@index([usuarioId])
   @@map("planos_alimentares")
 }
-
 
 model PlanoRefeicao {
   id               String               @id @default(uuid())
@@ -451,9 +436,9 @@ model PlanoAlimento {
 }
 
 model Alimento {
-  id              String           @id @default(uuid())
-  clinicaId       String?          @map("clinica_id")
-  clinica         Clinica?         @relation(fields: [clinicaId], references: [id])
+  id              String          @id @default(uuid())
+  clinicaId       String?         @map("clinica_id")
+  clinica         Clinica?        @relation(fields: [clinicaId], references: [id])
   codigo          String?
   nome            String
   grupo           String?
@@ -462,8 +447,8 @@ model Alimento {
   carboidratos    Float?
   gorduras        Float?
   fibra           Float?
-  criadoEm        DateTime         @default(now()) @map("criado_em")
-  atualizadoEm    DateTime         @updatedAt @map("atualizado_em")
+  criadoEm        DateTime        @default(now()) @map("criado_em")
+  atualizadoEm    DateTime        @updatedAt @map("atualizado_em")
   medidasCaseiras MedidaCaseira[]
   planosAlimentos PlanoAlimento[]
 
@@ -472,12 +457,12 @@ model Alimento {
 }
 
 model MedidaCaseira {
-  id                 String           @id @default(uuid())
-  alimentoId         String           @map("alimento_id")
-  alimento           Alimento         @relation(fields: [alimentoId], references: [id], onDelete: Cascade)
+  id                 String          @id @default(uuid())
+  alimentoId         String          @map("alimento_id")
+  alimento           Alimento        @relation(fields: [alimentoId], references: [id], onDelete: Cascade)
   nome               String
-  quantidadeEmGramas Float            @map("quantidade_em_gramas")
-  criadoEm           DateTime         @default(now()) @map("criado_em")
+  quantidadeEmGramas Float           @map("quantidade_em_gramas")
+  criadoEm           DateTime        @default(now()) @map("criado_em")
   planosAlimentos    PlanoAlimento[]
 
   @@index([alimentoId])

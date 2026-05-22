@@ -367,6 +367,92 @@
   @include badge;
 }
 
+.statusDropdownWrapper {
+  position: relative;
+}
+
+.statusTrigger {
+  @include badge;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all $transition-smooth;
+  user-select: none;
+
+  &:hover {
+    filter: brightness(0.93);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  }
+}
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot_blue { background: #2563eb; }
+.dot_green { background: #059669; }
+.dot_orange { background: #ea580c; }
+.dot_red { background: #dc2626; }
+.dot_teal { background: $teal; }
+
+.statusMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 170px;
+  background: $white;
+  border: 1px solid $gray-100;
+  border-radius: $radius-md;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+  z-index: $z-dropdown;
+  padding: 4px;
+  animation: menuSlideIn 0.15s ease-out;
+}
+
+@keyframes menuSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.statusMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: $radius-sm;
+  font-size: $font-size-2xs;
+  font-weight: $font-weight-medium;
+  color: $gray-600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all $transition-fast;
+  text-align: left;
+
+  &:hover {
+    background: $gray-50;
+    color: $gray-900;
+  }
+}
+
+.statusMenuItemActive {
+  background: $primary-50;
+  color: $primary-dark;
+  font-weight: $font-weight-semibold;
+}
+
 .badge_blue {
   background: $info-light;
   color: #2563eb;

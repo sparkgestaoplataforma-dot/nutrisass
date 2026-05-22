@@ -11,6 +11,7 @@ import {
   useExcluirAgendamento,
 } from './hooks/useAgenda';
 import { useSocket, useSocketEvent } from '@/hooks/useSocket';
+import { SOCKET_EVENTS } from '@nutricao/shared';
 import { TabelaAgenda } from './components/TabelaAgenda';
 import { AgendamentoModal } from './components/AgendamentoModal';
 import type { AgendamentoResponse } from '@/services/agenda';
@@ -47,16 +48,16 @@ export function AgendaPage() {
   const excluirMutation = useExcluirAgendamento(dataSelecionada);
 
   const queryClient = useQueryClient();
-  const socketRef = useSocket();
+  const { socketRef } = useSocket();
 
   const handleSocketUpdate = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['agenda', dataSelecionada] });
   }, [queryClient, dataSelecionada]);
 
-  useSocketEvent(socketRef, 'agenda:novo', handleSocketUpdate);
-  useSocketEvent(socketRef, 'agenda:atualizado', handleSocketUpdate);
-  useSocketEvent(socketRef, 'agenda:status', handleSocketUpdate);
-  useSocketEvent(socketRef, 'agenda:excluido', handleSocketUpdate);
+  useSocketEvent(socketRef, SOCKET_EVENTS.AGENDA_NOVO, handleSocketUpdate);
+  useSocketEvent(socketRef, SOCKET_EVENTS.AGENDA_ATUALIZADO, handleSocketUpdate);
+  useSocketEvent(socketRef, SOCKET_EVENTS.AGENDA_STATUS, handleSocketUpdate);
+  useSocketEvent(socketRef, SOCKET_EVENTS.AGENDA_EXCLUIDO, handleSocketUpdate);
 
   function navigateDate(days: number) {
     const d = new Date(dataSelecionada + 'T12:00:00');
