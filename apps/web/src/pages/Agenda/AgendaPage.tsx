@@ -14,6 +14,7 @@ import { useSocket, useSocketEvent } from '@/hooks/useSocket';
 import { SOCKET_EVENTS } from '@nutricao/shared';
 import { TabelaAgenda } from './components/TabelaAgenda';
 import { AgendamentoModal } from './components/AgendamentoModal';
+import { ConflictConfirmModal } from '@/components/ConflictConfirmModal/ConflictConfirmModal';
 import type { AgendamentoResponse } from '@/services/agenda';
 import type { CreateAgendamentoInput } from '@nutricao/shared';
 import styles from './AgendaPage.module.scss';
@@ -31,6 +32,12 @@ export function AgendaPage() {
   const [modalAberto, setModalAberto] = useState(false);
   const [agendamentoEditando, setAgendamentoEditando] =
     useState<AgendamentoResponse | null>(null);
+
+  // States for conflict modal
+  const [conflictModalOpen, setConflictModalOpen] = useState(false);
+  const [conflictTitle, setConflictTitle] = useState("");
+  const [conflictDescription, setConflictDescription] = useState("");
+  const [onConfirmConflict, setOnConfirmConflict] = useState<() => void>(() => {});
 
   const { data: nutricionistas = [] } = useQuery({
     queryKey: ['nutricionistas-list', user?.clinicaId],
@@ -66,6 +73,62 @@ export function AgendaPage() {
   }
 
   function handleSubmit(data: CreateAgendamentoInput) {
+    const handleMutationError = (error: any, variables: any, isEdit: boolean) => {
+      const errorMessage = error.response?.data?.message || error.message || "";
+      if (errorMessage.includes("Já existe um agendamento ativo")) {
+        const targetNutriId = isEdit 
+          ? (variables.nutricionistaId || agendamentoEditando?.nutricionistaId) 
+          : variables.nutricionistaId;
+        const nutricionistaNome = nutricionistas.find((n: any) => n.id === targetNutriId)?.nome || "o nutricionista";
+        
+        let horaFormatada = "";
+        try {
+          const date = new Date(variables.dataHora);
+          horaFormatada = new Intl.DateTimeFormat("pt-BR", {
+            dateStyle: "short",
+            timeStyle: "short"
+          }).format(date);
+        } catch {
+          horaFormatada = variables.dataHora;
+        }
+
+        setConflictTitle("Conflito de Horário");
+        setConflictDescription(
+          `O(A) nutricionista ${nutricionistaNome} já possui um agendamento ativo para o horário ${horaFormatada}.`
+        );
+        setOnConfirmConflict(() => () => {
+          setConflictModalOpen(false);
+          const inputComEncaixe = { ...variables, encaixe: true };
+          if (isEdit) {
+            editarMutation.mutate(
+              { id: agendamentoEditando!.id, input: inputComEncaixe },
+              {
+                onSuccess: () => {
+                  setModalAberto(false);
+                  setAgendamentoEditando(null);
+                },
+                onError: (err: any) => {
+                  alert(err.response?.data?.message || "Ocorreu um erro ao salvar o encaixe.");
+                }
+              }
+            );
+          } else {
+            criarMutation.mutate(inputComEncaixe, {
+              onSuccess: () => {
+                setModalAberto(false);
+              },
+              onError: (err: any) => {
+                alert(err.response?.data?.message || "Ocorreu um erro ao criar o encaixe.");
+              }
+            });
+          }
+        });
+        setConflictModalOpen(true);
+      } else {
+        alert(errorMessage || "Ocorreu um erro ao processar o agendamento.");
+      }
+    };
+
     if (agendamentoEditando) {
       editarMutation.mutate(
         { id: agendamentoEditando.id, input: data },
@@ -74,6 +137,9 @@ export function AgendaPage() {
             setModalAberto(false);
             setAgendamentoEditando(null);
           },
+          onError: (error, variables) => {
+            handleMutationError(error, variables.input, true);
+          }
         },
       );
     } else {
@@ -81,6 +147,9 @@ export function AgendaPage() {
         onSuccess: () => {
           setModalAberto(false);
         },
+        onError: (error, variables) => {
+          handleMutationError(error, variables, false);
+        }
       });
     }
   }
@@ -196,6 +265,15 @@ export function AgendaPage() {
           user={user}
         />
       )}
+
+      <ConflictConfirmModal
+        isOpen={conflictModalOpen}
+        onClose={() => setConflictModalOpen(false)}
+        onConfirm={onConfirmConflict}
+        title={conflictTitle}
+        description={conflictDescription}
+        isPending={criarMutation.isPending || editarMutation.isPending}
+      />
     </div>
   );
 }

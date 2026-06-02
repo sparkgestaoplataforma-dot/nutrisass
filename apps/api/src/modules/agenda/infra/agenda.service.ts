@@ -13,6 +13,36 @@ function parseLocalDate(date: string) {
   return new Date(year, month - 1, day);
 }
 
+async function verificarConflitoHorario(
+  nutricionistaId: string,
+  dataHora: Date,
+  encaixe: boolean,
+  excluirAgendamentoId?: string
+) {
+  if (encaixe) {
+    return;
+  }
+
+  const conflito = await prisma.agendamento.findFirst({
+    where: {
+      nutricionistaId,
+      dataHora,
+      status: {
+        notIn: ["CANCELADO", "NAO_COMPARECEU", "DESISTIU", "REMARCOU"],
+      },
+      encaixe: false,
+      ...(excluirAgendamentoId && { id: { not: excluirAgendamentoId } }),
+    },
+  });
+
+  if (conflito) {
+    throw new AppError(
+      "Já existe um agendamento ativo para este nutricionista neste horário. Caso deseje marcar no mesmo horário, utilize a opção de Encaixe.",
+      400
+    );
+  }
+}
+
 export async function pegarAgendamentosDia(
   data: string,
   clinicaId: string,
@@ -74,6 +104,12 @@ export async function criarAgendamento(
 
   const dataHora = new Date(input.dataHora);
 
+  await verificarConflitoHorario(
+    nutricionista.id,
+    dataHora,
+    input.encaixe || false
+  );
+
   const agendamento = await prisma.agendamento.create({
     data: {
       clinicaId,
@@ -107,6 +143,12 @@ export async function editarAgendamento(
   if (!existente) {
     throw new AppError("Agendamento não encontrado", 404);
   }
+
+  const dataHora = input.dataHora ? new Date(input.dataHora) : existente.dataHora;
+  const nutricionistaId = input.nutricionistaId || existente.nutricionistaId;
+  const encaixe = input.encaixe !== undefined ? input.encaixe : existente.encaixe;
+
+  await verificarConflitoHorario(nutricionistaId, dataHora, encaixe, id);
 
   const agendamento = await prisma.agendamento.update({
     where: { id },
@@ -149,6 +191,19 @@ export async function alterarStatusAgendamento(
 
   const statusAnterior = existente.status;
   const novoStatus = input.status;
+
+  const statusInativos = ["CANCELADO", "NAO_COMPARECEU", "DESISTIU", "REMARCOU"];
+  const statusAnteriorInativo = statusInativos.includes(statusAnterior);
+  const novoStatusAtivo = !statusInativos.includes(novoStatus);
+
+  if (statusAnteriorInativo && novoStatusAtivo) {
+    await verificarConflitoHorario(
+      existente.nutricionistaId,
+      existente.dataHora,
+      existente.encaixe,
+      id
+    );
+  }
 
   const agendamento = await prisma.agendamento.update({
     where: { id },
