@@ -11,14 +11,15 @@ export async function getDashboard(req: Request, res: Response) {
   const usuarioId = getUsuarioId(req);
   const usuarioPerfil = req.user!.perfil;
 
-  // Se for SECRETARIA:
-  // - Se selecionou um nutri (nutricionistaId), usamos ele.
-  // - Se selecionou "Todos" (vazio), usamos undefined para ver a clínica toda.
-  // Se for NUTRICIONISTA:
-  // - Usamos sempre o ID do token dele.
-  const targetId = usuarioPerfil === 'SECRETARIA' 
-    ? (nutricionistaId ? (nutricionistaId as string) : undefined)
-    : usuarioId;
+  // Se for AUTONOMO, forçar o próprio ID
+  // Se for SECRETARIA (ou ADMIN), pode filtrar por nutri
+  // Se for NUTRICIONISTA (Clínica), usa o próprio ID
+  const isAutonomo = req.user!.tipoClinica === 'AUTONOMO';
+  const targetId = isAutonomo
+    ? usuarioId
+    : (usuarioPerfil === 'SECRETARIA' || usuarioPerfil === 'ADMIN') 
+      ? (nutricionistaId ? (nutricionistaId as string) : undefined)
+      : usuarioId;
 
   const dados = await service.pegarDadosDashboard(
     clinicaId,

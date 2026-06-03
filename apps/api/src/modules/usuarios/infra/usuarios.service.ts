@@ -35,6 +35,18 @@ export async function pegarTodosNutricionistas(clinicaId: string) {
 }
 
 export async function criarUsuario(clinicaId: string, data: any) {
+  const clinica = await prisma.clinica.findUnique({
+    where: { id: clinicaId },
+    select: { tipo: true },
+  });
+  
+  if (clinica?.tipo === 'AUTONOMO') {
+    throw new AppError(
+      "Não é possível adicionar novos usuários no modo Autônomo. Migre para o modo Clínica primeiro.",
+      400
+    );
+  }
+
   const existente = await prisma.usuario.findUnique({
     where: { email: data.email },
   });
@@ -98,6 +110,13 @@ export async function excluirUsuario(id: string, clinicaId: string) {
     where: { id, clinicaId },
   });
   if (!existente) throw new AppError("Usuário não encontrado", 404);
+
+  const totalUsuarios = await prisma.usuario.count({
+    where: { clinicaId },
+  });
+  if (totalUsuarios <= 1) {
+    throw new AppError("Não é possível excluir o único usuário do consultório/clínica.", 400);
+  }
 
   if (existente.perfil === "ADMIN") {
     const totalAdmins = await prisma.usuario.count({

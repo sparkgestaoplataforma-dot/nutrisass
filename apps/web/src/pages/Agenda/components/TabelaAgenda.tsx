@@ -9,6 +9,7 @@ import {
 import { StatusBadge } from "./StatusBadge";
 import type { AgendamentoResponse } from "@/services/agenda";
 import { QuestionarioSelectorModal } from "@/components/QuestionarioSelectorModal/QuestionarioSelectorModal";
+import { useIsAutonomo } from "@/hooks/useIsAutonomo";
 import styles from "./TabelaAgenda.module.scss";
 
 type PacienteSelecionado = {
@@ -34,6 +35,7 @@ export function TabelaAgenda({
     useState(false);
   const [pacienteSelecionado, setPacienteSelecionado] =
     useState<PacienteSelecionado | null>(null);
+  const isAutonomo = useIsAutonomo();
 
   function handleAbrirQuestionarios(agendamento: AgendamentoResponse) {
     setPacienteSelecionado({
@@ -63,7 +65,7 @@ export function TabelaAgenda({
           <tr>
             <th>Hora</th>
             <th>Paciente</th>
-            <th>Nutricionista</th>
+            {!isAutonomo && <th>Nutricionista</th>}
             <th>Convênio</th>
             <th>Telefone</th>
             <th>Tipo</th>
@@ -87,7 +89,7 @@ export function TabelaAgenda({
                 </span>
                 {ag.encaixe && <span className={styles.encaixe}>Encaixe</span>}
               </td>
-              <td>{ag.nutricionista?.nome || "-"}</td>
+              {!isAutonomo && <td>{ag.nutricionista?.nome || "-"}</td>}
               <td>{ag.convenio?.nome || "Particular"}</td>
               <td>{ag.paciente.telefone || "-"}</td>
               <td>{ag.tipo === "CONSULTA" ? "Consulta" : "Retorno"}</td>

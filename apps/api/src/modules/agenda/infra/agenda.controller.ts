@@ -41,9 +41,12 @@ export async function listar(req: Request, res: Response) {
 
   const dataStr = (data as string) || new Date().toISOString().split("T")[0];
 
-  const targetNutricionistaId = (usuarioPerfil === "SECRETARIA" || usuarioPerfil === "ADMIN")
-    ? (nutricionistaId ? (nutricionistaId as string) : undefined)
-    : usuarioId;
+  const isAutonomo = req.user!.tipoClinica === 'AUTONOMO';
+  const targetNutricionistaId = isAutonomo
+    ? usuarioId
+    : (usuarioPerfil === "SECRETARIA" || usuarioPerfil === "ADMIN")
+      ? (nutricionistaId ? (nutricionistaId as string) : undefined)
+      : usuarioId;
 
   const agendamentos = await service.pegarAgendamentosDia(
     dataStr,

@@ -7,6 +7,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum TipoClinica {
+  AUTONOMO
+  CLINICA
+}
+
 enum Perfil {
   ADMIN
   NUTRICIONISTA
@@ -51,6 +56,7 @@ model Clinica {
   email                 String?
   endereco              String?
   logomarca             String?
+  tipo                  TipoClinica      @default(CLINICA)
   ativa                 Boolean          @default(true)
   criadoEm              DateTime         @default(now()) @map("criado_em")
   atualizadoEm          DateTime         @updatedAt @map("atualizado_em")

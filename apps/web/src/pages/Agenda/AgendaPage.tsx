@@ -19,11 +19,14 @@ import type { AgendamentoResponse } from '@/services/agenda';
 import type { CreateAgendamentoInput } from '@nutricao/shared';
 import styles from './AgendaPage.module.scss';
 import { useAuthStore } from "@/stores/authStore";
+import { useIsAutonomo } from "@/hooks/useIsAutonomo";
+
 function formatDate(date: Date) {
   return date.toLocaleDateString('sv-SE');
 }
 export function AgendaPage() {
   const {user} = useAuthStore();
+  const isAutonomo = useIsAutonomo();
 
   const [dataSelecionada, setDataSelecionada] = useState(formatDate(new Date()));
   const [nutricionistaId, setNutricionistaId] = useState(
@@ -200,19 +203,21 @@ export function AgendaPage() {
             Hoje
           </button>
           
-          <div className={styles.nutriFilter}>
-            <select 
-              id="nutricionista-filter"
-              className={styles.nutriSelect}
-              value={nutricionistaId}
-              onChange={(e) => setNutricionistaId(e.target.value)}
-            >
-              {(user?.perfil === 'SECRETARIA' || user?.perfil === 'ADMIN') && <option value="">Todos os Nutricionistas</option>}
-              {nutricionistas.map((n: any) => (
-                <option key={n.id} value={n.id}>{n.nome}</option>
-              ))}
-            </select>
-          </div>
+          {!isAutonomo && (
+            <div className={styles.nutriFilter}>
+              <select 
+                id="nutricionista-filter"
+                className={styles.nutriSelect}
+                value={nutricionistaId}
+                onChange={(e) => setNutricionistaId(e.target.value)}
+              >
+                {(user?.perfil === 'SECRETARIA' || user?.perfil === 'ADMIN') && <option value="">Todos os Nutricionistas</option>}
+                {nutricionistas.map((n: any) => (
+                  <option key={n.id} value={n.id}>{n.nome}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         <button

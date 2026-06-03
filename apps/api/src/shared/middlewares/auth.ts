@@ -56,6 +56,10 @@ export function roleGuard(...roles: string[]) {
       throw new AppError('Não autenticado', 401);
     }
 
+    if (req.user.tipoClinica === 'AUTONOMO') {
+      return next();
+    }
+
     if (!roles.includes(req.user.perfil)) {
       throw new AppError('Sem permissão para acessar este recurso', 403);
     }

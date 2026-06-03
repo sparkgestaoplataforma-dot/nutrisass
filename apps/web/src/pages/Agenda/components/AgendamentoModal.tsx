@@ -11,6 +11,7 @@ import { listarConvenios } from '@/services/convenios';
 import type { AgendamentoResponse } from '@/services/agenda';
 import { formatarParaInputDateTime } from '@/utils/date';
 import styles from './AgendamentoModal.module.scss';
+import { useIsAutonomo } from '@/hooks/useIsAutonomo';
 
 interface AgendamentoModalProps {
   dataSelecionada: string;
@@ -29,6 +30,8 @@ export function AgendamentoModal({
   isPending,
   user
 }: AgendamentoModalProps) {
+  const isAutonomo = useIsAutonomo();
+  
   const { data: pacientesData } = useQuery({
     queryKey: ['pacientes', 'select'],
     queryFn: () => listarPacientes(),
@@ -118,28 +121,30 @@ export function AgendamentoModal({
               )}
             </div>
 
-            <div className={styles.field}>
-              <label>Nutricionista</label>
-              <select
-                {...register('nutricionistaId')}
-                style={{
-                  pointerEvents: user?.perfil === 'NUTRICIONISTA' ? 'none' : 'auto',
-                  opacity: user?.perfil === 'NUTRICIONISTA' ? 0.7 : 1,
-                  backgroundColor: user?.perfil === 'NUTRICIONISTA' ? '#f5f5f5' : 'inherit',
-                }}
-                tabIndex={user?.perfil === 'NUTRICIONISTA' ? -1 : undefined}
-              >
-                <option value="" >Selecione um nutricionista</option>
-                {nutricionistasData?.map((profissional) => (
-                  <option key={profissional.id} value={profissional.id}>
-                        {profissional.nome}
-                  </option>
-                ))}
-              </select>
-              {errors.nutricionistaId && (
-                <span className={styles.error}>{errors.nutricionistaId.message}</span>
-              )}
-            </div>
+            {!isAutonomo && (
+              <div className={styles.field}>
+                <label>Nutricionista</label>
+                <select
+                  {...register('nutricionistaId')}
+                  style={{
+                    pointerEvents: user?.perfil === 'NUTRICIONISTA' ? 'none' : 'auto',
+                    opacity: user?.perfil === 'NUTRICIONISTA' ? 0.7 : 1,
+                    backgroundColor: user?.perfil === 'NUTRICIONISTA' ? '#f5f5f5' : 'inherit',
+                  }}
+                  tabIndex={user?.perfil === 'NUTRICIONISTA' ? -1 : undefined}
+                >
+                  <option value="" >Selecione um nutricionista</option>
+                  {nutricionistasData?.map((profissional) => (
+                    <option key={profissional.id} value={profissional.id}>
+                          {profissional.nome}
+                    </option>
+                  ))}
+                </select>
+                {errors.nutricionistaId && (
+                  <span className={styles.error}>{errors.nutricionistaId.message}</span>
+                )}
+              </div>
+            )}
 
             <div className={styles.row}>
               <div className={styles.field}>

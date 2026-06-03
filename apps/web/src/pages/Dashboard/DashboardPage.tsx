@@ -17,6 +17,7 @@ import { api } from "@/services/api";
 import { alterarStatus } from "@/services/agenda";
 import type { UpdateStatusInput } from "@nutricao/shared";
 import { pegarDadosDashboard } from "@/services/dashboard";
+import { useIsAutonomo } from "@/hooks/useIsAutonomo";
 import styles from "./DashboardPage.module.scss";
 
 const statusLabels: Record<string, string> = {
@@ -68,6 +69,7 @@ export function DashboardPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
+  const isAutonomo = useIsAutonomo();
   const [nutricionistaId, setNutricionistaId] = useState<string | undefined>(
     user?.perfil === "SECRETARIA" ? undefined : user?.userId,
   );
@@ -322,7 +324,7 @@ export function DashboardPage() {
                                 Encaixe
                               </span>
                             )}
-                            {ag.nutricionista?.nome && (
+                            {!isAutonomo && ag.nutricionista?.nome && (
                               <span className={styles.badgeNutri}>
                                 {ag.nutricionista.nome}
                               </span>
