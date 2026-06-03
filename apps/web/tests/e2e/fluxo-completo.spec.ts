@@ -26,6 +26,9 @@ test.describe.serial("Jornada Completa do Usuário (Macro E2E)", () => {
   test("Etapa 1: Cadastro da Clínica e Nutricionista", async () => {
     await page.goto("/cadastro");
 
+    // Selecionar o tipo de conta (Clínica)
+    await page.getByText("Tenho uma Clínica").click();
+
     // Formulário Clinica
     await page.getByPlaceholder("Ex: Clínica Nutri Vida").fill(clincaNome);
 

@@ -9,6 +9,7 @@ import {
   getUsuarioId,
 } from "../../../shared/middlewares/auth.js";
 import type { TokenPayload, AuthTokens } from "@nutricao/shared";
+import { redisSet } from "@/shared/providers/redis.js";
 
 export async function onboarding(req: Request, res: Response) {
   const { tipo = "CLINICA", clinica, admin } = req.body;
@@ -156,6 +157,13 @@ export async function alterarTipoClinica(req: Request, res: Response) {
   const refreshToken = jwt.sign(payload, env.JWT_SECRET, {
     expiresIn: env.JWT_REFRESH_EXPIRES_IN,
   });
+
+  await redisSet(
+    `refresh:${userId}`,
+    refreshToken,
+    "EX",
+    7 * 24 * 60 * 60,
+  );
 
   return res.json({
     success: true,

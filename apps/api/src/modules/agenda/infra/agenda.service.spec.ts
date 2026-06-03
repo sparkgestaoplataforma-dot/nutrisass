@@ -83,37 +83,38 @@ describe("agenda.service", () => {
 
   describe("editarAgendamento", () => {
     it("deve editar um agendamento existente", async () => {
-      prismaMock.agendamento.findUnique.mockResolvedValue({ id: mockAgendamentoId } as any);
+      prismaMock.agendamento.findFirst.mockResolvedValueOnce({ id: mockAgendamentoId } as any);
+      prismaMock.agendamento.findFirst.mockResolvedValueOnce(null);
       prismaMock.agendamento.update.mockResolvedValue({ id: mockAgendamentoId } as any);
 
-      const result = await editarAgendamento(mockAgendamentoId, { observacao: "teste" });
+      const result = await editarAgendamento(mockAgendamentoId, { observacao: "teste" }, mockClinicaId);
 
       expect(prismaMock.agendamento.update).toHaveBeenCalled();
       expect(result.id).toBe(mockAgendamentoId);
     });
 
     it("deve permitir alterar agendamento de encaixe para normal se não houver outro normal ativo", async () => {
-      prismaMock.agendamento.findUnique.mockResolvedValue({ 
+      prismaMock.agendamento.findFirst.mockResolvedValueOnce({ 
         id: mockAgendamentoId, 
         encaixe: true, 
         dataHora: new Date("2026-05-12T13:00:00Z"),
         nutricionistaId: mockUsuarioId 
       } as any);
       // findFirst mock returning null indicates no active normal appointment conflicts
-      prismaMock.agendamento.findFirst.mockResolvedValue(null);
+      prismaMock.agendamento.findFirst.mockResolvedValueOnce(null);
       prismaMock.agendamento.update.mockResolvedValue({ id: mockAgendamentoId, encaixe: false } as any);
 
-      const result = await editarAgendamento(mockAgendamentoId, { encaixe: false });
+      const result = await editarAgendamento(mockAgendamentoId, { encaixe: false }, mockClinicaId);
       expect(result.encaixe).toBe(false);
     });
   });
 
   describe("alterarStatusAgendamento", () => {
     it("deve alterar o status", async () => {
-      prismaMock.agendamento.findUnique.mockResolvedValue({ id: mockAgendamentoId, status: "AGENDADO", paciente: { nome: "Teste" } } as any);
+      prismaMock.agendamento.findFirst.mockResolvedValue({ id: mockAgendamentoId, status: "AGENDADO", paciente: { nome: "Teste" } } as any);
       prismaMock.agendamento.update.mockResolvedValue({ id: mockAgendamentoId, status: "PRESENTE", clinicaId: mockClinicaId, criadoPorUsuarioId: mockUsuarioId, dataHora: new Date(), paciente: { nome: "Teste" } } as any);
 
-      const result = await alterarStatusAgendamento(mockAgendamentoId, { status: "PRESENTE" });
+      const result = await alterarStatusAgendamento(mockAgendamentoId, { status: "PRESENTE" }, mockClinicaId);
 
       expect(prismaMock.agendamento.update).toHaveBeenCalled();
       expect(result.status).toBe("PRESENTE");
@@ -122,10 +123,10 @@ describe("agenda.service", () => {
 
   describe("excluirAgendamento", () => {
     it("deve excluir o agendamento", async () => {
-      prismaMock.agendamento.findUnique.mockResolvedValue({ id: mockAgendamentoId } as any);
+      prismaMock.agendamento.findFirst.mockResolvedValue({ id: mockAgendamentoId } as any);
       prismaMock.agendamento.delete.mockResolvedValue({} as any);
 
-      await excluirAgendamento(mockAgendamentoId);
+      await excluirAgendamento(mockAgendamentoId, mockClinicaId);
 
       expect(prismaMock.agendamento.delete).toHaveBeenCalled();
     });

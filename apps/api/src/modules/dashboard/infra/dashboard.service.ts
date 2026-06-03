@@ -6,11 +6,11 @@ export async function pegarDadosDashboard(
   usuarioId?: string,
   perfil?: string,
 ) {
-  const isSecretaria = perfil === "SECRETARIA";
+  const isSecretariaOrAdmin = perfil === "SECRETARIA" || perfil === "ADMIN";
 
   const schema = z.object({
     clinicaId: z.string().uuid("ID da clínica inválido"),
-    usuarioId: isSecretaria
+    usuarioId: isSecretariaOrAdmin
       ? z.string().uuid().optional()
       : z.string().uuid("O ID do usuário é obrigatório para o dashboard"),
   });

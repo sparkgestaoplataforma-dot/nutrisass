@@ -158,7 +158,14 @@ export function AgendaPage() {
   }
 
   function handleChangeStatus(id: string, status: string) {
-    statusMutation.mutate({ id, input: { status: status as any } });
+    statusMutation.mutate(
+      { id, input: { status: status as any } },
+      {
+        onError: (err: any) => {
+          alert(err.response?.data?.message || "Ocorreu um erro ao alterar o status do agendamento.");
+        },
+      }
+    );
   }
 
   function handleEdit(ag: AgendamentoResponse) {

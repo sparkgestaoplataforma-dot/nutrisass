@@ -9,6 +9,6 @@ const clinicaRoutes = Router();
 clinicaRoutes.post('/onboarding', validate(onboardingSchema), controller.onboarding);
 clinicaRoutes.get('/', authMiddleware, controller.getClinica);
 clinicaRoutes.put('/', authMiddleware, roleGuard('ADMIN'), validate(updateClinicaSchema), controller.atualizarClinica);
-clinicaRoutes.put('/tipo', authMiddleware, validate(alterarTipoSchema), controller.alterarTipoClinica);
+clinicaRoutes.put('/tipo', authMiddleware, roleGuard('ADMIN'), validate(alterarTipoSchema), controller.alterarTipoClinica);
 
 export { clinicaRoutes };

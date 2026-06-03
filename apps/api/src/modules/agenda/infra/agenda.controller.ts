@@ -99,13 +99,16 @@ export async function criar(req: Request, res: Response) {
 
 export async function editar(req: Request<{ id: string }>, res: Response) {
   const { id } = req.params;
+  const clinicaId = getClinicaId(req);
   
-  const agendamentoOriginal = await prisma.agendamento.findUnique({ where: { id } });
+  const agendamentoOriginal = await prisma.agendamento.findFirst({
+    where: { id, clinicaId },
+  });
   if (!agendamentoOriginal) {
     throw new AppError("Agendamento não encontrado", 404);
   }
 
-  const agendamento = await service.editarAgendamento(id, req.body);
+  const agendamento = await service.editarAgendamento(id, req.body, clinicaId);
 
   const dataFormatada = new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
@@ -151,7 +154,8 @@ export async function alterarStatus(
   res: Response,
 ) {
   const { id } = req.params;
-  const agendamento = await service.alterarStatusAgendamento(id, req.body);
+  const clinicaId = getClinicaId(req);
+  const agendamento = await service.alterarStatusAgendamento(id, req.body, clinicaId);
 
   const dataFormatada = new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
@@ -177,7 +181,8 @@ export async function alterarStatus(
 
 export async function excluir(req: Request<{ id: string }>, res: Response) {
   const { id } = req.params;
-  const agendamento = await service.excluirAgendamento(id);
+  const clinicaId = getClinicaId(req);
+  const agendamento = await service.excluirAgendamento(id, clinicaId);
 
   const dataFormatada = new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
