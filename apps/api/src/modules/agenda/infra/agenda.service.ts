@@ -137,8 +137,11 @@ export async function criarAgendamento(
 export async function editarAgendamento(
   id: string,
   input: UpdateAgendamentoInput,
+  clinicaId: string,
 ) {
-  const existente = await prisma.agendamento.findUnique({ where: { id } });
+  const existente = await prisma.agendamento.findFirst({
+    where: { id, clinicaId },
+  });
 
   if (!existente) {
     throw new AppError("Agendamento não encontrado", 404);
@@ -179,9 +182,10 @@ export async function editarAgendamento(
 export async function alterarStatusAgendamento(
   id: string,
   input: UpdateStatusInput,
+  clinicaId: string,
 ) {
-  const existente = await prisma.agendamento.findUnique({
-    where: { id },
+  const existente = await prisma.agendamento.findFirst({
+    where: { id, clinicaId },
     include: { paciente: true },
   });
 
@@ -217,8 +221,10 @@ export async function alterarStatusAgendamento(
   return agendamento;
 }
 
-export async function excluirAgendamento(id: string) {
-  const existente = await prisma.agendamento.findUnique({ where: { id } });
+export async function excluirAgendamento(id: string, clinicaId: string) {
+  const existente = await prisma.agendamento.findFirst({
+    where: { id, clinicaId },
+  });
 
   if (!existente) {
     throw new AppError("Agendamento não encontrado", 404);

@@ -17,6 +17,7 @@ import { api } from "@/services/api";
 import { alterarStatus } from "@/services/agenda";
 import type { UpdateStatusInput } from "@nutricao/shared";
 import { pegarDadosDashboard } from "@/services/dashboard";
+import { useIsAutonomo } from "@/hooks/useIsAutonomo";
 import styles from "./DashboardPage.module.scss";
 
 const statusLabels: Record<string, string> = {
@@ -68,8 +69,9 @@ export function DashboardPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
+  const isAutonomo = useIsAutonomo();
   const [nutricionistaId, setNutricionistaId] = useState<string | undefined>(
-    user?.perfil === "SECRETARIA" ? undefined : user?.userId,
+    (user?.perfil === "SECRETARIA" || user?.perfil === "ADMIN") ? undefined : user?.userId,
   );
 
   const { data: nutricionistas = [] } = useQuery({
@@ -80,7 +82,7 @@ export function DashboardPage() {
       );
       return data.data;
     },
-    enabled: !!user?.clinicaId && user?.perfil === "SECRETARIA",
+    enabled: !!user?.clinicaId && (user?.perfil === "SECRETARIA" || user?.perfil === "ADMIN"),
   });
 
   const { data, isLoading } = useQuery({
@@ -144,7 +146,7 @@ export function DashboardPage() {
 
   return (
     <div className={styles.page}>
-      {user?.perfil === "SECRETARIA" && (
+      {(user?.perfil === "SECRETARIA" || user?.perfil === "ADMIN") && (
         <div className={styles.header}>
           <div className={styles.titleGroup}>
             <h1>Dashboard da Clínica</h1>
@@ -322,7 +324,7 @@ export function DashboardPage() {
                                 Encaixe
                               </span>
                             )}
-                            {ag.nutricionista?.nome && (
+                            {!isAutonomo && ag.nutricionista?.nome && (
                               <span className={styles.badgeNutri}>
                                 {ag.nutricionista.nome}
                               </span>

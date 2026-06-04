@@ -19,11 +19,14 @@ import type { AgendamentoResponse } from '@/services/agenda';
 import type { CreateAgendamentoInput } from '@nutricao/shared';
 import styles from './AgendaPage.module.scss';
 import { useAuthStore } from "@/stores/authStore";
+import { useIsAutonomo } from "@/hooks/useIsAutonomo";
+
 function formatDate(date: Date) {
   return date.toLocaleDateString('sv-SE');
 }
 export function AgendaPage() {
   const {user} = useAuthStore();
+  const isAutonomo = useIsAutonomo();
 
   const [dataSelecionada, setDataSelecionada] = useState(formatDate(new Date()));
   const [nutricionistaId, setNutricionistaId] = useState(
@@ -155,7 +158,14 @@ export function AgendaPage() {
   }
 
   function handleChangeStatus(id: string, status: string) {
-    statusMutation.mutate({ id, input: { status: status as any } });
+    statusMutation.mutate(
+      { id, input: { status: status as any } },
+      {
+        onError: (err: any) => {
+          alert(err.response?.data?.message || "Ocorreu um erro ao alterar o status do agendamento.");
+        },
+      }
+    );
   }
 
   function handleEdit(ag: AgendamentoResponse) {
@@ -200,19 +210,21 @@ export function AgendaPage() {
             Hoje
           </button>
           
-          <div className={styles.nutriFilter}>
-            <select 
-              id="nutricionista-filter"
-              className={styles.nutriSelect}
-              value={nutricionistaId}
-              onChange={(e) => setNutricionistaId(e.target.value)}
-            >
-              {(user?.perfil === 'SECRETARIA' || user?.perfil === 'ADMIN') && <option value="">Todos os Nutricionistas</option>}
-              {nutricionistas.map((n: any) => (
-                <option key={n.id} value={n.id}>{n.nome}</option>
-              ))}
-            </select>
-          </div>
+          {!isAutonomo && (
+            <div className={styles.nutriFilter}>
+              <select 
+                id="nutricionista-filter"
+                className={styles.nutriSelect}
+                value={nutricionistaId}
+                onChange={(e) => setNutricionistaId(e.target.value)}
+              >
+                {(user?.perfil === 'SECRETARIA' || user?.perfil === 'ADMIN') && <option value="">Todos os Nutricionistas</option>}
+                {nutricionistas.map((n: any) => (
+                  <option key={n.id} value={n.id}>{n.nome}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         <button

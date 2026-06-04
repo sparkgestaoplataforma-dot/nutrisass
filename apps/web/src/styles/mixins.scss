@@ -131,6 +131,17 @@
   }
 }
 
+@mixin btn-outline($color: $primary) {
+  @include btn(transparent, $color);
+  border: 1px solid $color;
+
+  &:hover {
+    background: rgba($color, 0.05);
+    border-color: $color;
+    opacity: 1;
+  }
+}
+
 @mixin btn-soft($bg-light, $color) {
   @include btn($bg-light, $color);
 

@@ -70,6 +70,7 @@ describe("usuarios.service", () => {
 
   describe("criarUsuario", () => {
     it("deve criar um novo usuário com sucesso", async () => {
+      prismaMock.clinica.findUnique.mockResolvedValue({ tipo: 'CLINICA' } as any);
       prismaMock.usuario.findUnique.mockResolvedValue(null);
       prismaMock.usuario.create.mockResolvedValue({
         id: "novo-id",
@@ -87,11 +88,20 @@ describe("usuarios.service", () => {
     });
 
     it("deve lançar erro se o e-mail já existir", async () => {
+      prismaMock.clinica.findUnique.mockResolvedValue({ tipo: 'CLINICA' } as any);
       prismaMock.usuario.findUnique.mockResolvedValue({ id: "existente" } as any);
 
       const data = { nome: "Novo", email: "existente@example.com", senha: "123", perfil: "NUTRICIONISTA" };
       
       await expect(criarUsuario(mockClinicaId, data)).rejects.toThrow(new AppError("E-mail já cadastrado", 409));
+    });
+
+    it("deve impedir a criação de usuário se a clínica for AUTONOMO", async () => {
+      prismaMock.clinica.findUnique.mockResolvedValue({ tipo: 'AUTONOMO' } as any);
+
+      const data = { nome: "Novo", email: "novo@example.com", senha: "123", perfil: "NUTRICIONISTA" };
+      
+      await expect(criarUsuario(mockClinicaId, data)).rejects.toThrow(new AppError("Não é possível adicionar novos usuários no modo Autônomo. Migre para o modo Clínica primeiro.", 400));
     });
   });
 
@@ -130,6 +140,7 @@ describe("usuarios.service", () => {
   describe("excluirUsuario", () => {
     it("deve excluir o usuário com sucesso", async () => {
       prismaMock.usuario.findFirst.mockResolvedValue({ id: mockUsuarioId, perfil: "NUTRICIONISTA" } as any);
+      prismaMock.usuario.count.mockResolvedValue(2);
       prismaMock.usuario.delete.mockResolvedValue({} as any);
 
       const result = await excluirUsuario(mockUsuarioId, mockClinicaId);
@@ -140,9 +151,18 @@ describe("usuarios.service", () => {
 
     it("deve impedir a exclusão do último ADMIN", async () => {
       prismaMock.usuario.findFirst.mockResolvedValue({ id: mockUsuarioId, perfil: "ADMIN" } as any);
-      prismaMock.usuario.count.mockResolvedValue(1); // Só tem ele
+      // O primeiro count é para total de usuários, mocka como 2 para passar.
+      // O segundo count é para total de admins, mocka como 1 para falhar.
+      prismaMock.usuario.count.mockResolvedValueOnce(2).mockResolvedValueOnce(1);
 
       await expect(excluirUsuario(mockUsuarioId, mockClinicaId)).rejects.toThrow(new AppError("Não é possível excluir o último administrador", 400));
+    });
+
+    it("deve impedir a exclusão do único usuário", async () => {
+      prismaMock.usuario.findFirst.mockResolvedValue({ id: mockUsuarioId, perfil: "NUTRICIONISTA" } as any);
+      prismaMock.usuario.count.mockResolvedValue(1);
+
+      await expect(excluirUsuario(mockUsuarioId, mockClinicaId)).rejects.toThrow(new AppError("Não é possível excluir o único usuário do consultório/clínica.", 400));
     });
   });
 

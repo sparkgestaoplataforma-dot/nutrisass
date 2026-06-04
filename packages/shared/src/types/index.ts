@@ -18,6 +18,7 @@ export interface TokenPayload {
   clinicaId: string;
   email: string;
   perfil: string;
+  tipoClinica: "AUTONOMO" | "CLINICA";
 }
 
 export interface AuthTokens {

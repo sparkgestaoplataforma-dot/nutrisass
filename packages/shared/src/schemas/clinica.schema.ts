@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const onboardingSchema = z.object({
+  tipo: z.enum(['AUTONOMO', 'CLINICA']).optional().default('CLINICA'),
   clinica: z.object({
     nome: z.string().min(2, 'Nome da clínica deve ter no mínimo 2 caracteres'),
     cnpj: z.string().optional(),
@@ -27,3 +28,9 @@ export const updateClinicaSchema = z.object({
 });
 
 export type UpdateClinicaInput = z.infer<typeof updateClinicaSchema>;
+
+export const alterarTipoSchema = z.object({
+  tipo: z.enum(['AUTONOMO', 'CLINICA']),
+});
+
+export type AlterarTipoInput = z.infer<typeof alterarTipoSchema>;
