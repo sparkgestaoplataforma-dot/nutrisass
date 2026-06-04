@@ -113,12 +113,12 @@ export function ExamesBaseConfig() {
             <tbody>
               {exames.map((ex: any) => (
                 <tr key={ex.id}>
-                  <td>{ex.codigo}</td>
-                  <td>{ex.nome}</td>
-                  <td>{ex.valorMinimo ?? '-'}</td>
-                  <td>{ex.valorMaximo ?? '-'}</td>
-                  <td>{ex.unidade || '-'}</td>
-                  <td>
+                  <td data-label="Código">{ex.codigo}</td>
+                  <td data-label="Nome">{ex.nome}</td>
+                  <td data-label="Min">{ex.valorMinimo ?? '-'}</td>
+                  <td data-label="Máx">{ex.valorMaximo ?? '-'}</td>
+                  <td data-label="Unidade">{ex.unidade || '-'}</td>
+                  <td data-label="Ações">
                     <div className={styles.actions}>
                       <button className={styles.actionBtn} onClick={() => editar(ex)}><HugeiconsIcon icon={PencilEdit01Icon} size={16} strokeWidth={2} /></button>
                       <button className={`${styles.actionBtn} ${styles.danger}`}

@@ -2,10 +2,14 @@
 @use '../../../styles/mixins' as *;
 
 .container {
-  padding: 1.5rem;
+  padding: 1rem;
   background: white;
   border-radius: $radius-lg;
   border: 1px solid $gray-200;
+
+  @media (min-width: $breakpoint-sm) {
+    padding: 1.5rem;
+  }
 }
 
 .title {
@@ -35,8 +39,12 @@
 
 .cardsGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 1.5rem;
+
+  @media (min-width: $breakpoint-sm) {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .card {

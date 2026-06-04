@@ -96,9 +96,9 @@ export function ConveniosConfig() {
             <tbody>
               {convenios.map((c: any) => (
                 <tr key={c.id}>
-                  <td>{c.nome}</td>
-                  <td>{c.registroANS || '-'}</td>
-                  <td>
+                  <td data-label="Nome">{c.nome}</td>
+                  <td data-label="Registro ANS">{c.registroANS || '-'}</td>
+                  <td data-label="Ações">
                     <div className={styles.actions}>
                       <button className={styles.actionBtn} onClick={() => editar(c)}><HugeiconsIcon icon={PencilEdit01Icon} size={16} strokeWidth={2} /></button>
                       <button className={`${styles.actionBtn} ${styles.danger}`}
