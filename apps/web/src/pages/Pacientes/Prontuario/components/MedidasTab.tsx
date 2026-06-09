@@ -113,45 +113,77 @@ export function MedidasTab({ pacienteId }: MedidasTabProps) {
         </form>
       )}
 
-      <div className={styles.medidasTable}>
-        {medidas.length === 0 ? (
-          <div className={styles.empty}>Nenhuma medida registrada.</div>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Data</th>
-                {medidaFields.map((f) => (
-                  <th key={f.key}>{f.label}</th>
-                ))}
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {medidas.map((m: any) => (
-                <tr key={m.id}>
-                  <td>{new Date(m.data).toLocaleDateString('pt-BR')}</td>
+      {medidas.length === 0 ? (
+        <div className={styles.empty}>Nenhuma medida registrada.</div>
+      ) : (
+        <>
+          {/* Tabela para Desktop */}
+          <div className={styles.medidasTable}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
                   {medidaFields.map((f) => (
-                    <td key={f.key}>{m[f.key] ?? '-'}</td>
+                    <th key={f.key}>{f.label}</th>
                   ))}
-                  <td>
-                    <button
-                      className={styles.medidaActionBtn}
-                      onClick={() => {
-                        if (confirm('Excluir esta medida?')) {
-                          excluirMutation.mutate(m.id);
-                        }
-                      }}
-                    >
-                      <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={2} />
-                    </button>
-                  </td>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+              </thead>
+              <tbody>
+                {medidas.map((m: any) => (
+                  <tr key={m.id}>
+                    <td>{new Date(m.data).toLocaleDateString('pt-BR')}</td>
+                    {medidaFields.map((f) => (
+                      <td key={f.key}>{m[f.key] ?? '-'}</td>
+                    ))}
+                    <td>
+                      <button
+                        className={styles.medidaActionBtn}
+                        onClick={() => {
+                          if (confirm('Excluir esta medida?')) {
+                            excluirMutation.mutate(m.id);
+                          }
+                        }}
+                      >
+                        <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={2} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Cards para Mobile */}
+          <div className={styles.mobileCards}>
+            {medidas.map((m: any) => (
+              <div key={m.id} className={styles.mobileCard}>
+                <div className={styles.cardHeader}>
+                  <strong>{new Date(m.data).toLocaleDateString('pt-BR')}</strong>
+                  <button
+                    className={styles.medidaActionBtn}
+                    onClick={() => {
+                      if (confirm('Excluir esta medida?')) {
+                        excluirMutation.mutate(m.id);
+                      }
+                    }}
+                  >
+                    <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={2} />
+                  </button>
+                </div>
+                <div className={styles.cardBodyGrid}>
+                  {medidaFields.map((f) => (
+                    <div key={f.key} className={styles.cardInfoGridItem}>
+                      <span className={styles.cardInfoLabel}>{f.label}</span>
+                      <span className={styles.cardInfoValue}>{m[f.key] ?? '-'}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
