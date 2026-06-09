@@ -257,9 +257,74 @@
 
 .layout {
   display: grid;
-  grid-template-columns: 200px 1fr 260px;
-  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
   align-items: start;
+
+  @media (min-width: $breakpoint-lg) {
+    grid-template-columns: 200px 1fr 260px;
+    gap: 1.5rem;
+  }
+}
+
+.center {
+  min-width: 0;
+  width: 100%;
+  order: 3;
+
+  @media (min-width: $breakpoint-lg) {
+    order: 0;
+  }
+}
+
+.mobileControls {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0;
+
+  @media (min-width: $breakpoint-lg) {
+    display: none;
+  }
+}
+
+.mobileControlBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: $radius-md;
+  border: 1px solid $gray-200;
+  background: $white;
+  color: $gray-600;
+  font-size: $font-size-sm;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  &:hover {
+    background: $gray-50;
+    border-color: $gray-300;
+  }
+
+  &.active {
+    background: $primary-light;
+    color: $primary-dark;
+    border-color: $primary;
+    box-shadow: 0 4px 12px rgba($primary, 0.15);
+  }
+
+  svg {
+    font-size: 1.125rem;
+  }
+}
+
+.mobileHidden {
+  @media (max-width: 1023px) {
+    display: none !important;
+  }
 }
 
 // ==========================================
@@ -267,11 +332,17 @@
 // ==========================================
 
 .sidebarLeft {
-  position: sticky;
-  top: calc($header-height + 1.5rem);
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  order: 1;
+
+  @media (min-width: $breakpoint-lg) {
+    position: sticky;
+    top: calc($header-height + 1.5rem);
+    order: 0;
+  }
 }
 
 .sidebarLabel {
@@ -655,8 +726,14 @@
 // ==========================================
 
 .sidebarRight {
-  position: sticky;
-  top: calc($header-height + 1.5rem);
+  position: relative;
+  order: 2;
+
+  @media (min-width: $breakpoint-lg) {
+    position: sticky;
+    top: calc($header-height + 1.5rem);
+    order: 0;
+  }
 }
 
 .rightCard {
@@ -1157,6 +1234,7 @@
   border-radius: $radius-lg;
   border: 1px solid $gray-200;
   padding: 1.25rem;
+  scroll-margin-top: calc($header-height + 1.5rem);
 
   h2 {
     margin-bottom: 1rem;
