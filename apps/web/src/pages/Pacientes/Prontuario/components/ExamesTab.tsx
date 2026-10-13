@@ -170,7 +170,7 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
           {/* Lista de exames com checkboxes */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
             gap: '0.375rem',
             marginBottom: '1rem',
             maxHeight: '280px',
@@ -335,6 +335,50 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Cards para Mobile */}
+            <div className={styles.mobileCards} style={{ marginTop: '0.75rem' }}>
+              {sol.itens.map((item: any) => (
+                <div key={item.id} className={styles.mobileCard} style={{ padding: '0.75rem', gap: '0.5rem' }}>
+                  <div className={styles.cardHeader} style={{ paddingBottom: '0.25rem' }}>
+                    <strong>{item.exameBase.nome}</strong>
+                    <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{item.exameBase.codigo}</span>
+                  </div>
+                  <div className={styles.cardBodyGrid} style={{ gap: '0.5rem' }}>
+                    <div className={styles.cardInfoGridItem}>
+                      <span className={styles.cardInfoLabel}>Resultado</span>
+                      <span className={styles.cardInfoValue}>{item.resultado || '-'}</span>
+                    </div>
+                    <div className={styles.cardInfoGridItem}>
+                      <span className={styles.cardInfoLabel}>Data Resultado</span>
+                      <span className={styles.cardInfoValue}>
+                        {item.dataResultado
+                          ? new Date(item.dataResultado).toLocaleDateString('pt-BR')
+                          : '-'}
+                      </span>
+                    </div>
+                  </div>
+                  {!item.resultado && (
+                    <div className={styles.cardActions} style={{ padding: '0', marginTop: '0.25rem', paddingTop: '0.5rem', border: 'none' }}>
+                      <button
+                        className={styles.actionBtn}
+                        style={{ color: '#10b981', display: 'flex', gap: '0.25rem', alignItems: 'center', fontSize: '0.75rem', fontWeight: 600, width: '100%' }}
+                        onClick={() =>
+                          setResultadoForm({
+                            itemId: item.id,
+                            resultado: '',
+                            dataResultado: new Date().toISOString().split('T')[0],
+                          })
+                        }
+                      >
+                        <HugeiconsIcon icon={TaskDone01Icon} size={14} strokeWidth={2} />
+                        Registrar Resultado
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         ))

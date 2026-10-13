@@ -113,14 +113,14 @@ export function UsuariosConfig() {
             <tbody>
               {usuarios.map((u: any) => (
                 <tr key={u.id}>
-                  <td>{u.nome}</td>
-                  <td>{u.email}</td>
-                  <td>
+                  <td data-label="Nome">{u.nome}</td>
+                  <td data-label="E-mail">{u.email}</td>
+                  <td data-label="Perfil">
                     <span className={`${styles.badge} ${perfilLabels[u.perfil]?.className || ''}`}>
                       {perfilLabels[u.perfil]?.label || u.perfil}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="Ações">
                     <div className={styles.actions}>
                       <button className={styles.actionBtn} onClick={() => editar(u)}><HugeiconsIcon icon={PencilEdit01Icon} size={16} strokeWidth={2} /></button>
                       <button className={`${styles.actionBtn} ${styles.danger}`}

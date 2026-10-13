@@ -108,74 +108,141 @@ export function PacientesPage() {
         ) : pacientes.length === 0 ? (
           <div className={styles.empty}>Nenhum paciente encontrado.</div>
         ) : (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>E-mail</th>
-                <th>Telefone</th>
-                <th>Convênio</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            <div className={styles.desktopTable}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>E-mail</th>
+                    <th>Telefone</th>
+                    <th>Convênio</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pacientes.map((p) => (
+                    <tr key={p.id}>
+                      <td>
+                        <span
+                          className={styles.nomeLink}
+                          onClick={() => navigate(`/pacientes/${p.id}`)}
+                        >
+                          {p.nome}
+                        </span>
+                      </td>
+                      <td>{p.email || "-"}</td>
+                      <td>{p.telefone || "-"}</td>
+                      <td>{p.convenio?.nome || "Particular"}</td>
+                      <td>
+                        <div className={styles.actions}>
+                          <button
+                            className={`${styles.actionBtn} ${styles.shortcutBtn}`}
+                            onClick={() =>
+                              handleAbrirQuestionarios({ id: p.id, nome: p.nome })
+                            }
+                            title="Aplicar questionário"
+                          >
+                            <HugeiconsIcon
+                              icon={CheckListIcon}
+                              size={14}
+                              strokeWidth={2}
+                            />
+                            {/* Questionários */}
+                          </button>
+                          <button
+                            className={styles.actionBtn}
+                            onClick={() => navigate(`/pacientes/${p.id}/editar`)}
+                            title="Editar"
+                          >
+                            <HugeiconsIcon
+                              icon={PencilEdit01Icon}
+                              size={16}
+                              strokeWidth={2}
+                            />
+                          </button>
+                          <button
+                            className={`${styles.actionBtn} ${styles.danger}`}
+                            onClick={() => handleDelete({ id: p.id, nome: p.nome })}
+                            title="Excluir"
+                          >
+                            <HugeiconsIcon
+                              icon={Delete02Icon}
+                              size={16}
+                              strokeWidth={2}
+                            />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className={styles.mobileCards}>
               {pacientes.map((p) => (
-                <tr key={p.id}>
-                  <td>
+                <div key={p.id} className={styles.mobileCard}>
+                  <div className={styles.cardHeader}>
                     <span
                       className={styles.nomeLink}
                       onClick={() => navigate(`/pacientes/${p.id}`)}
                     >
                       {p.nome}
                     </span>
-                  </td>
-                  <td>{p.email || "-"}</td>
-                  <td>{p.telefone || "-"}</td>
-                  <td>{p.convenio?.nome || "Particular"}</td>
-                  <td>
-                    <div className={styles.actions}>
-                      <button
-                        className={`${styles.actionBtn} ${styles.shortcutBtn}`}
-                        onClick={() =>
-                          handleAbrirQuestionarios({ id: p.id, nome: p.nome })
-                        }
-                        title="Aplicar questionário"
-                      >
-                        <HugeiconsIcon
-                          icon={CheckListIcon}
-                          size={14}
-                          strokeWidth={2}
-                        />
-                        {/* Questionários */}
-                      </button>
-                      <button
-                        className={styles.actionBtn}
-                        onClick={() => navigate(`/pacientes/${p.id}/editar`)}
-                        title="Editar"
-                      >
-                        <HugeiconsIcon
-                          icon={PencilEdit01Icon}
-                          size={16}
-                          strokeWidth={2}
-                        />
-                      </button>
-                      <button
-                        className={`${styles.actionBtn} ${styles.danger}`}
-                        onClick={() => handleDelete({ id: p.id, nome: p.nome })}
-                        title="Excluir"
-                      >
-                        <HugeiconsIcon
-                          icon={Delete02Icon}
-                          size={16}
-                          strokeWidth={2}
-                        />
-                      </button>
+                  </div>
+                  <div className={styles.cardBody}>
+                    <div className={styles.cardInfo}>
+                      <strong>E-mail:</strong> {p.email || "-"}
                     </div>
-                  </td>
-                </tr>
+                    <div className={styles.cardInfo}>
+                      <strong>Telefone:</strong> {p.telefone || "-"}
+                    </div>
+                    <div className={styles.cardInfo}>
+                      <strong>Convênio:</strong> {p.convenio?.nome || "Particular"}
+                    </div>
+                  </div>
+                  <div className={styles.cardActions}>
+                    <button
+                      className={`${styles.actionBtn} ${styles.shortcutBtn}`}
+                      onClick={() =>
+                        handleAbrirQuestionarios({ id: p.id, nome: p.nome })
+                      }
+                      title="Aplicar questionário"
+                    >
+                      <HugeiconsIcon
+                        icon={CheckListIcon}
+                        size={14}
+                        strokeWidth={2}
+                      />
+                    </button>
+                    <button
+                      className={styles.actionBtn}
+                      onClick={() => navigate(`/pacientes/${p.id}/editar`)}
+                      title="Editar"
+                    >
+                      <HugeiconsIcon
+                        icon={PencilEdit01Icon}
+                        size={16}
+                        strokeWidth={2}
+                      />
+                    </button>
+                    <button
+                      className={`${styles.actionBtn} ${styles.danger}`}
+                      onClick={() => handleDelete({ id: p.id, nome: p.nome })}
+                      title="Excluir"
+                    >
+                      <HugeiconsIcon
+                        icon={Delete02Icon}
+                        size={16}
+                        strokeWidth={2}
+                      />
+                    </button>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
 

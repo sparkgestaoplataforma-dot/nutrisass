@@ -6,17 +6,18 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
   @include flex-center;
-  z-index: 100;
+  z-index: $z-modal;
 }
 
 .modal {
   background: $white;
   border-radius: $radius-lg;
   box-shadow: $shadow-lg;
-  width: 100%;
+  width: calc(100% - 2rem);
   max-width: 560px;
   max-height: 90vh;
   overflow-y: auto;
+  margin: 1rem;
 }
 
 .header {
@@ -49,8 +50,12 @@
 
 .row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 1rem;
+
+  @media (min-width: $breakpoint-sm) {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .field {

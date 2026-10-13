@@ -11,6 +11,14 @@
   display: flex;
   gap: 0;
   border-bottom: 2px solid $gray-200;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 
 .tab {
@@ -27,6 +35,7 @@
   display: flex;
   align-items: center;
   gap: $space-2;
+  white-space: nowrap;
 
   &:hover {
     color: $gray-700;
@@ -46,16 +55,28 @@
 
 // Toolbar
 .toolbar {
-  @include flex-between;
-  gap: $space-4;
-  flex-wrap: wrap;
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  width: 100%;
+
+  @media (min-width: $breakpoint-sm) {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: $space-4;
+  }
 }
 
 .searchWrapper {
   position: relative;
-  flex: 1;
-  max-width: 400px;
-  min-width: 200px;
+  width: 100%;
+
+  @media (min-width: $breakpoint-sm) {
+    flex: 1;
+    max-width: 400px;
+    min-width: 200px;
+  }
 }
 
 .searchIcon {
@@ -74,6 +95,12 @@
 
 .addBtn {
   @include btn;
+  width: 100%;
+  justify-content: center;
+
+  @media (min-width: $breakpoint-sm) {
+    width: auto;
+  }
 }
 
 // Table
@@ -92,6 +119,84 @@
   width: 100%;
   border-collapse: collapse;
   min-width: 700px;
+
+  @media (max-width: 639px) {
+    display: block;
+    min-width: 0 !important;
+
+    thead {
+      display: none;
+    }
+
+    tbody {
+      display: block;
+      width: 100%;
+    }
+
+    tr {
+      display: flex;
+      flex-direction: column;
+      background: $white;
+      border: 1px solid $gray-200;
+      border-radius: $radius-md;
+      padding: $space-4;
+      margin-bottom: $space-4;
+      box-shadow: $shadow-xs;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: $space-2 0;
+      border-bottom: 1px solid $gray-50;
+      font-size: $font-size-sm;
+      color: $gray-700;
+      text-align: right;
+      width: 100%;
+
+      &::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: $gray-500;
+        text-transform: uppercase;
+        font-size: $font-size-2xs;
+        margin-right: 1rem;
+        text-align: left;
+      }
+
+      &[data-label="Nome"] {
+        order: -1;
+        font-weight: 600;
+        font-size: $font-size-base;
+        color: $gray-800;
+        border-bottom: 1px solid $gray-200;
+        padding-bottom: $space-2;
+        margin-bottom: $space-2;
+        text-align: left;
+
+        &::before {
+          display: none;
+        }
+      }
+
+      &[data-label="Ações"] {
+        border-bottom: none;
+        padding-top: $space-3;
+        margin-top: $space-2;
+        border-top: 1px solid $gray-100;
+        justify-content: flex-end;
+        
+        &::before {
+          display: none;
+        }
+      }
+    }
+  }
 
   th {
     background: $gray-50;
@@ -172,8 +277,12 @@
 // Form
 .formCard {
   @include card;
-  padding: $space-6;
+  padding: $space-4;
   margin-bottom: $space-4;
+
+  @media (min-width: $breakpoint-sm) {
+    padding: $space-6;
+  }
 }
 
 .formTitle {
@@ -183,9 +292,13 @@
 
 .formGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: 1fr;
   gap: $space-4;
   margin-bottom: $space-4;
+
+  @media (min-width: $breakpoint-sm) {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
 }
 
 .field {
@@ -206,16 +319,235 @@
 
 .formActions {
   display: flex;
+  flex-direction: column-reverse;
   gap: $space-2;
-  justify-content: flex-end;
+
+  @media (min-width: $breakpoint-sm) {
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: $space-2;
+  }
 }
 
 .cancelBtn {
   @include btn-ghost;
+  width: 100%;
+  justify-content: center;
+
+  @media (min-width: $breakpoint-sm) {
+    width: auto;
+  }
 }
 
 .submitBtn {
   @include btn;
+  width: 100%;
+  justify-content: center;
+
+  @media (min-width: $breakpoint-sm) {
+    width: auto;
+  }
+}
+
+// Medidas Caseiras Section
+.medidasSection {
+  margin-top: $space-6;
+  margin-bottom: $space-6;
+  background: $gray-50;
+  border-radius: $radius-lg;
+  border: 1px solid $gray-200;
+  overflow: hidden;
+}
+
+.medidasHeader {
+  padding: $space-4 $space-5;
+  border-bottom: 1px solid $gray-200;
+  background: $gray-100;
+
+  h4 {
+    margin: 0;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $gray-700;
+  }
+
+  p {
+    margin: $space-1 0 0 0;
+    font-size: $font-size-xs;
+    color: $gray-500;
+  }
+}
+
+.medidasBody {
+  padding: $space-5;
+}
+
+.quickMeasuresSection {
+  margin-bottom: $space-6;
+
+  label {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $gray-600;
+    display: block;
+    margin-bottom: $space-3;
+  }
+}
+
+.quickMeasuresGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.quickMeasureBtn {
+  background: $white;
+  border: 1px solid $gray-300;
+  border-radius: $radius-full;
+  padding: 0.35rem 0.85rem;
+  font-size: $font-size-xs;
+  color: $gray-700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all $transition-base;
+
+  &:hover {
+    border-color: $gray-400;
+    background: $gray-50;
+  }
+}
+
+.medidasConfiguredList {
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $radius-md;
+  padding: $space-4;
+  box-shadow: $shadow-xs;
+
+  label {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $gray-700;
+    display: block;
+    margin-bottom: $space-4;
+  }
+}
+
+.medidasListWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.medidaRow {
+  display: flex;
+  align-items: flex-end;
+  gap: $space-2;
+  padding-bottom: $space-3;
+  border-bottom: 1px solid $gray-100;
+
+  &:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  @media (min-width: $breakpoint-sm) {
+    align-items: flex-start;
+    gap: $space-4;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+}
+
+.medidaInputs {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  flex: 1;
+
+  @media (min-width: $breakpoint-sm) {
+    flex-direction: row;
+    gap: $space-4;
+  }
+}
+
+.medidaInputNome {
+  flex: 1;
+  margin-bottom: 0;
+
+  input {
+    padding: 0.45rem 0.6rem;
+    font-size: $font-size-sm;
+    border-color: $gray-300;
+  }
+}
+
+.medidaInputEquiv {
+  width: 100%;
+  margin-bottom: 0;
+
+  @media (min-width: $breakpoint-sm) {
+    width: 120px;
+  }
+
+  input {
+    padding: 0.45rem 0.6rem;
+    font-size: $font-size-sm;
+    border-color: $gray-300;
+  }
+}
+
+.medidaRemoveBtn {
+  color: $danger;
+  height: 36px;
+  padding: 0 $space-1;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.15rem;
+
+  @media (min-width: $breakpoint-sm) {
+    margin-top: 1.25rem;
+    margin-bottom: 0;
+  }
+
+  &:hover {
+    color: darken($danger, 10%);
+  }
+}
+
+.addCustomMeasureContainer {
+  display: flex;
+  justify-content: center;
+  
+  &.hasItems {
+    margin-top: $space-4;
+  }
+}
+
+.addCustomMeasureBtn {
+  background: transparent;
+  border: 1px dashed $gray-300;
+  color: $gray-600;
+  font-size: $font-size-xs;
+  padding: 0.65rem 1rem;
+  border-radius: $radius-md;
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  cursor: pointer;
+  width: 100%;
+  justify-content: center;
+  transition: all $transition-base;
+
+  &:hover {
+    border-color: $gray-400;
+    background: $gray-50;
+  }
 }
 
 // States
@@ -231,12 +563,16 @@
 }
 
 .emptyState {
-  padding: $space-12 $space-8;
+  padding: $space-8 $space-4;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: $space-3;
+
+  @media (min-width: $breakpoint-sm) {
+    padding: $space-12 $space-8;
+  }
 }
 
 .emptyTitle {
@@ -248,13 +584,23 @@
 .emptyDesc {
   font-size: $font-size-sm;
   color: $gray-400;
-  max-width: 480px;
+  max-width: 100%;
   line-height: 1.6;
+
+  @media (min-width: $breakpoint-sm) {
+    max-width: 480px;
+  }
 }
 
 .emptyBtn {
   @include btn;
   margin-top: $space-2;
+  width: 100%;
+  justify-content: center;
+
+  @media (min-width: $breakpoint-sm) {
+    width: auto;
+  }
 }
 
 .emptyIcon {
@@ -264,18 +610,35 @@
 
 // Pagination and Footer
 .footer {
-  padding: $space-3 $space-4;
+  padding: $space-4;
   border-top: 1px solid $gray-100;
   font-size: $font-size-xs;
   color: $gray-400;
   background: $gray-50;
-  @include flex-between;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-3;
+
+  @media (min-width: $breakpoint-sm) {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 0;
+    padding: $space-3 $space-4;
+  }
 }
 
 .pagination {
   display: flex;
   align-items: center;
   gap: $space-2;
+  width: 100%;
+  justify-content: space-between;
+
+  @media (min-width: $breakpoint-sm) {
+    width: auto;
+    justify-content: flex-end;
+  }
 }
 
 .pageBtn {
