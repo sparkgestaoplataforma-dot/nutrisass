@@ -17,13 +17,16 @@ import { Skeleton } from "@/components/Loading/Skeleton";
 import { SkeletonAvaliacaoModules } from "@/components/Loading/skeletons/SkeletonAvaliacaoModules";
 import { LoadingError } from "@/components/Loading/LoadingError";
 import { EmptyState } from "@/components/Loading/EmptyState";
-import { ClipboardIcon } from "@hugeicons/core-free-icons";
+import { ClipboardIcon, Menu01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 
 export function AvaliacaoDetalhesPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { avaliacaoId, pacienteId } = useParams();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [showMobileLeft, setShowMobileLeft] = useState(false);
+  const [showMobileRight, setShowMobileRight] = useState(false);
 
   const {
     data: avaliacao,
@@ -62,7 +65,30 @@ export function AvaliacaoDetalhesPage() {
       <HeaderAvaliacaoDetalhes paciente={paciente} isLoadingPaciente={isLoadingPaciente}/>
 
       <div className={styles.layout}>
-        <aside className={styles.sidebarLeft}>
+        <div className={styles.mobileControls}>
+          <button
+            className={`${styles.mobileControlBtn} ${showMobileLeft ? styles.active : ""}`}
+            onClick={() => {
+              setShowMobileLeft(!showMobileLeft);
+              setShowMobileRight(false);
+            }}
+          >
+            <HugeiconsIcon icon={Menu01Icon} size={18} />
+            Módulos
+          </button>
+          <button
+            className={`${styles.mobileControlBtn} ${showMobileRight ? styles.active : ""}`}
+            onClick={() => {
+              setShowMobileRight(!showMobileRight);
+              setShowMobileLeft(false);
+            }}
+          >
+            <HugeiconsIcon icon={ClipboardIcon} size={18} />
+            Resumo
+          </button>
+        </div>
+
+        <aside className={`${styles.sidebarLeft} ${!showMobileLeft ? styles.mobileHidden : ""}`}>
           {isLoading ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "0 12px" }}>
               <Skeleton width="100%" height="40px" borderRadius="8px" />
@@ -70,11 +96,11 @@ export function AvaliacaoDetalhesPage() {
               <Skeleton width="100%" height="40px" borderRadius="8px" />
             </div>
           ) : (
-            <SidebarEsquerda avaliacao={avaliacao} />
+            <SidebarEsquerda avaliacao={avaliacao} onItemClick={() => setShowMobileLeft(false)} />
           )}
         </aside>
 
-        <main>
+        <main className={`${styles.center} ${showMobileLeft || showMobileRight ? styles.mobileHidden : ""}`}>
           {isLoading ? (
             <SkeletonAvaliacaoModules />
           ) : isError ? (
@@ -93,7 +119,7 @@ export function AvaliacaoDetalhesPage() {
           )}
         </main>
 
-        <aside className={styles.sidebarRight}>
+        <aside className={`${styles.sidebarRight} ${!showMobileRight ? styles.mobileHidden : ""}`}>
           <SidebarDireita
             deleteMutation={deleteMutation}
             avaliacao={avaliacao}

@@ -239,21 +239,21 @@ export function ExamesPage() {
             <tbody>
               {examesFiltrados.map((ex) => (
                 <tr key={ex.id}>
-                  <td className={styles.codeCell}>{ex.codigo}</td>
-                  <td>{ex.nome}</td>
-                  <td className={styles.valueCell}>
+                  <td data-label="Código" className={styles.codeCell}>{ex.codigo}</td>
+                  <td data-label="Nome">{ex.nome}</td>
+                  <td data-label="Min" className={styles.valueCell}>
                     {ex.valorMinimo != null ? ex.valorMinimo : '-'}
                   </td>
-                  <td className={styles.valueCell}>
+                  <td data-label="Max" className={styles.valueCell}>
                     {ex.valorMaximo != null ? ex.valorMaximo : '-'}
                   </td>
-                  <td>
+                  <td data-label="Unidade">
                     {ex.unidade ? (
                       <span className={styles.unitBadge}>{ex.unidade}</span>
                     ) : '-'}
                   </td>
                   {isMeus && (
-                    <td>
+                    <td data-label="Ações">
                       <div className={styles.actions}>
                         <button className={styles.actionBtn} onClick={() => editar(ex)} title="Editar">
                           <HugeiconsIcon icon={PencilEdit01Icon} size={16} strokeWidth={2} />

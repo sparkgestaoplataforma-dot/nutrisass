@@ -6,18 +6,24 @@ import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 
 interface SidebarEsquerdaProps {
   avaliacao: AvaliacaoComRespostas | null | undefined;
+  onItemClick?: () => void;
 }
 
-export function SidebarEsquerda({ avaliacao }: SidebarEsquerdaProps) {
+export function SidebarEsquerda({ avaliacao, onItemClick }: SidebarEsquerdaProps) {
   function scrollToModulo(id: string) {
-    const elemento = document.getElementById(`modulo-${id}`);
-
-    if (elemento) {
-      elemento.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+    if (onItemClick) {
+      onItemClick();
     }
+
+    setTimeout(() => {
+      const elemento = document.getElementById(`modulo-${id}`);
+      if (elemento) {
+        elemento.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    }, 100);
   }
   return (
     <>

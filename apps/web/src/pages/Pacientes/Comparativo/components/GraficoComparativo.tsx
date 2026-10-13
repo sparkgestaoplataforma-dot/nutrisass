@@ -28,7 +28,7 @@ export function GraficoComparativo({
 }: graficoComparativoProps) {
   return (
     <>
-      <ResponsiveContainer width="100%" height={320}>
+      <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={graficoDados}
           margin={{ top: 20, right: 30, left: 10, bottom: 10 }}

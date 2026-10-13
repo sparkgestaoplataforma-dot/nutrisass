@@ -25,6 +25,7 @@ import {
   DocumentCodeFreeIcons,
   AlertCircleIcon,
   Restaurant01Icon,
+  Menu01Icon,
 } from "@hugeicons/core-free-icons";
 import { Skeleton } from "@/components/Loading/Skeleton";
 import { SkeletonObservacao } from "@/components/Loading/skeletons/SkeletonObservacao";
@@ -109,6 +110,9 @@ export function ProntuarioPage() {
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerStartedAt, setTimerStartedAt] = useState<Date | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const [showMobileNav, setShowMobileNav] = useState(false);
+  const [showMobileRight, setShowMobileRight] = useState(false);
 
   // --- Queries ---
   const { 
@@ -325,49 +329,73 @@ export function ProntuarioPage() {
 
       {/* Layout principal */}
       <div className={styles.layout}>
+        {/* Mobile Top Controls */}
+        <div className={styles.mobileControls}>
+          <button 
+            className={`${styles.mobileControlBtn} ${showMobileNav ? styles.active : ''}`}
+            onClick={() => {
+              setShowMobileNav(!showMobileNav);
+              if (!showMobileNav) setShowMobileRight(false);
+            }}
+          >
+            <HugeiconsIcon icon={Menu01Icon} size={16} />
+            Navegação
+          </button>
+          <button 
+            className={`${styles.mobileControlBtn} ${showMobileRight ? styles.active : ''}`}
+            onClick={() => {
+              setShowMobileRight(!showMobileRight);
+              if (!showMobileRight) setShowMobileNav(false);
+            }}
+          >
+            <HugeiconsIcon icon={ClipboardIcon} size={16} />
+            Questionários
+          </button>
+        </div>
+
         {/* Sidebar Esquerda */}
-        <aside className={styles.sidebarLeft}>
-          <p className={styles.sidebarLabel}>Navegação</p>
-          <button
-            className={styles.sideNavItem}
-            onClick={() => setView("medidas")}
-          >
-            <div className={styles.sideNavIcon}>
-              <HugeiconsIcon icon={RulerIcon} size={16} strokeWidth={1.8} />
-            </div>
-            <span>Medidas</span>
-            <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
-          </button>
-          <button
-            className={styles.sideNavItem}
-            onClick={() => setView("exames")}
-          >
-            <div className={styles.sideNavIcon}>
-              <HugeiconsIcon icon={TestTubeIcon} size={16} strokeWidth={1.8} />
-            </div>
-            <span>Exames</span>
-            <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
-          </button>
-          <button
-            className={styles.sideNavItem}
-            onClick={() => navigate(`/pacientes/${id!}/comparativo`)}
-          >
-            <div className={styles.sideNavIcon}>
-              <HugeiconsIcon icon={ClipboardIcon} size={16} strokeWidth={1.8} />
-            </div>
-            <span>Questionários</span>
-            <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
-          </button>
-          <button
-            className={styles.sideNavItem}
-            onClick={() => setView("planoAlimentar")}
-          >
-            <div className={styles.sideNavIcon}>
-              <HugeiconsIcon icon={Restaurant01Icon} size={16} strokeWidth={1.8} />
-            </div>
-            <span>Plano Alimentar</span>
-            <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
-          </button>
+        <aside className={`${styles.sidebarLeft} ${!showMobileNav ? styles.mobileHidden : ""}`}>
+            <p className={styles.sidebarLabel}>Navegação</p>
+            <button
+              className={styles.sideNavItem}
+              onClick={() => { setView("medidas"); setShowMobileNav(false); }}
+            >
+              <div className={styles.sideNavIcon}>
+                <HugeiconsIcon icon={RulerIcon} size={16} strokeWidth={1.8} />
+              </div>
+              <span>Medidas</span>
+              <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
+            </button>
+            <button
+              className={styles.sideNavItem}
+              onClick={() => { setView("exames"); setShowMobileNav(false); }}
+            >
+              <div className={styles.sideNavIcon}>
+                <HugeiconsIcon icon={TestTubeIcon} size={16} strokeWidth={1.8} />
+              </div>
+              <span>Exames</span>
+              <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
+            </button>
+            <button
+              className={styles.sideNavItem}
+              onClick={() => navigate(`/pacientes/${id!}/comparativo`)}
+            >
+              <div className={styles.sideNavIcon}>
+                <HugeiconsIcon icon={ClipboardIcon} size={16} strokeWidth={1.8} />
+              </div>
+              <span>Questionários</span>
+              <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
+            </button>
+            <button
+              className={styles.sideNavItem}
+              onClick={() => { setView("planoAlimentar"); setShowMobileNav(false); }}
+            >
+              <div className={styles.sideNavIcon}>
+                <HugeiconsIcon icon={Restaurant01Icon} size={16} strokeWidth={1.8} />
+              </div>
+              <span>Plano Alimentar</span>
+              <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
+            </button>
         </aside>
 
         {/* Conteúdo Central */}
@@ -546,172 +574,172 @@ export function ProntuarioPage() {
         </main>
 
         {/* Sidebar Direita */}
-        <aside className={styles.sidebarRight}>
+        <aside className={`${styles.sidebarRight} ${!showMobileRight ? styles.mobileHidden : ""}`}>
           <div className={styles.rightStack}>
-          <div className={styles.rightCard}>
-            <h4 className={styles.rightTitle}>Resultados de Questionários</h4>
-            <select
-              className={styles.rightSelect}
-              value={avaliacaoSelecionadaId || ""}
-              onChange={(e) => setAvaliacaoSelecionadaId(e.target.value)}
-            >
-              {listAvaliacoes.length > 0 ? (
-                listAvaliacoes.map((av: Avaliacao & { dataRealizacaoFormatada?: string }) => (
-                  <option key={av.id} value={av.id}>
-                    {av.dataRealizacaoFormatada || av.dataRealizacao}
-                  </option>
-                ))
-              ) : (
-                <option value="">Selecione um questionário</option>
-              )}
-            </select>
-
-            {totalPagesAvaliacoes > 1 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', marginBottom: '1rem', fontSize: '0.8rem' }}>
-                <button 
-                  style={{ border: 'none', background: 'transparent', cursor: avaliacoesPage === 1 ? 'not-allowed' : 'pointer', color: '#6b7280' }}
-                  onClick={() => setAvaliacoesPage(p => Math.max(1, p - 1))} 
-                  disabled={avaliacoesPage === 1}
-                >
-                  &laquo; Anterior
-                </button>
-                <span style={{ color: '#9ca3af' }}>{avaliacoesPage} / {totalPagesAvaliacoes}</span>
-                <button 
-                  style={{ border: 'none', background: 'transparent', cursor: avaliacoesPage >= totalPagesAvaliacoes ? 'not-allowed' : 'pointer', color: '#6b7280' }}
-                  onClick={() => setAvaliacoesPage(p => Math.min(totalPagesAvaliacoes, p + 1))} 
-                  disabled={avaliacoesPage >= totalPagesAvaliacoes}
-                >
-                  Próxima &raquo;
-                </button>
-              </div>
-            )}
-
-            {selectedAvaliacao?.regraInterpretacao && (() => {
-              const regras = selectedAvaliacao.questionario?.regras ?? [];
-              const { nivel } = getInterpretacaoScore(
-                selectedAvaliacao.scoreTotal,
-                regras,
-              );
-              const corClasse = getClasseCorPorNivel(nivel, styles);
-              return (
-                <div 
-                  className={`${styles.observacaoCard} ${corClasse}`} 
-                  style={{ 
-                    borderColor: isLoadingAvaliacaoDetalhe ? "#e5e7eb" : undefined,
-                    background: isLoadingAvaliacaoDetalhe ? "#f9fafb" : undefined,
-                    borderLeftColor: isLoadingAvaliacaoDetalhe ? "#e5e7eb" : undefined
-                  }}
-                >
-                  <span className={styles.observacaoLabel}>Observação</span>
-                  {isLoadingAvaliacaoDetalhe ? (
-                    <SkeletonObservacao />
-                  ) : selectedAvaliacao ? (
-                    <>
-                      <p className={styles.observacaoText}>
-                        {selectedAvaliacao.regraInterpretacao}
-                      </p>
-                      <span className={styles.observacaoScore}>
-                        Score: {selectedAvaliacao.scoreTotal}
-                      </span>
-                    </>
-                  ) : (
-                    <p className={styles.observacaoText} style={{ color: "#9ca3af", fontStyle: "italic", fontWeight: "normal" }}>
-                      {listAvaliacoes.length === 0 ? "Nenhum questionário aplicado" : "Nenhuma observação cadastrada"}
-                    </p>
-                  )}
-                </div>
-              );
-            })()}
-
-            <div className={styles.sideNavTopic}>
-              <div className={styles.sideNavIcon}>
-                <HugeiconsIcon
-                  icon={Calendar01Icon}
-                  size={16}
-                  strokeWidth={1.8}
-                />
-              </div>
-              <div className={styles.TopicContent}>
-                <div className={styles.topicTitle}>Data</div>
-                <div className={styles.topicDescription}>
-                  {(isLoadingAvaliacaoDetalhe || isLoadingAvaliacoes) ? (
-                    <Skeleton width="80px" height="14px" />
-                  ) : (selectedAvaliacao as any)?.dataRealizacaoFormatada ? (
-                    (selectedAvaliacao as any).dataRealizacaoFormatada
-                  ) : (
-                    "Nenhuma selecionada"
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {isLoadingAvaliacaoDetalhe || isLoadingAvaliacoes ? (
-              <Skeleton width="100%" height="44px" borderRadius="8px" />
-            ) : (
-              <button
-                className={styles.sideNavItem}
-                onClick={() => {
-                  const idToUse = avaliacaoSelecionadaId;
-                  if (idToUse) {
-                    navigate(`/avaliacoes/${idToUse}/${id}`);
-                  }
-                }}
-                disabled={!avaliacaoSelecionadaId}
-                style={{
-                  opacity: !avaliacaoSelecionadaId ? 0.5 : 1,
-                }}
+            <div className={styles.rightCard}>
+              <h4 className={styles.rightTitle}>Resultados de Questionários</h4>
+              <select
+                className={styles.rightSelect}
+                value={avaliacaoSelecionadaId || ""}
+                onChange={(e) => setAvaliacaoSelecionadaId(e.target.value)}
               >
+                {listAvaliacoes.length > 0 ? (
+                  listAvaliacoes.map((av: Avaliacao & { dataRealizacaoFormatada?: string }) => (
+                    <option key={av.id} value={av.id}>
+                      {av.dataRealizacaoFormatada || av.dataRealizacao}
+                    </option>
+                  ))
+                ) : (
+                  <option value="">Selecione um questionário</option>
+                )}
+              </select>
+
+              {totalPagesAvaliacoes > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', marginBottom: '1rem', fontSize: '0.8rem' }}>
+                  <button 
+                    style={{ border: 'none', background: 'transparent', cursor: avaliacoesPage === 1 ? 'not-allowed' : 'pointer', color: '#6b7280' }}
+                    onClick={() => setAvaliacoesPage(p => Math.max(1, p - 1))} 
+                    disabled={avaliacoesPage === 1}
+                  >
+                    &laquo; Anterior
+                  </button>
+                  <span style={{ color: '#9ca3af' }}>{avaliacoesPage} / {totalPagesAvaliacoes}</span>
+                  <button 
+                    style={{ border: 'none', background: 'transparent', cursor: avaliacoesPage >= totalPagesAvaliacoes ? 'not-allowed' : 'pointer', color: '#6b7280' }}
+                    onClick={() => setAvaliacoesPage(p => Math.min(totalPagesAvaliacoes, p + 1))} 
+                    disabled={avaliacoesPage >= totalPagesAvaliacoes}
+                  >
+                    Próxima &raquo;
+                  </button>
+                </div>
+              )}
+
+              {selectedAvaliacao?.regraInterpretacao && (() => {
+                const regras = selectedAvaliacao.questionario?.regras ?? [];
+                const { nivel } = getInterpretacaoScore(
+                  selectedAvaliacao.scoreTotal,
+                  regras,
+                );
+                const corClasse = getClasseCorPorNivel(nivel, styles);
+                return (
+                  <div 
+                    className={`${styles.observacaoCard} ${corClasse}`} 
+                    style={{ 
+                      borderColor: isLoadingAvaliacaoDetalhe ? "#e5e7eb" : undefined,
+                      background: isLoadingAvaliacaoDetalhe ? "#f9fafb" : undefined,
+                      borderLeftColor: isLoadingAvaliacaoDetalhe ? "#e5e7eb" : undefined
+                    }}
+                  >
+                    <span className={styles.observacaoLabel}>Observação</span>
+                    {isLoadingAvaliacaoDetalhe ? (
+                      <SkeletonObservacao />
+                    ) : selectedAvaliacao ? (
+                      <>
+                        <p className={styles.observacaoText}>
+                          {selectedAvaliacao.regraInterpretacao}
+                        </p>
+                        <span className={styles.observacaoScore}>
+                          Score: {selectedAvaliacao.scoreTotal}
+                        </span>
+                      </>
+                    ) : (
+                      <p className={styles.observacaoText} style={{ color: "#9ca3af", fontStyle: "italic", fontWeight: "normal" }}>
+                        {listAvaliacoes.length === 0 ? "Nenhum questionário aplicado" : "Nenhuma observação cadastrada"}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              <div className={styles.sideNavTopic}>
                 <div className={styles.sideNavIcon}>
                   <HugeiconsIcon
-                    icon={ClipboardIcon}
+                    icon={Calendar01Icon}
                     size={16}
                     strokeWidth={1.8}
                   />
                 </div>
-                <span>Ver Respostas</span>
-                <HugeiconsIcon
-                  icon={ArrowRight01Icon}
-                  size={12}
-                  strokeWidth={2}
-                />
-              </button>
-            )}
-          </div>
+                <div className={styles.TopicContent}>
+                  <div className={styles.topicTitle}>Data</div>
+                  <div className={styles.topicDescription}>
+                    {(isLoadingAvaliacaoDetalhe || isLoadingAvaliacoes) ? (
+                      <Skeleton width="80px" height="14px" />
+                    ) : (selectedAvaliacao as any)?.dataRealizacaoFormatada ? (
+                      (selectedAvaliacao as any).dataRealizacaoFormatada
+                    ) : (
+                      "Nenhuma selecionada"
+                    )}
+                  </div>
+                </div>
+              </div>
 
-          {/* Histórico de Consultas */}
-          <div className={styles.rightCard}>
-            <h4 className={styles.rightTitle}>Histórico de Consultas</h4>
-            {paciente.agendamentos?.length ? (
-              <ul className={styles.historicoList}>
-                {paciente.agendamentos.map((ag: any) => {
-                  const d = new Date(ag.dataHora);
-                  return (
-                    <li key={ag.id} className={styles.historicoItem}>
-                      <div className={styles.historicoData}>
-                        <strong>{d.getDate().toString().padStart(2, "0")}</strong>
-                        <span>
-                          {d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "")}
-                          /{d.getFullYear().toString().slice(-2)}
+              {isLoadingAvaliacaoDetalhe || isLoadingAvaliacoes ? (
+                <Skeleton width="100%" height="44px" borderRadius="8px" />
+              ) : (
+                <button
+                  className={styles.sideNavItem}
+                  onClick={() => {
+                    const idToUse = avaliacaoSelecionadaId;
+                    if (idToUse) {
+                      navigate(`/avaliacoes/${idToUse}/${id}`);
+                    }
+                  }}
+                  disabled={!avaliacaoSelecionadaId}
+                  style={{
+                    opacity: !avaliacaoSelecionadaId ? 0.5 : 1,
+                  }}
+                >
+                  <div className={styles.sideNavIcon}>
+                    <HugeiconsIcon
+                      icon={ClipboardIcon}
+                      size={16}
+                      strokeWidth={1.8}
+                    />
+                  </div>
+                  <span>Ver Respostas</span>
+                  <HugeiconsIcon
+                    icon={ArrowRight01Icon}
+                    size={12}
+                    strokeWidth={2}
+                  />
+                </button>
+              )}
+            </div>
+
+            {/* Histórico de Consultas */}
+            <div className={styles.rightCard}>
+              <h4 className={styles.rightTitle}>Histórico de Consultas</h4>
+              {paciente.agendamentos?.length ? (
+                <ul className={styles.historicoList}>
+                  {paciente.agendamentos.map((ag: any) => {
+                    const d = new Date(ag.dataHora);
+                    return (
+                      <li key={ag.id} className={styles.historicoItem}>
+                        <div className={styles.historicoData}>
+                          <strong>{d.getDate().toString().padStart(2, "0")}</strong>
+                          <span>
+                            {d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "")}
+                            /{d.getFullYear().toString().slice(-2)}
+                          </span>
+                        </div>
+                        <div className={styles.historicoInfo}>
+                          <strong>
+                            {ag.tipo === "RETORNO" ? "Retorno" : "Consulta"} ·{" "}
+                            {d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                          </strong>
+                          <span>{ag.convenio?.nome || "Particular"}</span>
+                        </div>
+                        <span className={`${styles.historicoStatus} ${statusClass(ag.status)}`}>
+                          {STATUS_LABEL[ag.status] || ag.status}
                         </span>
-                      </div>
-                      <div className={styles.historicoInfo}>
-                        <strong>
-                          {ag.tipo === "RETORNO" ? "Retorno" : "Consulta"} ·{" "}
-                          {d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                        </strong>
-                        <span>{ag.convenio?.nome || "Particular"}</span>
-                      </div>
-                      <span className={`${styles.historicoStatus} ${statusClass(ag.status)}`}>
-                        {STATUS_LABEL[ag.status] || ag.status}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className={styles.historicoEmpty}>Nenhuma consulta registrada.</p>
-            )}
-          </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className={styles.historicoEmpty}>Nenhuma consulta registrada.</p>
+              )}
+            </div>
           </div>
         </aside>
       </div>
