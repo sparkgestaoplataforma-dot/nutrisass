@@ -8,8 +8,9 @@ const router = Router();
 
 router.use(authMiddleware);
 
-router.post('/', validate(createAgendamentoSchema), controller.criar);
 router.get('/', controller.listar);
+router.get('/:id/guia-tiss', controller.guiaTiss);
+router.post('/', validate(createAgendamentoSchema), controller.criar);
 router.put('/:id', validate(updateAgendamentoSchema), controller.editar);
 router.patch('/:id/status', validate(updateStatusSchema), controller.alterarStatus);
 router.delete('/:id', controller.excluir);

@@ -77,6 +77,24 @@ function formatDuration(seconds: number): string {
   return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  AGENDADO: "Agendado",
+  CONFIRMOU: "Confirmou",
+  PRESENTE: "Presente",
+  ENCAIXE: "Encaixe",
+  CANCELADO: "Cancelado",
+  NAO_COMPARECEU: "Não compareceu",
+  REALIZADO: "Realizado",
+  DESISTIU: "Desistiu",
+  REMARCOU: "Remarcou",
+};
+
+function statusClass(status: string) {
+  if (status === "REALIZADO" || status === "PRESENTE") return styles.statusOk;
+  if (["CANCELADO", "NAO_COMPARECEU", "DESISTIU"].includes(status)) return styles.statusFalta;
+  return styles.statusPendente;
+}
+
 export function ProntuarioPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -529,6 +547,7 @@ export function ProntuarioPage() {
 
         {/* Sidebar Direita */}
         <aside className={styles.sidebarRight}>
+          <div className={styles.rightStack}>
           <div className={styles.rightCard}>
             <h4 className={styles.rightTitle}>Resultados de Questionários</h4>
             <select
@@ -657,6 +676,42 @@ export function ProntuarioPage() {
                 />
               </button>
             )}
+          </div>
+
+          {/* Histórico de Consultas */}
+          <div className={styles.rightCard}>
+            <h4 className={styles.rightTitle}>Histórico de Consultas</h4>
+            {paciente.agendamentos?.length ? (
+              <ul className={styles.historicoList}>
+                {paciente.agendamentos.map((ag: any) => {
+                  const d = new Date(ag.dataHora);
+                  return (
+                    <li key={ag.id} className={styles.historicoItem}>
+                      <div className={styles.historicoData}>
+                        <strong>{d.getDate().toString().padStart(2, "0")}</strong>
+                        <span>
+                          {d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "")}
+                          /{d.getFullYear().toString().slice(-2)}
+                        </span>
+                      </div>
+                      <div className={styles.historicoInfo}>
+                        <strong>
+                          {ag.tipo === "RETORNO" ? "Retorno" : "Consulta"} ·{" "}
+                          {d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                        </strong>
+                        <span>{ag.convenio?.nome || "Particular"}</span>
+                      </div>
+                      <span className={`${styles.historicoStatus} ${statusClass(ag.status)}`}>
+                        {STATUS_LABEL[ag.status] || ag.status}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className={styles.historicoEmpty}>Nenhuma consulta registrada.</p>
+            )}
+          </div>
           </div>
         </aside>
       </div>

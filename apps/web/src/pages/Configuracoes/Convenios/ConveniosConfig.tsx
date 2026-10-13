@@ -6,10 +6,12 @@ import { PlusSignIcon, PencilEdit01Icon, Delete02Icon } from '@hugeicons/core-fr
 import { api } from '@/services/api';
 import type { CreateConvenioInput } from '@nutricao/shared';
 import styles from '../ConfigPage.module.scss';
+import { LogoUpload } from '../components/LogoUpload';
 
 export function ConveniosConfig() {
   const [formAberto, setFormAberto] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [logomarca, setLogomarca] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: convenios = [] } = useQuery({
@@ -23,7 +25,8 @@ export function ConveniosConfig() {
   const { register, handleSubmit, reset } = useForm<CreateConvenioInput>();
 
   const mutation = useMutation({
-    mutationFn: async (data: CreateConvenioInput) => {
+    mutationFn: async (input: CreateConvenioInput) => {
+      const data = { ...input, logomarca };
       if (editandoId) return api.put(`/convenios/${editandoId}`, data);
       return api.post('/convenios', data);
     },
@@ -44,11 +47,13 @@ export function ConveniosConfig() {
   function fecharForm() {
     setFormAberto(false);
     setEditandoId(null);
+    setLogomarca(null);
     reset({ nome: '', registroANS: '' });
   }
 
   function editar(conv: any) {
     setEditandoId(conv.id);
+    setLogomarca(conv.logomarca || null);
     reset({ nome: conv.nome, registroANS: conv.registroANS || '' });
     setFormAberto(true);
   }
@@ -74,6 +79,9 @@ export function ConveniosConfig() {
                 <label>Registro ANS</label>
                 <input {...register('registroANS')} placeholder="Opcional" />
               </div>
+              <div className={styles.fullWidth}>
+                <LogoUpload value={logomarca} onChange={setLogomarca} label="Logomarca da operadora" />
+              </div>
             </div>
             <div className={styles.formActions}>
               <button type="button" className={styles.cancelBtn} onClick={fecharForm}>Cancelar</button>
@@ -91,11 +99,14 @@ export function ConveniosConfig() {
         ) : (
           <table className={styles.table}>
             <thead>
-              <tr><th>Nome</th><th>Registro ANS</th><th>Ações</th></tr>
+              <tr><th>Logo</th><th>Nome</th><th>Registro ANS</th><th>Ações</th></tr>
             </thead>
             <tbody>
               {convenios.map((c: any) => (
                 <tr key={c.id}>
+                  <td>
+                    {c.logomarca ? <img className={styles.logoThumb} src={c.logomarca} alt="" /> : '-'}
+                  </td>
                   <td>{c.nome}</td>
                   <td>{c.registroANS || '-'}</td>
                   <td>

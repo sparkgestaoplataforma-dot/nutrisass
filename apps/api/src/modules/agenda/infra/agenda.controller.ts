@@ -205,3 +205,43 @@ export async function excluir(req: Request<{ id: string }>, res: Response) {
 
   return res.json({ success: true, message: "Agendamento excluído" });
 }
+
+// Dados consolidados para preenchimento da Guia de Consulta TISS (padrão ANS)
+export async function guiaTiss(req: Request<{ id: string }>, res: Response) {
+  const clinicaId = getClinicaId(req);
+  const { id } = req.params;
+
+  const agendamento = await prisma.agendamento.findFirst({
+    where: { id, clinicaId },
+    include: {
+      paciente: {
+        include: { convenio: true },
+      },
+      convenio: true,
+      nutricionista: { select: { id: true, nome: true, perfil: true } },
+      criadoPor: { select: { id: true, nome: true, perfil: true } },
+      clinica: {
+        select: {
+          id: true,
+          nome: true,
+          cnpj: true,
+          telefone: true,
+          email: true,
+          endereco: true,
+          logomarca: true,
+        },
+      },
+    },
+  });
+
+  if (!agendamento) throw new AppError('Agendamento não encontrado', 404);
+
+  return res.json({
+    success: true,
+    data: {
+      ...agendamento,
+      usuario: agendamento.nutricionista || agendamento.criadoPor,
+    },
+  });
+}
+

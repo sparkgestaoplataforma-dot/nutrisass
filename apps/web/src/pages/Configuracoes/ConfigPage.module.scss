@@ -135,3 +135,83 @@
   color: $gray-400;
   font-size: $font-size-sm;
 }
+
+.hint {
+  font-size: $font-size-sm;
+  color: $gray-500;
+  margin: -0.5rem 0 1rem;
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.fieldError {
+  font-size: $font-size-xs;
+  color: $danger;
+  margin-bottom: 0.5rem;
+}
+
+.savedMsg {
+  align-self: center;
+  font-size: $font-size-sm;
+  color: $primary-dark;
+  font-weight: 500;
+}
+
+.logoUpload {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logoPreview {
+  width: 120px;
+  height: 64px;
+  border: 1px dashed $gray-300;
+  border-radius: $radius-sm;
+  background: $gray-50;
+  @include flex-center;
+  overflow: hidden;
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  span {
+    font-size: $font-size-xs;
+    color: $gray-400;
+  }
+}
+
+.logoActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.logoBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid $gray-200;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: 500;
+  color: $gray-700;
+  background: $white;
+  transition: all 0.15s;
+
+  &:hover { border-color: $primary; color: $primary-dark; }
+}
+
+.logoBtnDanger:hover { border-color: $danger; color: $danger; }
+
+.logoThumb {
+  height: 28px;
+  max-width: 72px;
+  object-fit: contain;
+  vertical-align: middle;
+}

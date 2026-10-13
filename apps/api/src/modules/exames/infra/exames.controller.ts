@@ -96,6 +96,46 @@ export async function solicitarExame(req: Request<{ pacienteId: string }>, res: 
   return res.status(201).json({ success: true, data: solicitacao });
 }
 
+// Lança exames externos (não solicitados pela clínica) já com resultado, em uma única operação
+export async function lancarExameExterno(req: Request<{ pacienteId: string }>, res: Response) {
+  const clinicaId = getClinicaId(req);
+  const { pacienteId } = req.params;
+  const { dataResultado, itens } = req.body as {
+    dataResultado: string;
+    itens: { exameBaseId: string; resultado: string }[];
+  };
+
+  const paciente = await prisma.paciente.findFirst({ where: { id: pacienteId, clinicaId } });
+  if (!paciente) throw new AppError('Paciente não encontrado', 404);
+
+  const exameIds = [...new Set(itens.map((i) => i.exameBaseId))];
+  const examesValidos = await prisma.exameBase.count({
+    where: { id: { in: exameIds }, clinicaId },
+  });
+  if (examesValidos !== exameIds.length) throw new AppError('Exame inválido', 400);
+
+  const data = new Date(dataResultado);
+
+  const solicitacao = await prisma.solicitacaoExame.create({
+    data: {
+      pacienteId,
+      dataSolicitada: data,
+      itens: {
+        create: itens.map((item) => ({
+          exameBaseId: item.exameBaseId,
+          resultado: item.resultado,
+          dataResultado: data,
+        })),
+      },
+    },
+    include: {
+      itens: { include: { exameBase: true } },
+    },
+  });
+
+  return res.status(201).json({ success: true, data: solicitacao });
+}
+
 export async function registrarResultado(req: Request, res: Response) {
   const { itemId, dataResultado, resultado } = req.body;
 
