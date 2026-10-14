@@ -11,6 +11,10 @@ interface ExamesTabProps {
 
 type TabExame = 'base' | 'meus';
 
+function normalizeText(str: string): string {
+  return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
 export function ExamesTab({ pacienteId }: ExamesTabProps) {
   const [solicitando, setSolicitando] = useState(false);
   const [tabExame, setTabExame] = useState<TabExame>('base');
@@ -56,11 +60,11 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
 
   const examesFiltrados = useMemo(() => {
     if (!busca.trim()) return listaAtual;
-    const termo = busca.toLowerCase();
+    const termo = normalizeText(busca.trim());
     return listaAtual.filter(
       (ex: any) =>
-        ex.nome.toLowerCase().includes(termo) ||
-        ex.codigo.toLowerCase().includes(termo)
+        normalizeText(ex.nome).includes(termo) ||
+        normalizeText(ex.codigo).includes(termo)
     );
   }, [listaAtual, busca]);
 

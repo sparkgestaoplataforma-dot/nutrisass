@@ -22,10 +22,33 @@ describe("exames.controller", () => {
   });
 
   describe("Exames Base", () => {
-    it("deve listar exames base", async () => {
-      prismaMock.exameBase.findMany.mockResolvedValue([{ id: "ex-1" }] as any);
+    it("deve listar exames base com paginação e busca", async () => {
+      mockReq.query = { page: "1", limit: "20", search: "glicemia" };
+      prismaMock.exameBase.findMany.mockResolvedValue([{ id: "ex-1", nome: "Glicemia" }] as any);
+      prismaMock.exameBase.count.mockResolvedValue(1);
       await listarExamesBase(mockReq, mockRes);
-      expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({ success: true, data: [{ id: "ex-1" }] }));
+      expect(mockRes.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          data: [{ id: "ex-1", nome: "Glicemia" }],
+          total: 1,
+          page: 1,
+          limit: 20,
+          totalPages: 1,
+        })
+      );
+    });
+
+    it("deve limitar a 100 itens no máximo", async () => {
+      mockReq.query = { limit: "200" };
+      prismaMock.exameBase.findMany.mockResolvedValue([]);
+      prismaMock.exameBase.count.mockResolvedValue(0);
+      await listarExamesBase(mockReq, mockRes);
+      expect(mockRes.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          limit: 100,
+        })
+      );
     });
 
     it("deve criar exame base customizado", async () => {

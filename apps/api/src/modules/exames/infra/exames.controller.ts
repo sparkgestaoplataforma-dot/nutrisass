@@ -3,20 +3,51 @@ import { prisma } from '../../../shared/providers/prisma.js';
 import { AppError } from '../../../shared/middlewares/errorHandler.js';
 import { getClinicaId } from '../../../shared/middlewares/auth.js';
 
+function normalizeText(str: string): string {
+  return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
 // Exames Base (config)
 export async function listarExamesBase(req: Request, res: Response) {
   const clinicaId = getClinicaId(req);
   const { tipo } = req.query; // 'base' | 'custom' | undefined (all)
+  const search = (req.query.search || req.query.busca || req.query.q) as string | undefined;
 
   const where: any = { clinicaId };
   if (tipo === 'base') where.isBase = true;
   if (tipo === 'custom') where.isBase = false;
 
-  const exames = await prisma.exameBase.findMany({
+  const pageNum = Math.max(1, parseInt(req.query.page as string, 10) || 1);
+  const requestedLimit = req.query.limit
+    ? parseInt(req.query.limit as string, 10)
+    : (req.query.page ? 20 : 100);
+  const limitNum = Math.min(Math.max(1, requestedLimit || 20), 100);
+
+  let exames = await prisma.exameBase.findMany({
     where,
     orderBy: { nome: 'asc' },
   });
-  return res.json({ success: true, data: exames });
+
+  if (search && search.trim()) {
+    const term = normalizeText(search.trim());
+    exames = exames.filter((e) =>
+      normalizeText(e.nome).includes(term) ||
+      normalizeText(e.codigo).includes(term)
+    );
+  }
+
+  const total = exames.length;
+  const skip = (pageNum - 1) * limitNum;
+  const paginatedExames = exames.slice(skip, skip + limitNum);
+
+  return res.json({
+    success: true,
+    data: paginatedExames,
+    total,
+    page: pageNum,
+    limit: limitNum,
+    totalPages: Math.ceil(total / limitNum) || 1,
+  });
 }
 
 export async function criarExameBase(req: Request, res: Response) {
