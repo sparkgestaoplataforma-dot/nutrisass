@@ -7,7 +7,7 @@ import {
   LabelEscolhaItemInput,
   UpdateQuestionarioInput,
 } from "@nutricao/shared";
-import { criarQuestionarioPadraoParaClinica } from "../seed/default-questionario";
+import { criarQuestionarioPadraoParaClinica } from "../seed/default-questionario.js";
 
 type VersionamentoEstruturalResultado = {
   questionarioId: string;
