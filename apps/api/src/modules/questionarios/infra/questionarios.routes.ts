@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { validate } from "../../../shared/middlewares/validate.js";
 import { authMiddleware, roleGuard } from "../../../shared/middlewares/auth.js";
-import * as controller from "./questionarios.controller";
+import * as controller from "./questionarios.controller.js";
 import {
   createQuestionarioSchema,
   createQuestionarioModuloSchema,
