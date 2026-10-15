@@ -74,15 +74,27 @@ export async function buscarPorId(req: Request<{ id: string }>, res: Response) {
 export async function criar(req: Request, res: Response) {
   const clinicaId = getClinicaId(req);
 
+  const {
+    id: _id,
+    clinicaId: _clinicaId,
+    criadoEm: _criadoEm,
+    atualizadoEm: _atualizadoEm,
+    convenio: _convenio,
+    agendamentos: _agendamentos,
+    ...dados
+  } = req.body;
+
   const paciente = await prisma.paciente.create({
     data: {
-      ...req.body,
+      ...dados,
       clinicaId,
-      dataNascimento: req.body.dataNascimento
-        ? new Date(req.body.dataNascimento)
+      sexo: dados.sexo || null,
+      convenioId: dados.convenioId || null,
+      dataNascimento: dados.dataNascimento
+        ? new Date(dados.dataNascimento)
         : null,
-      validadeCarteira: req.body.validadeCarteira
-        ? new Date(req.body.validadeCarteira)
+      validadeCarteira: dados.validadeCarteira
+        ? new Date(dados.validadeCarteira)
         : null,
     },
   });
@@ -99,16 +111,34 @@ export async function editar(req: Request<{ id: string }>, res: Response) {
   });
   if (!existente) throw new AppError("Paciente não encontrado", 404);
 
+  const {
+    id: _id,
+    clinicaId: _clinicaId,
+    criadoEm: _criadoEm,
+    atualizadoEm: _atualizadoEm,
+    convenio: _convenio,
+    agendamentos: _agendamentos,
+    evolucoes: _evolucoes,
+    medidas: _medidas,
+    solicitacoes: _solicitacoes,
+    avaliacoesQuestionarios: _avaliacoesQuestionarios,
+    respostasQuestionarios: _respostasQuestionarios,
+    planosAlimentares: _planosAlimentares,
+    ...dados
+  } = req.body;
+
   const paciente = await prisma.paciente.update({
     where: { id },
     data: {
-      ...req.body,
-      dataNascimento: req.body.dataNascimento
-        ? new Date(req.body.dataNascimento)
-        : undefined,
-      validadeCarteira: req.body.validadeCarteira
-        ? new Date(req.body.validadeCarteira)
-        : undefined,
+      ...dados,
+      sexo: dados.sexo || null,
+      convenioId: dados.convenioId || null,
+      dataNascimento: dados.dataNascimento
+        ? new Date(dados.dataNascimento)
+        : null,
+      validadeCarteira: dados.validadeCarteira
+        ? new Date(dados.validadeCarteira)
+        : null,
     },
   });
 
