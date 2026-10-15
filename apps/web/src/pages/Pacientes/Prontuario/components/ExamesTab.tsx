@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { PlusSignIcon, Delete02Icon, TaskDone01Icon, Search01Icon } from '@hugeicons/core-free-icons';
+import { PlusSignIcon, Delete02Icon, TaskDone01Icon, Search01Icon, FileImportIcon } from '@hugeicons/core-free-icons';
 import { api } from '@/services/api';
 import styles from '../ProntuarioPage.module.scss';
 
@@ -10,6 +10,10 @@ interface ExamesTabProps {
 }
 
 type TabExame = 'base' | 'meus';
+
+function normalizeText(str: string): string {
+  return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
 
 export function ExamesTab({ pacienteId }: ExamesTabProps) {
   const [solicitando, setSolicitando] = useState(false);
@@ -21,6 +25,11 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
     resultado: string;
     dataResultado: string;
   } | null>(null);
+  // Lançamento de exames externos (trazidos pelo paciente, sem solicitação prévia)
+  const [lancandoExterno, setLancandoExterno] = useState(false);
+  const [externoData, setExternoData] = useState(() => new Date().toISOString().split('T')[0]);
+  const [externoBusca, setExternoBusca] = useState('');
+  const [externoItens, setExternoItens] = useState<Record<string, string>>({});
   const queryClient = useQueryClient();
 
   const { data: solicitacoes = [] } = useQuery({
@@ -51,11 +60,11 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
 
   const examesFiltrados = useMemo(() => {
     if (!busca.trim()) return listaAtual;
-    const termo = busca.toLowerCase();
+    const termo = normalizeText(busca.trim());
     return listaAtual.filter(
       (ex: any) =>
-        ex.nome.toLowerCase().includes(termo) ||
-        ex.codigo.toLowerCase().includes(termo)
+        normalizeText(ex.nome).includes(termo) ||
+        normalizeText(ex.codigo).includes(termo)
     );
   }, [listaAtual, busca]);
 
@@ -97,14 +106,196 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
     );
   }
 
+  const todosExames = useMemo(() => [...examesBase, ...meusExames], [examesBase, meusExames]);
+  const exameMap = useMemo(() => new Map(todosExames.map((ex: any) => [ex.id, ex])), [todosExames]);
+
+  const externoFiltrados = useMemo(() => {
+    const termo = externoBusca.trim().toLowerCase();
+    if (!termo) return [];
+    return todosExames
+      .filter(
+        (ex: any) =>
+          !(ex.id in externoItens) &&
+          (ex.nome.toLowerCase().includes(termo) || ex.codigo.toLowerCase().includes(termo)),
+      )
+      .slice(0, 12);
+  }, [todosExames, externoBusca, externoItens]);
+
+  const externoIds = Object.keys(externoItens);
+  const externoValido =
+    !!externoData && externoIds.length > 0 && externoIds.every((id) => externoItens[id].trim());
+
+  function fecharExterno() {
+    setLancandoExterno(false);
+    setExternoItens({});
+    setExternoBusca('');
+    setExternoData(new Date().toISOString().split('T')[0]);
+  }
+
+  const externoMutation = useMutation({
+    mutationFn: async () =>
+      api.post(`/exames/paciente/${pacienteId}/externo`, {
+        dataResultado: externoData,
+        itens: externoIds.map((id) => ({ exameBaseId: id, resultado: externoItens[id].trim() })),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exames-solicitacoes', pacienteId] });
+      fecharExterno();
+    },
+  });
+
+  /** Exame externo: lançado já com resultado na mesma data da "solicitação". */
+  function isExterno(sol: any) {
+    return (
+      sol.itens.length > 0 &&
+      sol.itens.every(
+        (i: any) => i.resultado && i.dataResultado && new Date(i.dataResultado).getTime() === new Date(sol.dataSolicitada).getTime(),
+      )
+    );
+  }
+
+  function formatRef(ex: any) {
+    if (ex.valorMinimo == null && ex.valorMaximo == null) return ex.unidade || '';
+    const faixa = `${ex.valorMinimo ?? '…'} – ${ex.valorMaximo ?? '…'}`;
+    return `Ref.: ${faixa}${ex.unidade ? ` ${ex.unidade}` : ''}`;
+  }
+
   return (
     <div>
-      <button
-        className={styles.novaEvolucaoBtn}
-        onClick={() => setSolicitando(!solicitando)}
-      >
-        <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} /> Solicitar Exame
-      </button>
+      <div className={styles.toolbar}>
+        <button
+          className={styles.novaEvolucaoBtn}
+          onClick={() => { setSolicitando(!solicitando); setLancandoExterno(false); }}
+        >
+          <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} /> Solicitar Exame
+        </button>
+        <button
+          className={styles.outlineBtn}
+          onClick={() => { if (lancandoExterno) fecharExterno(); else { setLancandoExterno(true); setSolicitando(false); } }}
+          title="Lançar resultado de exame trazido pelo paciente, sem solicitação prévia"
+        >
+          <HugeiconsIcon icon={FileImportIcon} size={16} strokeWidth={2} /> Lançar Exame Externo
+        </button>
+      </div>
+
+      {lancandoExterno && (
+        <div className={styles.evolucaoForm}>
+          <h4 style={{ marginBottom: '0.75rem', fontSize: '0.875rem', fontWeight: 600 }}>
+            Lançar Exame Externo
+          </h4>
+          <div className={styles.formGrid}>
+            <div className={styles.field}>
+              <label>Data do Resultado *</label>
+              <input type="date" value={externoData} onChange={(e) => setExternoData(e.target.value)} />
+            </div>
+            <div className={styles.field} style={{ position: 'relative' }}>
+              <label>Adicionar exame</label>
+              <input
+                type="text"
+                placeholder="Buscar por nome ou código..."
+                value={externoBusca}
+                onChange={(e) => setExternoBusca(e.target.value)}
+              />
+              {externoFiltrados.length > 0 && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10, marginTop: 4,
+                  background: '#fff', border: '1px solid #e5e7eb', borderRadius: '0.5rem',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.08)', maxHeight: 240, overflowY: 'auto',
+                }}>
+                  {externoFiltrados.map((ex: any) => (
+                    <button
+                      key={ex.id}
+                      type="button"
+                      onClick={() => { setExternoItens((prev) => ({ ...prev, [ex.id]: '' })); setExternoBusca(''); }}
+                      style={{
+                        display: 'flex', justifyContent: 'space-between', width: '100%', gap: '0.5rem',
+                        padding: '0.5rem 0.75rem', fontSize: '0.8125rem', textAlign: 'left',
+                        background: 'none', border: 'none', cursor: 'pointer',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f0fdf4')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                    >
+                      <span>{ex.nome}</span>
+                      <span style={{ color: '#9ca3af', fontSize: '0.6875rem' }}>{ex.codigo}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {externoIds.length === 0 ? (
+            <p style={{ color: '#9ca3af', fontSize: '0.8125rem', textAlign: 'center', padding: '1rem 0' }}>
+              Busque e adicione os exames trazidos pelo paciente.
+            </p>
+          ) : (
+            <table className={styles.externoTable}>
+              <thead>
+                <tr>
+                  <th>Exame</th>
+                  <th style={{ width: '40%' }}>Resultado *</th>
+                  <th style={{ width: 40 }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {externoIds.map((id) => {
+                  const ex: any = exameMap.get(id);
+                  return (
+                    <tr key={id}>
+                      <td>
+                        {ex?.nome}
+                        {ex && formatRef(ex) && <div className={styles.externoRef}>{formatRef(ex)}</div>}
+                      </td>
+                      <td>
+                        <input
+                          value={externoItens[id]}
+                          placeholder={ex?.unidade ? `Valor (${ex.unidade})` : 'Valor do resultado'}
+                          onChange={(e) => setExternoItens((prev) => ({ ...prev, [id]: e.target.value }))}
+                        />
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className={styles.medidaActionBtn}
+                          title="Remover"
+                          onClick={() =>
+                            setExternoItens((prev) => {
+                              const { [id]: _removido, ...resto } = prev;
+                              return resto;
+                            })
+                          }
+                        >
+                          <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={2} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+
+          {externoMutation.isError && (
+            <p style={{ color: '#ef4444', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+              {(externoMutation.error as any)?.response?.data?.message || 'Erro ao lançar exames'}
+            </p>
+          )}
+
+          <div className={styles.formActions}>
+            <button type="button" className={styles.cancelBtn} onClick={fecharExterno}>
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className={styles.submitBtn}
+              disabled={!externoValido || externoMutation.isPending}
+              onClick={() => externoMutation.mutate()}
+            >
+              {externoMutation.isPending ? 'Salvando...' : `Lançar (${externoIds.length})`}
+            </button>
+          </div>
+        </div>
+      )}
 
       {solicitando && (
         <div className={styles.evolucaoForm}>
@@ -280,7 +471,9 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
           <div key={sol.id} className={styles.evolucaoCard}>
             <div className={styles.evolucaoHeader}>
               <h3>
-                Solicitação — {new Date(sol.dataSolicitada).toLocaleDateString('pt-BR')}
+                {isExterno(sol) ? 'Exame externo' : 'Solicitação'} —{' '}
+                {new Date(sol.dataSolicitada).toLocaleDateString('pt-BR', isExterno(sol) ? { timeZone: 'UTC' } : undefined)}
+                {isExterno(sol) && <span className={styles.externoBadge}>Externo</span>}
               </h3>
               <button
                 className={styles.medidaActionBtn}

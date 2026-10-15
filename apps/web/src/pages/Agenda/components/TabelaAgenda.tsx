@@ -5,7 +5,10 @@ import {
   PencilEdit01Icon,
   Delete02Icon,
   CheckListIcon,
+  Invoice01Icon,
 } from "@hugeicons/core-free-icons";
+import { api } from "@/services/api";
+import { imprimirGuiaTiss, type GuiaTissData } from "../print/imprimirGuiaTiss";
 import { StatusBadge } from "./StatusBadge";
 import type { AgendamentoResponse } from "@/services/agenda";
 import { QuestionarioSelectorModal } from "@/components/QuestionarioSelectorModal/QuestionarioSelectorModal";
@@ -36,6 +39,22 @@ export function TabelaAgenda({
   const [pacienteSelecionado, setPacienteSelecionado] =
     useState<PacienteSelecionado | null>(null);
   const isAutonomo = useIsAutonomo();
+  const [gerandoTissId, setGerandoTissId] = useState<string | null>(null);
+
+  async function handleGerarGuiaTiss(ag: AgendamentoResponse) {
+    try {
+      setGerandoTissId(ag.id);
+      const { data } = await api.get<{ success: boolean; data: GuiaTissData }>(
+        `/agendamentos/${ag.id}/guia-tiss`,
+      );
+      imprimirGuiaTiss(data.data);
+    } catch (err) {
+      console.error("Erro ao gerar Guia TISS:", err);
+      alert("Não foi possível gerar a Guia TISS para este agendamento.");
+    } finally {
+      setGerandoTissId(null);
+    }
+  }
 
   function handleAbrirQuestionarios(agendamento: AgendamentoResponse) {
     setPacienteSelecionado({
@@ -125,6 +144,20 @@ export function TabelaAgenda({
                 <span>Questionário</span>
               </button>
               <div className={styles.rightActions}>
+                {ag.convenio && (
+                  <button
+                    className={`${styles.actionBtn} ${styles.tissBtn}`}
+                    onClick={() => handleGerarGuiaTiss(ag)}
+                    title={`Gerar Guia TISS (${ag.convenio.nome})`}
+                    disabled={gerandoTissId === ag.id}
+                  >
+                    <HugeiconsIcon
+                      icon={Invoice01Icon}
+                      size={16}
+                      strokeWidth={2}
+                    />
+                  </button>
+                )}
                 <button
                   className={styles.actionBtn}
                   onClick={() => onEdit(ag)}
@@ -204,6 +237,20 @@ export function TabelaAgenda({
                         strokeWidth={2}
                       />
                     </button>
+                    {ag.convenio && (
+                      <button
+                        className={`${styles.actionBtn} ${styles.tissBtn}`}
+                        onClick={() => handleGerarGuiaTiss(ag)}
+                        title={`Gerar Guia TISS (${ag.convenio.nome})`}
+                        disabled={gerandoTissId === ag.id}
+                      >
+                        <HugeiconsIcon
+                          icon={Invoice01Icon}
+                          size={16}
+                          strokeWidth={2}
+                        />
+                      </button>
+                    )}
                     <button
                       className={styles.actionBtn}
                       onClick={() => onEdit(ag)}

@@ -22,9 +22,9 @@ export const updateClinicaSchema = z.object({
   nome: z.string().min(2).optional(),
   cnpj: z.string().optional(),
   telefone: z.string().optional(),
-  email: z.string().email().optional(),
+  email: z.string().email().optional().or(z.literal('')),
   endereco: z.string().optional(),
-  logomarca: z.string().optional(),
+  logomarca: z.string().nullable().optional(),
 });
 
 export type UpdateClinicaInput = z.infer<typeof updateClinicaSchema>;

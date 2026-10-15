@@ -21,10 +21,33 @@ describe("convenios.controller", () => {
   });
 
   describe("listar", () => {
-    it("deve retornar a lista de convênios", async () => {
+    it("deve retornar a lista de convênios com paginação", async () => {
+      mockReq.query = { page: "1", limit: "10", search: "unimed" };
       prismaMock.convenio.findMany.mockResolvedValue([{ id: "convenio-1", nome: "Unimed" }] as any);
+      prismaMock.convenio.count.mockResolvedValue(1);
       await listar(mockReq, mockRes);
-      expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+      expect(mockRes.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          data: [{ id: "convenio-1", nome: "Unimed" }],
+          total: 1,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+        })
+      );
+    });
+
+    it("deve respeitar limite máximo de 100 itens", async () => {
+      mockReq.query = { page: "1", limit: "500" };
+      prismaMock.convenio.findMany.mockResolvedValue([]);
+      prismaMock.convenio.count.mockResolvedValue(0);
+      await listar(mockReq, mockRes);
+      expect(mockRes.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          limit: 100,
+        })
+      );
     });
   });
 

@@ -13,6 +13,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import { api } from '@/services/api';
 import { useDebounce } from '@/hooks/useDebounce';
+import { Skeleton } from '@/components/Loading/Skeleton';
 import styles from './AlimentosPage.module.scss';
 
 const UNIDADES_SUGERIDAS = [
@@ -52,13 +53,14 @@ export function AlimentosPage() {
   const [tab, setTab] = useState<Tab>('taco');
   const [busca, setBusca] = useState('');
   const buscaDebounced = useDebounce(busca, 500);
+  const isDebouncing = busca !== buscaDebounced;
   const [page, setPage] = useState(1);
   const [formAberto, setFormAberto] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery<AlimentosResponse>({
+  const { data, isLoading, isFetching } = useQuery<AlimentosResponse>({
     queryKey: ['alimentos-page', tab, page, buscaDebounced],
     queryFn: async () => {
       const tipo = tab === 'taco' ? 'taco' : 'custom';
@@ -66,6 +68,8 @@ export function AlimentosPage() {
       return data;
     },
   });
+
+  const isSearching = isDebouncing || isLoading || isFetching;
 
   const { register, handleSubmit, reset, control } = useForm<any>();
 
@@ -324,8 +328,48 @@ export function AlimentosPage() {
       )}
 
       {/* Content */}
-      {isLoading ? (
-        <div className={styles.loading}>Carregando alimentos...</div>
+      {isSearching ? (
+        <div className={styles.tableCard}>
+          <div className={styles.tableContainer}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Grupo</th>
+                  <th>Kcal</th>
+                  <th>Carb (g)</th>
+                  <th>Prot (g)</th>
+                  <th>Gord (g)</th>
+                  {isMeus && <th>Ações</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <tr key={i}>
+                    <td>
+                      <Skeleton width={i % 2 === 0 ? "180px" : "130px"} height={16} borderRadius={4} />
+                    </td>
+                    <td>
+                      <Skeleton width={i % 2 === 0 ? "120px" : "90px"} height={16} borderRadius={4} />
+                    </td>
+                    <td><Skeleton width="45px" height={16} borderRadius={4} /></td>
+                    <td><Skeleton width="45px" height={16} borderRadius={4} /></td>
+                    <td><Skeleton width="45px" height={16} borderRadius={4} /></td>
+                    <td><Skeleton width="45px" height={16} borderRadius={4} /></td>
+                    {isMeus && (
+                      <td>
+                        <div className={styles.actions}>
+                          <Skeleton width={28} height={28} borderRadius={6} />
+                          <Skeleton width={28} height={28} borderRadius={6} />
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : isMeus && alimentos.length === 0 && !buscaDebounced && !formAberto ? (
         <div className={styles.tableCard}>
           <div className={styles.emptyState}>

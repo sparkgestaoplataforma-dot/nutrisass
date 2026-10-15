@@ -80,9 +80,24 @@ export function PlanoAlimentarPdfPage() {
     );
   }
 
+function getLogomarcaSrc(logomarca?: string | null): string | null {
+  if (!logomarca) return null;
+  if (
+    logomarca.startsWith('data:') ||
+    logomarca.startsWith('http://') ||
+    logomarca.startsWith('https://') ||
+    logomarca.startsWith('blob:') ||
+    logomarca.startsWith('/')
+  ) {
+    return logomarca;
+  }
+  return `/api/uploads/${logomarca}`;
+}
+
   const paciente = plano.paciente;
   const clinica = plano.clinica;
   const usuario = plano.usuario;
+  const logoSrc = getLogomarcaSrc(clinica?.logomarca);
 
   function handlePrint() {
     window.print();
@@ -103,8 +118,14 @@ export function PlanoAlimentarPdfPage() {
 
       <header className={styles.header}>
         <div className={styles.clinicInfo}>
-          {clinica?.logomarca ? (
-            <img src={`/api/uploads/${clinica.logomarca}`} alt={clinica.nome || 'Logo da clínica'} />
+          {logoSrc ? (
+            <img
+              src={logoSrc}
+              alt={clinica?.nome || 'Logo da clínica'}
+              onError={(e) => {
+                (e.currentTarget as HTMLElement).style.display = 'none';
+              }}
+            />
           ) : (
             <div style={{ width: 50, height: 50, background: '#e5e7eb', borderRadius: 8 }} />
           )}

@@ -225,6 +225,20 @@
   }
 }
 
+.tissBtn {
+  color: #2563eb;
+
+  &:hover {
+    color: #1d4ed8;
+    background: #eff6ff;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: wait;
+  }
+}
+
 .empty {
   padding: 3rem 1rem;
   text-align: center;

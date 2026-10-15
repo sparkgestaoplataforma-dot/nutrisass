@@ -10,6 +10,7 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
+    "db:taco": "tsx prisma/tabela_taco/import_taco.ts",
     "db:studio": "prisma studio",
     "test": "vitest run"
   },

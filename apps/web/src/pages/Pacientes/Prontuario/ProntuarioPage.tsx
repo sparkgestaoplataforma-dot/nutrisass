@@ -16,13 +16,9 @@ import {
   FileSearchIcon,
   FilePlusIcon,
   FileValidationIcon,
-  CheckListIcon,
-  GitCompareIcon,
   PlayCircleIcon,
   StopCircleIcon,
   Clock01Icon,
-  Calculator01Icon,
-  DocumentCodeFreeIcons,
   AlertCircleIcon,
   Restaurant01Icon,
   Menu01Icon,
@@ -31,6 +27,7 @@ import { Skeleton } from "@/components/Loading/Skeleton";
 import { SkeletonObservacao } from "@/components/Loading/skeletons/SkeletonObservacao";
 import { EmptyState } from "@/components/Loading/EmptyState";
 import { api } from "@/services/api";
+import { getPacientePorId, type Paciente } from "@/services/pacientes";
 import { useAuthStore } from "@/stores/authStore";
 import { EstadoClinicoTimeline } from "./components/EstadoClinicoTimeline";
 import { MedidasTab } from "./components/MedidasTab";
@@ -38,9 +35,7 @@ import { ExamesTab } from "./components/ExamesTab";
 import { PlanoAlimentarTab } from "./components/PlanoAlimentarTab";
 import styles from "./ProntuarioPage.module.scss";
 import {
-  Avaliacoes,
   Avaliacao,
-  AvaliacaoComRespostas,
   getAvaliacoesPorId,
   getAvaliacoesPorPacienteId,
 } from "@/services/avaliacao";
@@ -78,6 +73,24 @@ function formatDuration(seconds: number): string {
   return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  AGENDADO: "Agendado",
+  CONFIRMOU: "Confirmou",
+  PRESENTE: "Presente",
+  ENCAIXE: "Encaixe",
+  CANCELADO: "Cancelado",
+  NAO_COMPARECEU: "Não compareceu",
+  REALIZADO: "Realizado",
+  DESISTIU: "Desistiu",
+  REMARCOU: "Remarcou",
+};
+
+function statusClass(status: string) {
+  if (status === "REALIZADO" || status === "PRESENTE") return styles.statusOk;
+  if (["CANCELADO", "NAO_COMPARECEU", "DESISTIU"].includes(status)) return styles.statusFalta;
+  return styles.statusPendente;
+}
+
 export function ProntuarioPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -97,21 +110,22 @@ export function ProntuarioPage() {
   const [showMobileRight, setShowMobileRight] = useState(false);
 
   // --- Queries ---
-  const { 
-    data: paciente, 
+  const {
+    data: paciente,
     isLoading: isLoadingPaciente,
     isError: isErrorPaciente,
     refetch: refetchPaciente
-  } = useQuery({
+  } = useQuery<Paciente | null>({
     queryKey: ["paciente", id],
     queryFn: async () => {
-      const { data } = await api.get(`/pacientes/${id}`);
-      return data.data;
+      const response = await getPacientePorId(id!);
+      return response ?? null;
     },
+    enabled: !!id,
   });
 
-  const { 
-    data: avaliacoesResponse, 
+  const {
+    data: avaliacoesResponse,
     isLoading: isLoadingAvaliacoes,
   } = useQuery({
     queryKey: ["avaliacoes", id, avaliacoesPage],
@@ -131,9 +145,9 @@ export function ProntuarioPage() {
     }
   }, [listAvaliacoes, avaliacaoSelecionadaId]);
 
-  const { 
-    data: avaliacaoSelecionadaResponse, 
-    isLoading: isLoadingAvaliacaoDetalhe 
+  const {
+    data: avaliacaoSelecionadaResponse,
+    isLoading: isLoadingAvaliacaoDetalhe
   } = useQuery({
     queryKey: ["avaliacao-selecionada", avaliacaoSelecionadaId],
     queryFn: () => getAvaliacoesPorId(avaliacaoSelecionadaId!),
@@ -226,13 +240,13 @@ export function ProntuarioPage() {
 
   const endereco = paciente
     ? [
-        paciente.endereco,
-        paciente.bairro,
-        paciente.municipio,
-        paciente.uf,
-      ]
-        .filter(Boolean)
-        .join(", ")
+      paciente.endereco,
+      paciente.bairro,
+      paciente.municipio,
+      paciente.uf,
+    ]
+      .filter(Boolean)
+      .join(", ")
     : "";
   return (
     <div className={styles.page}>
@@ -313,7 +327,7 @@ export function ProntuarioPage() {
       <div className={styles.layout}>
         {/* Mobile Top Controls */}
         <div className={styles.mobileControls}>
-          <button 
+          <button
             className={`${styles.mobileControlBtn} ${showMobileNav ? styles.active : ''}`}
             onClick={() => {
               setShowMobileNav(!showMobileNav);
@@ -323,7 +337,7 @@ export function ProntuarioPage() {
             <HugeiconsIcon icon={Menu01Icon} size={16} />
             Navegação
           </button>
-          <button 
+          <button
             className={`${styles.mobileControlBtn} ${showMobileRight ? styles.active : ''}`}
             onClick={() => {
               setShowMobileRight(!showMobileRight);
@@ -337,47 +351,47 @@ export function ProntuarioPage() {
 
         {/* Sidebar Esquerda */}
         <aside className={`${styles.sidebarLeft} ${!showMobileNav ? styles.mobileHidden : ""}`}>
-            <p className={styles.sidebarLabel}>Navegação</p>
-            <button
-              className={styles.sideNavItem}
-              onClick={() => { setView("medidas"); setShowMobileNav(false); }}
-            >
-              <div className={styles.sideNavIcon}>
-                <HugeiconsIcon icon={RulerIcon} size={16} strokeWidth={1.8} />
-              </div>
-              <span>Medidas</span>
-              <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
-            </button>
-            <button
-              className={styles.sideNavItem}
-              onClick={() => { setView("exames"); setShowMobileNav(false); }}
-            >
-              <div className={styles.sideNavIcon}>
-                <HugeiconsIcon icon={TestTubeIcon} size={16} strokeWidth={1.8} />
-              </div>
-              <span>Exames</span>
-              <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
-            </button>
-            <button
-              className={styles.sideNavItem}
-              onClick={() => navigate(`/pacientes/${id!}/comparativo`)}
-            >
-              <div className={styles.sideNavIcon}>
-                <HugeiconsIcon icon={ClipboardIcon} size={16} strokeWidth={1.8} />
-              </div>
-              <span>Questionários</span>
-              <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
-            </button>
-            <button
-              className={styles.sideNavItem}
-              onClick={() => { setView("planoAlimentar"); setShowMobileNav(false); }}
-            >
-              <div className={styles.sideNavIcon}>
-                <HugeiconsIcon icon={Restaurant01Icon} size={16} strokeWidth={1.8} />
-              </div>
-              <span>Plano Alimentar</span>
-              <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
-            </button>
+          <p className={styles.sidebarLabel}>Navegação</p>
+          <button
+            className={styles.sideNavItem}
+            onClick={() => { setView("medidas"); setShowMobileNav(false); }}
+          >
+            <div className={styles.sideNavIcon}>
+              <HugeiconsIcon icon={RulerIcon} size={16} strokeWidth={1.8} />
+            </div>
+            <span>Medidas</span>
+            <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
+          </button>
+          <button
+            className={styles.sideNavItem}
+            onClick={() => { setView("exames"); setShowMobileNav(false); }}
+          >
+            <div className={styles.sideNavIcon}>
+              <HugeiconsIcon icon={TestTubeIcon} size={16} strokeWidth={1.8} />
+            </div>
+            <span>Exames</span>
+            <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
+          </button>
+          <button
+            className={styles.sideNavItem}
+            onClick={() => navigate(`/pacientes/${id!}/comparativo`)}
+          >
+            <div className={styles.sideNavIcon}>
+              <HugeiconsIcon icon={ClipboardIcon} size={16} strokeWidth={1.8} />
+            </div>
+            <span>Questionários</span>
+            <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
+          </button>
+          <button
+            className={styles.sideNavItem}
+            onClick={() => { setView("planoAlimentar"); setShowMobileNav(false); }}
+          >
+            <div className={styles.sideNavIcon}>
+              <HugeiconsIcon icon={Restaurant01Icon} size={16} strokeWidth={1.8} />
+            </div>
+            <span>Plano Alimentar</span>
+            <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
+          </button>
         </aside>
 
         {/* Conteúdo Central */}
@@ -557,7 +571,8 @@ export function ProntuarioPage() {
 
         {/* Sidebar Direita */}
         <aside className={`${styles.sidebarRight} ${!showMobileRight ? styles.mobileHidden : ""}`}>
-          <div className={styles.rightCard}>
+          <div className={styles.rightStack}>
+            <div className={styles.rightCard}>
               <h4 className={styles.rightTitle}>Resultados de Questionários</h4>
               <select
                 className={styles.rightSelect}
@@ -577,17 +592,17 @@ export function ProntuarioPage() {
 
               {totalPagesAvaliacoes > 1 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', marginBottom: '1rem', fontSize: '0.8rem' }}>
-                  <button 
+                  <button
                     style={{ border: 'none', background: 'transparent', cursor: avaliacoesPage === 1 ? 'not-allowed' : 'pointer', color: '#6b7280' }}
-                    onClick={() => setAvaliacoesPage(p => Math.max(1, p - 1))} 
+                    onClick={() => setAvaliacoesPage(p => Math.max(1, p - 1))}
                     disabled={avaliacoesPage === 1}
                   >
                     &laquo; Anterior
                   </button>
                   <span style={{ color: '#9ca3af' }}>{avaliacoesPage} / {totalPagesAvaliacoes}</span>
-                  <button 
+                  <button
                     style={{ border: 'none', background: 'transparent', cursor: avaliacoesPage >= totalPagesAvaliacoes ? 'not-allowed' : 'pointer', color: '#6b7280' }}
-                    onClick={() => setAvaliacoesPage(p => Math.min(totalPagesAvaliacoes, p + 1))} 
+                    onClick={() => setAvaliacoesPage(p => Math.min(totalPagesAvaliacoes, p + 1))}
                     disabled={avaliacoesPage >= totalPagesAvaliacoes}
                   >
                     Próxima &raquo;
@@ -603,9 +618,9 @@ export function ProntuarioPage() {
                 );
                 const corClasse = getClasseCorPorNivel(nivel, styles);
                 return (
-                  <div 
-                    className={`${styles.observacaoCard} ${corClasse}`} 
-                    style={{ 
+                  <div
+                    className={`${styles.observacaoCard} ${corClasse}`}
+                    style={{
                       borderColor: isLoadingAvaliacaoDetalhe ? "#e5e7eb" : undefined,
                       background: isLoadingAvaliacaoDetalhe ? "#f9fafb" : undefined,
                       borderLeftColor: isLoadingAvaliacaoDetalhe ? "#e5e7eb" : undefined
@@ -686,6 +701,42 @@ export function ProntuarioPage() {
                 </button>
               )}
             </div>
+
+            {/* Histórico de Consultas */}
+            <div className={styles.rightCard}>
+              <h4 className={styles.rightTitle}>Histórico de Consultas</h4>
+              {paciente?.agendamentos?.length ? (
+                <ul className={styles.historicoList}>
+                  {paciente.agendamentos.map((ag) => {
+                    const d = new Date(ag.dataHora);
+                    return (
+                      <li key={ag.id} className={styles.historicoItem}>
+                        <div className={styles.historicoData}>
+                          <strong>{d.getDate().toString().padStart(2, "0")}</strong>
+                          <span>
+                            {d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "")}
+                            /{d.getFullYear().toString().slice(-2)}
+                          </span>
+                        </div>
+                        <div className={styles.historicoInfo}>
+                          <strong>
+                            {ag.tipo === "RETORNO" ? "Retorno" : "Consulta"} ·{" "}
+                            {d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                          </strong>
+                          <span>{ag.convenio?.nome || "Particular"}</span>
+                        </div>
+                        <span className={`${styles.historicoStatus} ${statusClass(ag.status)}`}>
+                          {STATUS_LABEL[ag.status] || ag.status}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className={styles.historicoEmpty}>Nenhuma consulta registrada.</p>
+              )}
+            </div>
+          </div>
         </aside>
       </div>
     </div>

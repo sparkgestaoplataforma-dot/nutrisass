@@ -1,6 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { ArrowLeft01Icon, ArrowRight01Icon, PlusSignIcon } from '@hugeicons/core-free-icons';
+import {
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  PlusSignIcon,
+  CheckmarkCircle02Icon,
+  CancelCircleIcon,
+} from '@hugeicons/core-free-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import {
@@ -35,6 +41,15 @@ export function AgendaPage() {
   const [modalAberto, setModalAberto] = useState(false);
   const [agendamentoEditando, setAgendamentoEditando] =
     useState<AgendamentoResponse | null>(null);
+  const [toastSucesso, setToastSucesso] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!toastSucesso) return;
+    const timer = setTimeout(() => {
+      setToastSucesso(null);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [toastSucesso]);
 
   // States for conflict modal
   const [conflictModalOpen, setConflictModalOpen] = useState(false);
@@ -75,8 +90,14 @@ export function AgendaPage() {
     setDataSelecionada(formatDate(d));
   }
 
-  function handleSubmit(data: CreateAgendamentoInput) {
+  function handleSubmit(
+    data: CreateAgendamentoInput,
+    pacienteCriado?: { id: string; nome: string }
+  ) {
     const handleMutationError = (error: any, variables: any, isEdit: boolean) => {
+      if (pacienteCriado?.nome) {
+        setToastSucesso(`Paciente "${pacienteCriado.nome}" cadastrado com sucesso!`);
+      }
       const errorMessage = error.response?.data?.message || error.message || "";
       if (errorMessage.includes("Já existe um agendamento ativo")) {
         const targetNutriId = isEdit 
@@ -109,6 +130,7 @@ export function AgendaPage() {
                 onSuccess: () => {
                   setModalAberto(false);
                   setAgendamentoEditando(null);
+                  setToastSucesso('Agendamento atualizado com sucesso!');
                 },
                 onError: (err: any) => {
                   alert(err.response?.data?.message || "Ocorreu um erro ao salvar o encaixe.");
@@ -119,6 +141,11 @@ export function AgendaPage() {
             criarMutation.mutate(inputComEncaixe, {
               onSuccess: () => {
                 setModalAberto(false);
+                if (pacienteCriado?.nome) {
+                  setToastSucesso(`Paciente "${pacienteCriado.nome}" cadastrado e agendamento confirmado com sucesso!`);
+                } else {
+                  setToastSucesso('Agendamento realizado com sucesso!');
+                }
               },
               onError: (err: any) => {
                 alert(err.response?.data?.message || "Ocorreu um erro ao criar o encaixe.");
@@ -139,6 +166,7 @@ export function AgendaPage() {
           onSuccess: () => {
             setModalAberto(false);
             setAgendamentoEditando(null);
+            setToastSucesso('Agendamento atualizado com sucesso!');
           },
           onError: (error, variables) => {
             handleMutationError(error, variables.input, true);
@@ -149,6 +177,11 @@ export function AgendaPage() {
       criarMutation.mutate(data, {
         onSuccess: () => {
           setModalAberto(false);
+          if (pacienteCriado?.nome) {
+            setToastSucesso(`Paciente "${pacienteCriado.nome}" cadastrado e agendamento confirmado com sucesso!`);
+          } else {
+            setToastSucesso('Agendamento realizado com sucesso!');
+          }
         },
         onError: (error, variables) => {
           handleMutationError(error, variables, false);
@@ -237,6 +270,21 @@ export function AgendaPage() {
           <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} /> Agendar
         </button>
       </div>
+
+      {toastSucesso && (
+        <div className={styles.toastSucesso}>
+          <HugeiconsIcon icon={CheckmarkCircle02Icon} size={20} className={styles.toastIcon} />
+          <span>{toastSucesso}</span>
+          <button
+            type="button"
+            className={styles.toastCloseBtn}
+            onClick={() => setToastSucesso(null)}
+            title="Fechar"
+          >
+            <HugeiconsIcon icon={CancelCircleIcon} size={16} />
+          </button>
+        </div>
+      )}
 
       <div className={styles.stats}>
         <div className={styles.stat}>

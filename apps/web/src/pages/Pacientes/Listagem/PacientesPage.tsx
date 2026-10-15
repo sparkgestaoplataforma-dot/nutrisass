@@ -14,6 +14,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { useAuthStore } from "@/stores/authStore";
 import { QuestionarioSelectorModal } from "@/components/QuestionarioSelectorModal/QuestionarioSelectorModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal/DeleteConfirmModal";
+import { Skeleton } from "@/components/Loading/Skeleton";
 import styles from "./PacientesPage.module.scss";
 
 type PacienteSelecionado = {
@@ -32,6 +33,7 @@ export function PacientesPage() {
   );
   const [isExcluirModalOpen, setIsExcluirModalOpen] = useState(false);
   const buscaDebounced = useDebounce(busca);
+  const isDebouncing = busca !== buscaDebounced;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
@@ -40,10 +42,12 @@ export function PacientesPage() {
   const podeCadastrarDefault = perfil === "ADMIN" || perfil === "NUTRICIONISTA";
   const isSecretaria = perfil === "SECRETARIA";
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isFetching } = useQuery({
     queryKey: ["pacientes", buscaDebounced],
     queryFn: () => listarPacientes(buscaDebounced || undefined),
   });
+
+  const isSearching = isDebouncing || isLoading || isFetching;
 
   const excluirMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/pacientes/${id}`),
@@ -103,8 +107,45 @@ export function PacientesPage() {
       </div>
 
       <div className={styles.container}>
-        {isLoading ? (
-          <div className={styles.empty}>Carregando...</div>
+        {isSearching ? (
+          <div className={styles.desktopTable}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>E-mail</th>
+                  <th>Telefone</th>
+                  <th>Convênio</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i}>
+                    <td>
+                      <Skeleton width={i % 2 === 0 ? "160px" : "120px"} height={16} borderRadius={4} />
+                    </td>
+                    <td>
+                      <Skeleton width={i % 2 === 0 ? "180px" : "140px"} height={16} borderRadius={4} />
+                    </td>
+                    <td>
+                      <Skeleton width="110px" height={16} borderRadius={4} />
+                    </td>
+                    <td>
+                      <Skeleton width="90px" height={16} borderRadius={4} />
+                    </td>
+                    <td>
+                      <div className={styles.actions}>
+                        <Skeleton width={28} height={28} borderRadius={6} />
+                        <Skeleton width={28} height={28} borderRadius={6} />
+                        <Skeleton width={28} height={28} borderRadius={6} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : pacientes.length === 0 ? (
           <div className={styles.empty}>Nenhum paciente encontrado.</div>
         ) : (

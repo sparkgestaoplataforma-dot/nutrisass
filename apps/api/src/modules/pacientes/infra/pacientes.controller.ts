@@ -11,11 +11,22 @@ export async function listar(req: Request, res: Response) {
 
   const where: any = { clinicaId };
   if (busca) {
+    const termo = busca as string;
+    const cleanDigits = termo.replace(/\D/g, "");
     where.OR = [
-      { nome: { contains: busca as string, mode: "insensitive" as const } },
-      { email: { contains: busca as string, mode: "insensitive" as const } },
-      { telefone: { contains: busca as string } },
+      { nome: { contains: termo, mode: "insensitive" as const } },
+      { email: { contains: termo, mode: "insensitive" as const } },
+      { telefone: { contains: termo } },
+      { whatsapp: { contains: termo } },
+      { cpf: { contains: termo } },
     ];
+    if (cleanDigits && cleanDigits !== termo) {
+      where.OR.push(
+        { telefone: { contains: cleanDigits } },
+        { whatsapp: { contains: cleanDigits } },
+        { cpf: { contains: cleanDigits } },
+      );
+    }
   }
 
   const pageNum = Number(page);
@@ -29,6 +40,8 @@ export async function listar(req: Request, res: Response) {
         nome: true,
         email: true,
         telefone: true,
+        whatsapp: true,
+        cpf: true,
         convenio: { select: { id: true, nome: true } },
       },
       orderBy: { nome: "asc" },
@@ -74,15 +87,27 @@ export async function buscarPorId(req: Request<{ id: string }>, res: Response) {
 export async function criar(req: Request, res: Response) {
   const clinicaId = getClinicaId(req);
 
+  const {
+    id: _id,
+    clinicaId: _clinicaId,
+    criadoEm: _criadoEm,
+    atualizadoEm: _atualizadoEm,
+    convenio: _convenio,
+    agendamentos: _agendamentos,
+    ...dados
+  } = req.body;
+
   const paciente = await prisma.paciente.create({
     data: {
-      ...req.body,
+      ...dados,
       clinicaId,
-      dataNascimento: req.body.dataNascimento
-        ? new Date(req.body.dataNascimento)
+      sexo: dados.sexo || null,
+      convenioId: dados.convenioId || null,
+      dataNascimento: dados.dataNascimento
+        ? new Date(dados.dataNascimento)
         : null,
-      validadeCarteira: req.body.validadeCarteira
-        ? new Date(req.body.validadeCarteira)
+      validadeCarteira: dados.validadeCarteira
+        ? new Date(dados.validadeCarteira)
         : null,
     },
   });
@@ -99,16 +124,34 @@ export async function editar(req: Request<{ id: string }>, res: Response) {
   });
   if (!existente) throw new AppError("Paciente não encontrado", 404);
 
+  const {
+    id: _id,
+    clinicaId: _clinicaId,
+    criadoEm: _criadoEm,
+    atualizadoEm: _atualizadoEm,
+    convenio: _convenio,
+    agendamentos: _agendamentos,
+    evolucoes: _evolucoes,
+    medidas: _medidas,
+    solicitacoes: _solicitacoes,
+    avaliacoesQuestionarios: _avaliacoesQuestionarios,
+    respostasQuestionarios: _respostasQuestionarios,
+    planosAlimentares: _planosAlimentares,
+    ...dados
+  } = req.body;
+
   const paciente = await prisma.paciente.update({
     where: { id },
     data: {
-      ...req.body,
-      dataNascimento: req.body.dataNascimento
-        ? new Date(req.body.dataNascimento)
-        : undefined,
-      validadeCarteira: req.body.validadeCarteira
-        ? new Date(req.body.validadeCarteira)
-        : undefined,
+      ...dados,
+      sexo: dados.sexo || null,
+      convenioId: dados.convenioId || null,
+      dataNascimento: dados.dataNascimento
+        ? new Date(dados.dataNascimento)
+        : null,
+      validadeCarteira: dados.validadeCarteira
+        ? new Date(dados.validadeCarteira)
+        : null,
     },
   });
 

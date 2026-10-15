@@ -20,10 +20,17 @@ export type Convenio = {
   nome: string;
 };
 
-export type Agendamento = {
+export type AgendamentoPaciente = {
   id: string;
-  // coloque os campos se você for usar depois
+  dataHora: string;
+  tipo: "CONSULTA" | "RETORNO" | string;
+  status: string;
+  encaixe?: boolean;
+  observacao?: string | null;
+  convenio?: { nome: string } | null;
 };
+
+export type Agendamento = AgendamentoPaciente;
 
 export type Paciente = {
   id: string;
@@ -55,7 +62,7 @@ export type Paciente = {
   criadoEmFormatada?: string;
   atualizadoEmFormatada?: string;
   convenio: Convenio | null;
-  agendamentos: Agendamento[];
+  agendamentos: AgendamentoPaciente[];
 };
 
 export async function listarPacientes(busca?: string) {

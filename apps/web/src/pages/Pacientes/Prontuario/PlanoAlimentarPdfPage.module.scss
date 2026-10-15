@@ -82,7 +82,8 @@
   gap: 16px;
 
   img {
-    height: 50px;
+    max-height: 56px;
+    max-width: 160px;
     object-fit: contain;
   }
 
