@@ -25,6 +25,7 @@ import { useIsAutonomo } from '@/hooks/useIsAutonomo';
 
 interface NovoPacienteForm {
   nome: string;
+  cpf: string;
   telefone: string;
   whatsapp: string;
   dataNascimento: string;
@@ -33,6 +34,7 @@ interface NovoPacienteForm {
 
 const NOVO_PACIENTE_VAZIO: NovoPacienteForm = {
   nome: '',
+  cpf: '',
   telefone: '',
   whatsapp: '',
   dataNascimento: '',
@@ -157,21 +159,30 @@ export function AgendamentoModal({
       return null;
     }
 
+    const cpfDigits = (novoPaciente.cpf || '').replace(/\D/g, '');
+    if (cpfDigits.length !== 11) {
+      setErroNovoPaciente('Informe um CPF válido com 11 dígitos.');
+      return null;
+    }
+
+    const zapDigits = limparTelefone(novoPaciente.whatsapp);
+    if (zapDigits.length < 10) {
+      setErroNovoPaciente('Informe o WhatsApp com DDD (mínimo 10 dígitos).');
+      return null;
+    }
+
     const telDigits = limparTelefone(novoPaciente.telefone);
     if (telDigits.length > 0 && telDigits.length < 10) {
       setErroNovoPaciente('Telefone incompleto (informe DDD + número).');
       return null;
     }
 
-    const zapDigits = limparTelefone(novoPaciente.whatsapp);
-    if (zapDigits.length > 0 && zapDigits.length < 10) {
-      setErroNovoPaciente('WhatsApp incompleto (informe DDD + número).');
-      return null;
-    }
-
-    const payload: Record<string, string> = { nome };
+    const payload: Record<string, string> = {
+      nome,
+      cpf: novoPaciente.cpf.trim(),
+      whatsapp: formatarTelefone(zapDigits),
+    };
     if (telDigits) payload.telefone = formatarTelefone(telDigits);
-    if (zapDigits) payload.whatsapp = formatarTelefone(zapDigits);
     if (novoPaciente.dataNascimento) payload.dataNascimento = novoPaciente.dataNascimento;
     // Vincula o convênio escolhido no agendamento ao cadastro do paciente
     if (convenioIdSelecionado) {
@@ -317,18 +328,18 @@ export function AgendamentoModal({
                   </div>
                   <div className={styles.row}>
                     <div className={styles.field}>
-                      <label className={styles.miniLabel}>Telefone</label>
+                      <label className={styles.miniLabel}>CPF *</label>
                       <PatternFormat
-                        placeholder="(00) 0000-0000"
-                        format={obterMascaraTelefone(novoPaciente.telefone)}
-                        value={novoPaciente.telefone}
+                        placeholder="000.000.000-00"
+                        format="###.###.###-##"
+                        value={novoPaciente.cpf}
                         onValueChange={(values) => {
-                          atualizarNovoPaciente('telefone', limparTelefone(values.value));
+                          atualizarNovoPaciente('cpf', values.value);
                         }}
                       />
                     </div>
                     <div className={styles.field}>
-                      <label className={styles.miniLabel}>WhatsApp</label>
+                      <label className={styles.miniLabel}>WhatsApp *</label>
                       <PatternFormat
                         placeholder="(00) 00000-0000"
                         format={obterMascaraTelefone(novoPaciente.whatsapp)}
@@ -341,6 +352,17 @@ export function AgendamentoModal({
                   </div>
                   <div className={styles.row}>
                     <div className={styles.field}>
+                      <label className={styles.miniLabel}>Telefone</label>
+                      <PatternFormat
+                        placeholder="(00) 0000-0000"
+                        format={obterMascaraTelefone(novoPaciente.telefone)}
+                        value={novoPaciente.telefone}
+                        onValueChange={(values) => {
+                          atualizarNovoPaciente('telefone', limparTelefone(values.value));
+                        }}
+                      />
+                    </div>
+                    <div className={styles.field}>
                       <label className={styles.miniLabel}>Data de nascimento</label>
                       <input
                         type="date"
@@ -348,6 +370,8 @@ export function AgendamentoModal({
                         onChange={(e) => atualizarNovoPaciente('dataNascimento', e.target.value)}
                       />
                     </div>
+                  </div>
+                  <div className={styles.row}>
                     <div className={styles.field}>
                       <label className={styles.miniLabel}>Nº da carteira</label>
                       <input

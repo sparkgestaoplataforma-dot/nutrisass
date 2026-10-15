@@ -11,11 +11,22 @@ export async function listar(req: Request, res: Response) {
 
   const where: any = { clinicaId };
   if (busca) {
+    const termo = busca as string;
+    const cleanDigits = termo.replace(/\D/g, "");
     where.OR = [
-      { nome: { contains: busca as string, mode: "insensitive" as const } },
-      { email: { contains: busca as string, mode: "insensitive" as const } },
-      { telefone: { contains: busca as string } },
+      { nome: { contains: termo, mode: "insensitive" as const } },
+      { email: { contains: termo, mode: "insensitive" as const } },
+      { telefone: { contains: termo } },
+      { whatsapp: { contains: termo } },
+      { cpf: { contains: termo } },
     ];
+    if (cleanDigits && cleanDigits !== termo) {
+      where.OR.push(
+        { telefone: { contains: cleanDigits } },
+        { whatsapp: { contains: cleanDigits } },
+        { cpf: { contains: cleanDigits } },
+      );
+    }
   }
 
   const pageNum = Number(page);
@@ -29,6 +40,8 @@ export async function listar(req: Request, res: Response) {
         nome: true,
         email: true,
         telefone: true,
+        whatsapp: true,
+        cpf: true,
         convenio: { select: { id: true, nome: true } },
       },
       orderBy: { nome: "asc" },

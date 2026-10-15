@@ -14,6 +14,7 @@ import { listarConvenios } from "@/services/convenios";
 import { buscarEnderecoPorCep } from "@/services/cep";
 import styles from "./PacienteFormPage.module.scss";
 import { PatternFormat } from "react-number-format";
+import { obterMascaraTelefone } from "@/utils/phone";
 
 export function PacienteFormPage() {
   const { id } = useParams();
@@ -216,14 +217,17 @@ export function PacienteFormPage() {
                         field.onChange(values.value);
                       }}
                       placeholder="(00) 0000-0000"
-                      format="(##) ####-#####"
+                      format={obterMascaraTelefone(field.value || "")}
                       onBlur={field.onBlur}
                     />
                   )}
                 />
+                {errors.telefone?.message && (
+                  <span className={styles.error}>{String(errors.telefone.message)}</span>
+                )}
               </div>
               <div className={styles.field}>
-                <label>WhatsApp</label>
+                <label>WhatsApp *</label>
                 <Controller
                   control={control}
                   name="whatsapp"
@@ -233,12 +237,15 @@ export function PacienteFormPage() {
                       onValueChange={(values) => {
                         field.onChange(values.value);
                       }}
-                      placeholder="(00) 0000-0000"
-                      format="(##) ####-#####"
+                      placeholder="(00) 00000-0000"
+                      format={obterMascaraTelefone(field.value || "")}
                       onBlur={field.onBlur}
                     />
                   )}
                 />
+                {errors.whatsapp?.message && (
+                  <span className={styles.error}>{String(errors.whatsapp.message)}</span>
+                )}
               </div>
               <div className={styles.field}>
                 <label>Sexo</label>
@@ -277,7 +284,7 @@ export function PacienteFormPage() {
             <h3>Documentos</h3>
             <div className={styles.grid}>
               <div className={styles.field}>
-                <label>CPF</label>
+                <label>CPF *</label>
                 <Controller
                   control={control}
                   name="cpf"
@@ -293,6 +300,9 @@ export function PacienteFormPage() {
                     />
                   )}
                 />
+                {errors.cpf?.message && (
+                  <span className={styles.error}>{String(errors.cpf.message)}</span>
+                )}
               </div>
               <div className={styles.field}>
                 <label>Identidade</label>
