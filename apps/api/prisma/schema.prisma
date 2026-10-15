@@ -127,6 +127,8 @@ model Paciente {
   respostasQuestionarios  Resposta[]
   planosAlimentares       PlanoAlimentar[]
 
+  @@unique([clinicaId, cpf])
+  @@unique([clinicaId, telefone])
   @@index([clinicaId])
   @@map("pacientes")
 }

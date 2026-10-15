@@ -15,6 +15,7 @@ import autoTable from "jspdf-autotable";
 import { Paciente } from "@/services/pacientes";
 import { Skeleton } from "@/components/Loading/Skeleton";
 import { SkeletonObservacao } from "@/components/Loading/skeletons/SkeletonObservacao";
+import { formatarDataNascimento } from "@/utils/date";
 
 interface SidebarDireitaProps {
   avaliacao: AvaliacaoComRespostas | null | undefined;
@@ -70,9 +71,9 @@ export function SidebarDireita({
     doc.text("Classificação:", 20, 89);
 
     doc.setFont("helvetica", "normal");
-    const dataNasc = paciente.dataNascimentoFormatada 
-      ? paciente.dataNascimentoFormatada.split(' ')[0] 
-      : "Não informada";
+    const dataNasc = formatarDataNascimento(
+      paciente.dataNascimento || paciente.dataNascimentoFormatada
+    );
     const dataAval = (avaliacao as any).dataRealizacaoFormatada || avaliacao.dataRealizacao;
     
     doc.text(dataNasc, 55, 75);

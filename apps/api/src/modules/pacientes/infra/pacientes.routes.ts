@@ -20,7 +20,7 @@ router.post(
   controller.criarAvaliacao,
 );
 
-router.get("/:id/nome", controller.buscarNomePorId);
+router.get("/:id/nome", publicRateLimiter, controller.buscarNomePorId);
 
 // Rotas autenticadas
 router.use(authMiddleware);
