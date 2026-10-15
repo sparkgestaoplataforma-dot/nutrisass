@@ -4,6 +4,7 @@ import {
   ArrowLeft01Icon,
   PencilEdit01Icon,
   Delete02Icon,
+  FileDownloadIcon,
   WavingHand02Icon,
 } from "@hugeicons/core-free-icons";
 import type { PlanoAlimentarAPI } from "@/services/planoAlimentar";
@@ -101,6 +102,14 @@ export function PlanoAlimentarView({ plano, onBack, onEdit, onDelete, isDeleting
               <span>Excluir</span>
             </button>
           )}
+          <button
+            className={styles.pdfBtn}
+            onClick={() => window.open(`/pacientes/${plano.pacienteId}/planos/${plano.id}/pdf`, '_blank')}
+            title="Baixar PDF do Plano Alimentar"
+          >
+            <HugeiconsIcon icon={FileDownloadIcon} size={14} strokeWidth={2} />
+            <span>PDF</span>
+          </button>
         </div>
       </div>
 

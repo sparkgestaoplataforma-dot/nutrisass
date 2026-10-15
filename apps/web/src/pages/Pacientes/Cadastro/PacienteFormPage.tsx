@@ -10,7 +10,6 @@ import {
   type CreatePacienteInput,
 } from "@nutricao/shared";
 import { api } from "@/services/api";
-import { getPacientePorId } from "@/services/pacientes";
 import { listarConvenios } from "@/services/convenios";
 import { buscarEnderecoPorCep } from "@/services/cep";
 import styles from "./PacienteFormPage.module.scss";
@@ -30,7 +29,10 @@ export function PacienteFormPage() {
 
   const { data: pacienteData } = useQuery({
     queryKey: ["paciente", id],
-    queryFn: () => getPacientePorId(id!),
+    queryFn: async () => {
+      const { data } = await api.get(`/pacientes/${id}`);
+      return data.data;
+    },
     enabled: isEditing,
   });
 
@@ -151,9 +153,6 @@ export function PacienteFormPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pacientes"] });
-      if (id) {
-        queryClient.invalidateQueries({ queryKey: ["paciente", id] });
-      }
       navigate("/pacientes");
     },
   });

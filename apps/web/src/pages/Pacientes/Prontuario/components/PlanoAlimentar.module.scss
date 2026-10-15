@@ -56,58 +56,18 @@
 
 .planoCardHeader {
   @include flex-between;
-  align-items: center;
-  gap: $space-3;
   margin-bottom: $space-3;
-
-  @media (max-width: $breakpoint-sm) {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
-
-.planoCardTitleRow {
-  display: flex;
-  align-items: baseline;
-  gap: $space-2;
-  flex-wrap: wrap;
-  min-width: 0;
 }
 
 .planoCardTitle {
   font-size: $font-size-md;
   font-weight: $font-weight-bold;
   color: $gray-900;
-  word-break: break-word;
 }
 
 .planoCardDate {
   font-size: $font-size-2xs;
   color: $gray-400;
-}
-
-.downloadPdfBtn {
-  @include btn;
-  padding: $space-2 $space-3;
-  font-size: $font-size-xs;
-  border-radius: $radius-md;
-  box-shadow: 0 1px 3px rgba($primary, 0.2);
-  flex-shrink: 0;
-  gap: $space-1;
-
-  &:hover {
-    box-shadow: 0 4px 10px rgba($primary, 0.35);
-  }
-
-  &:focus-visible {
-    outline: none;
-    box-shadow: $shadow-focus;
-  }
-
-  @media (max-width: $breakpoint-sm) {
-    width: 100%;
-    margin-top: $space-2;
-  }
 }
 
 .planoCardBadges {
@@ -211,6 +171,10 @@
     border-color: rgba($danger, 0.3);
     opacity: 1;
   }
+}
+
+.pdfBtn {
+  @include btn-ghost($primary);
 }
 
 .backBtn {
