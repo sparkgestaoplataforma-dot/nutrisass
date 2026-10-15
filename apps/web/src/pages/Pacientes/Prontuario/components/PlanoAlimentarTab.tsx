@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { PlusSignIcon, Restaurant01Icon } from "@hugeicons/core-free-icons";
+import {
+  PlusSignIcon,
+  Restaurant01Icon,
+  FileDownloadIcon,
+} from "@hugeicons/core-free-icons";
 import { listarPlanos, buscarPlano, criarPlano, atualizarPlano, deletarPlano, type PlanoAlimentarAPI } from "@/services/planoAlimentar";
 import type { CreatePlanoAlimentarInput } from "@nutricao/shared";
 import { PlanoAlimentarView } from "./PlanoAlimentarView";
@@ -164,10 +168,28 @@ export function PlanoAlimentarTab({ pacienteId, isNutricionista = false }: Props
           {planos.map((p) => (
             <div key={p.id} className={styles.planoCard} onClick={() => openView(p.id)}>
               <div className={styles.planoCardHeader}>
-                <span className={styles.planoCardTitle}>{p.titulo}</span>
-                <span className={styles.planoCardDate}>
-                  {new Date(p.criadoEm).toLocaleDateString("pt-BR")}
-                </span>
+                <div className={styles.planoCardTitleRow}>
+                  <span className={styles.planoCardTitle}>{p.titulo}</span>
+                  <span className={styles.planoCardDate}>
+                    {new Date(p.criadoEm).toLocaleDateString("pt-BR")}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className={styles.downloadPdfBtn}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(
+                      `/pacientes/${p.pacienteId || pacienteId}/planos/${p.id}/pdf`,
+                      "_blank"
+                    );
+                  }}
+                  title="Baixar PDF do Plano Alimentar"
+                  aria-label={`Baixar PDF do plano ${p.titulo}`}
+                >
+                  <HugeiconsIcon icon={FileDownloadIcon} size={15} strokeWidth={2} />
+                  <span>Baixar PDF</span>
+                </button>
               </div>
               <div className={styles.planoCardBadges}>
                 {p.objetivo && (

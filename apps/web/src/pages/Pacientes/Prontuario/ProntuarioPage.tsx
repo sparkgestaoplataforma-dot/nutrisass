@@ -43,6 +43,7 @@ import {
   getInterpretacaoScore,
   getClasseCorPorNivel,
 } from "@/utils/scoreInterpretacao";
+import { formatarDataNascimento } from "@/utils/date";
 import { LoadingError } from "@/components/Loading/LoadingError";
 
 type View = "atendimento" | "medidas" | "exames" | "planoAlimentar";
@@ -58,12 +59,45 @@ function getInitials(nome: string): string {
 }
 
 function getAge(dateStr: string): number {
-  const birth = new Date(dateStr);
+  if (!dateStr) return 0;
   const today = new Date();
+
+  if (typeof dateStr === "string") {
+    const raw = dateStr.trim();
+    if (/^\d{2}\/\d{2}\/\d{4}/.test(raw)) {
+      const [dia, mes, ano] = raw.slice(0, 10).split("/");
+      const birthYear = parseInt(ano, 10);
+      const birthMonth = parseInt(mes, 10) - 1;
+      const birthDay = parseInt(dia, 10);
+      if (!isNaN(birthYear) && !isNaN(birthMonth) && !isNaN(birthDay)) {
+        let age = today.getFullYear() - birthYear;
+        const m = today.getMonth() - birthMonth;
+        if (m < 0 || (m === 0 && today.getDate() < birthDay)) age--;
+        return age >= 0 ? age : 0;
+      }
+    }
+
+    const datePart = raw.split("T")[0];
+    const parts = datePart.split("-");
+    if (parts.length === 3) {
+      const birthYear = parseInt(parts[0], 10);
+      const birthMonth = parseInt(parts[1], 10) - 1;
+      const birthDay = parseInt(parts[2], 10);
+      if (!isNaN(birthYear) && !isNaN(birthMonth) && !isNaN(birthDay)) {
+        let age = today.getFullYear() - birthYear;
+        const m = today.getMonth() - birthMonth;
+        if (m < 0 || (m === 0 && today.getDate() < birthDay)) age--;
+        return age >= 0 ? age : 0;
+      }
+    }
+  }
+
+  const birth = new Date(dateStr);
+  if (isNaN(birth.getTime())) return 0;
   let age = today.getFullYear() - birth.getFullYear();
   const m = today.getMonth() - birth.getMonth();
   if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-  return age;
+  return age >= 0 ? age : 0;
 }
 
 function formatDuration(seconds: number): string {
@@ -427,9 +461,9 @@ export function ProntuarioPage() {
                           <span className={styles.badgeConvenio}>
                             {paciente?.convenio?.nome || "Particular"}
                           </span>
-                          {paciente?.dataNascimento && (
+                          {(paciente?.dataNascimento || paciente?.dataNascimentoFormatada) && (
                             <span className={styles.badgeAge}>
-                              {getAge(paciente.dataNascimento)} anos
+                              {getAge(paciente.dataNascimento || paciente.dataNascimentoFormatada!)} anos
                             </span>
                           )}
                         </>
@@ -461,10 +495,10 @@ export function ProntuarioPage() {
                     <span>
                       {isLoadingPaciente ? (
                         <Skeleton width="80px" height="14px" />
-                      ) : paciente?.dataNascimentoFormatada ? (
-                        paciente.dataNascimentoFormatada.split(' ')[0] // Pega apenas a parte da data
                       ) : (
-                        "Não informada"
+                        formatarDataNascimento(
+                          paciente?.dataNascimento || paciente?.dataNascimentoFormatada
+                        )
                       )}
                     </span>
                   </div>

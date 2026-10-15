@@ -89,6 +89,7 @@ export function DashboardPage() {
     queryKey: ["dashboard", user?.clinicaId, nutricionistaId],
     queryFn: () => pegarDadosDashboard(nutricionistaId),
     enabled: !!user?.clinicaId,
+    refetchOnMount: 'always',
   });
 
   const { mutate: updateStatus } = useMutation({
@@ -98,6 +99,8 @@ export function DashboardPage() {
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["agenda"] });
     },
+    refetchOnMount: 'always',
+
   });
 
   const [openStatusId, setOpenStatusId] = useState<string | null>(null);
@@ -292,7 +295,7 @@ export function DashboardPage() {
                                 <span className={`${styles.statusDot} ${styles[`dot_${statusColors[ag.status] || "blue"}`]}`} />
                                 {statusLabels[ag.status] || ag.status}
                                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ marginLeft: 2 }}>
-                                  <path d="M2.5 4L5 6.5L7.5 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                                  <path d="M2.5 4L5 6.5L7.5 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                               </button>
                               {openStatusId === ag.id && (

@@ -1,7 +1,7 @@
 import axios from "axios";
 import { api } from "./api";
 import type { ApiResponse, PaginatedResponse } from "@nutricao/shared";
-import { formatarDataBrasilia } from "@/utils/date";
+import { formatarDataBrasilia, formatarDataNascimento } from "@/utils/date";
 
 const publicApi = axios.create({
   baseURL: "/api",
@@ -80,7 +80,7 @@ export async function getPacientePorId(id: string) {
   }>>(`/pacientes/${id}`);
   
   if (data.data) {
-    data.data.dataNascimentoFormatada = formatarDataBrasilia(data.data.dataNascimento);
+    data.data.dataNascimentoFormatada = formatarDataNascimento(data.data.dataNascimento);
     data.data.criadoEmFormatada = formatarDataBrasilia(data.data.criadoEm);
     data.data.atualizadoEmFormatada = formatarDataBrasilia(data.data.atualizadoEm);
   }
