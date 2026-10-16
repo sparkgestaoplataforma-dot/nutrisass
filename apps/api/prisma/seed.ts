@@ -3,6 +3,7 @@ import { prisma } from "../src/shared/providers/prisma";
 import { criarQuestionarioPadraoParaClinica } from "../src/modules/questionarios/seed/default-questionario";
 import * as fs from "fs";
 import * as path from "path";
+import { importarTabelaTaco } from "./tabela_taco/import_taco";
 
 async function main() {
   const senhaHash = await bcrypt.hash("123456", 10);
@@ -1146,41 +1147,8 @@ async function main() {
     }
   }
 
-  // Seed de 597 Alimentos da tabela TACO a partir do JSON
-  const tacoPath = path.join(__dirname, "tabela_taco/alimentos.json");
-  if (fs.existsSync(tacoPath)) {
-    const tacoData = JSON.parse(fs.readFileSync(tacoPath, "utf8"));
-    console.log(`\nLendo arquivo TACO com ${tacoData.length} alimentos...`);
-
-    const existentes = await prisma.alimento.findMany({
-      where: { clinicaId: null },
-      select: { nome: true },
-    });
-    const existentesNomes = new Set(existentes.map((e) => e.nome.toLowerCase().trim()));
-
-    const paraInserir = tacoData
-      .filter((item: any) => !existentesNomes.has(item.nome.toLowerCase().trim()))
-      .map((item: any) => ({
-        nome: item.nome.trim(),
-        grupo: item.grupo ? item.grupo.trim() : null,
-        calorias: item.calorias ?? 0,
-        proteinas: item.proteinas ?? 0,
-        carboidratos: item.carboidratos ?? 0,
-        gorduras: item.gorduras ?? 0,
-        fibra: item.fibra ?? 0,
-        clinicaId: null,
-      }));
-
-    if (paraInserir.length > 0) {
-      await prisma.alimento.createMany({
-        data: paraInserir,
-        skipDuplicates: true,
-      });
-      console.log(`Foram inseridos ${paraInserir.length} novos alimentos da tabela TACO.`);
-    } else {
-      console.log(`Alimentos da tabela TACO já se encontram atualizados.`);
-    }
-  }
+  // Seed de Alimentos da tabela TACO a partir do JSON (com insert, update e medidas caseiras completas)
+  await importarTabelaTaco();
 
   // ====== PLANOS ALIMENTARES ======
   const nutriUser = await prisma.usuario.findFirst({

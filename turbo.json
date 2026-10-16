@@ -9,6 +9,11 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
+    "@nutricao/api#build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"],
+      "cache": false
+    },
     "lint": {
       "dependsOn": ["^build"]
     },
@@ -19,6 +24,9 @@
       "cache": false
     },
     "db:seed": {
+      "cache": false
+    },
+    "db:taco": {
       "cache": false
     },
     "db:studio": {
