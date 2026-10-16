@@ -1,2 +1,2 @@
-export * from './enums';
-export * from './socket';
+export * from './enums.js';
+export * from './socket.js';

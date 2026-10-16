@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc && npm run db:taco",
+    "build": "tsc && tsc-alias && npm run db:taco",
     "start": "node dist/server.js",
     "lint": "tsc --noEmit",
     "db:migrate": "prisma migrate dev",
@@ -39,6 +39,7 @@
     "@types/pg": "^8.18.0",
     "@types/socket.io": "^3.0.1",
     "prisma": "^7.4.2",
+    "tsc-alias": "^1.9.7",
     "tsx": "^4",
     "typescript": "^5.5",
     "vite-tsconfig-paths": "^6.1.1",
