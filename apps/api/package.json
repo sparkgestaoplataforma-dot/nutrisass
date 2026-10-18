@@ -4,13 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc && tsc-alias",
+    "build": "tsc && tsc-alias && npm run db:taco",
     "start": "node dist/server.js",
     "lint": "tsc --noEmit",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:taco": "tsx prisma/tabela_taco/import_taco.ts",
+    "db:studio": "prisma studio",
+    "test": "vitest run"
   },
   "dependencies": {
     "@nutricao/shared": "*",
@@ -21,10 +23,11 @@
     "dotenv": "^16.4",
     "express": "^4.21",
     "express-async-errors": "^3.1",
+    "express-rate-limit": "^8.3.2",
     "ioredis": "^5.4",
     "jsonwebtoken": "^9.0",
     "pg": "^8.20.0",
-    "socket.io": "^4.8",
+    "socket.io": "^4.8.3",
     "zod": "^3.23"
   },
   "devDependencies": {
@@ -34,9 +37,13 @@
     "@types/jsonwebtoken": "^9",
     "@types/node": "^22",
     "@types/pg": "^8.18.0",
+    "@types/socket.io": "^3.0.1",
     "prisma": "^7.4.2",
     "tsc-alias": "^1.9.7",
     "tsx": "^4",
-    "typescript": "^5.5"
+    "typescript": "^5.5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.4",
+    "vitest-mock-extended": "^4.0.0"
   }
 }

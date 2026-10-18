@@ -1,23 +1,35 @@
+import { AvaliacaoComRespostas, ModuloAvaliacao } from "@/services/avaliacao";
 import styles from "../AvaliacaoDetalhesPage.module.scss";
+
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 
-export function SidebarEsquerda({ avaliacao }: any) {
-  function scrollToModulo(id: string) {
-    const elemento = document.getElementById(`modulo-${id}`);
+interface SidebarEsquerdaProps {
+  avaliacao: AvaliacaoComRespostas | null | undefined;
+  onItemClick?: () => void;
+}
 
-    if (elemento) {
-      elemento.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+export function SidebarEsquerda({ avaliacao, onItemClick }: SidebarEsquerdaProps) {
+  function scrollToModulo(id: string) {
+    if (onItemClick) {
+      onItemClick();
     }
+
+    setTimeout(() => {
+      const elemento = document.getElementById(`modulo-${id}`);
+      if (elemento) {
+        elemento.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    }, 100);
   }
   return (
     <>
       <p className={styles.sidebarLabel}>Módulos</p>
 
-      {avaliacao?.questionario?.modulos.map((modulo: any) => (
+      {avaliacao?.questionario?.modulos.map((modulo: ModuloAvaliacao) => (
         <button
           key={modulo.nome}
           className={styles.sideNavItem}

@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { PlusSignIcon, Delete02Icon } from '@hugeicons/core-free-icons';
+import { PlusSignIcon, Delete02Icon, PrinterIcon } from '@hugeicons/core-free-icons';
 import { api } from '@/services/api';
+import { getClinica } from '@/services/clinica';
 import type { CreateMedidaInput } from '@nutricao/shared';
+import { imprimirMedidas } from '../print/imprimirMedidas';
 import styles from '../ProntuarioPage.module.scss';
 
 interface MedidasTabProps {
@@ -34,6 +36,21 @@ export function MedidasTab({ pacienteId }: MedidasTabProps) {
       const { data } = await api.get(`/prontuario/${pacienteId}/medidas`);
       return data.data;
     },
+  });
+
+  // Mesma chave usada no ProntuarioPage (reaproveita o cache)
+  const { data: paciente } = useQuery({
+    queryKey: ['paciente', pacienteId],
+    queryFn: async () => {
+      const { data } = await api.get(`/pacientes/${pacienteId}`);
+      return data.data;
+    },
+  });
+
+  const { data: clinica } = useQuery({
+    queryKey: ['clinica'],
+    queryFn: getClinica,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { register, handleSubmit, reset } = useForm<CreateMedidaInput>();
@@ -66,12 +83,22 @@ export function MedidasTab({ pacienteId }: MedidasTabProps) {
 
   return (
     <div>
-      <button
-        className={styles.novaMedidaBtn}
-        onClick={() => setFormAberto(!formAberto)}
-      >
-        <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} /> Adicionar Medida
-      </button>
+      <div className={styles.toolbar}>
+        <button
+          className={styles.novaMedidaBtn}
+          onClick={() => setFormAberto(!formAberto)}
+        >
+          <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} /> Adicionar Medida
+        </button>
+        <button
+          className={styles.outlineBtn}
+          disabled={medidas.length === 0 || !paciente}
+          title={medidas.length === 0 ? 'Nenhuma medida para imprimir' : 'Imprimir medidas em papel timbrado'}
+          onClick={() => imprimirMedidas(medidas, paciente, clinica)}
+        >
+          <HugeiconsIcon icon={PrinterIcon} size={16} strokeWidth={2} /> Imprimir
+        </button>
+      </div>
 
       {formAberto && (
         <form
@@ -113,45 +140,77 @@ export function MedidasTab({ pacienteId }: MedidasTabProps) {
         </form>
       )}
 
-      <div className={styles.medidasTable}>
-        {medidas.length === 0 ? (
-          <div className={styles.empty}>Nenhuma medida registrada.</div>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Data</th>
-                {medidaFields.map((f) => (
-                  <th key={f.key}>{f.label}</th>
-                ))}
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {medidas.map((m: any) => (
-                <tr key={m.id}>
-                  <td>{new Date(m.data).toLocaleDateString('pt-BR')}</td>
+      {medidas.length === 0 ? (
+        <div className={styles.empty}>Nenhuma medida registrada.</div>
+      ) : (
+        <>
+          {/* Tabela para Desktop */}
+          <div className={styles.medidasTable}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
                   {medidaFields.map((f) => (
-                    <td key={f.key}>{m[f.key] ?? '-'}</td>
+                    <th key={f.key}>{f.label}</th>
                   ))}
-                  <td>
-                    <button
-                      className={styles.medidaActionBtn}
-                      onClick={() => {
-                        if (confirm('Excluir esta medida?')) {
-                          excluirMutation.mutate(m.id);
-                        }
-                      }}
-                    >
-                      <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={2} />
-                    </button>
-                  </td>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+              </thead>
+              <tbody>
+                {medidas.map((m: any) => (
+                  <tr key={m.id}>
+                    <td>{new Date(m.data).toLocaleDateString('pt-BR')}</td>
+                    {medidaFields.map((f) => (
+                      <td key={f.key}>{m[f.key] ?? '-'}</td>
+                    ))}
+                    <td>
+                      <button
+                        className={styles.medidaActionBtn}
+                        onClick={() => {
+                          if (confirm('Excluir esta medida?')) {
+                            excluirMutation.mutate(m.id);
+                          }
+                        }}
+                      >
+                        <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={2} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Cards para Mobile */}
+          <div className={styles.mobileCards}>
+            {medidas.map((m: any) => (
+              <div key={m.id} className={styles.mobileCard}>
+                <div className={styles.cardHeader}>
+                  <strong>{new Date(m.data).toLocaleDateString('pt-BR')}</strong>
+                  <button
+                    className={styles.medidaActionBtn}
+                    onClick={() => {
+                      if (confirm('Excluir esta medida?')) {
+                        excluirMutation.mutate(m.id);
+                      }
+                    }}
+                  >
+                    <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={2} />
+                  </button>
+                </div>
+                <div className={styles.cardBodyGrid}>
+                  {medidaFields.map((f) => (
+                    <div key={f.key} className={styles.cardInfoGridItem}>
+                      <span className={styles.cardInfoLabel}>{f.label}</span>
+                      <span className={styles.cardInfoValue}>{m[f.key] ?? '-'}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

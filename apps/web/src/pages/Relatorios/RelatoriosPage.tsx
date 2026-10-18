@@ -25,6 +25,7 @@ export function RelatoriosPage() {
   const [dataInicio, setDataInicio] = useState(getFirstOfMonth());
   const [dataFim, setDataFim] = useState(getToday());
   const [status, setStatus] = useState('');
+  const [showFiltrosMobile, setShowFiltrosMobile] = useState(false);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['relatorio', dataInicio, dataFim, status],
@@ -39,32 +40,62 @@ export function RelatoriosPage() {
   const agendamentos = data?.agendamentos || [];
   const resumo = data?.resumo || { total: 0, realizados: 0, cancelados: 0 };
 
+  function getStatusClass(status: string) {
+    switch (status) {
+      case 'AGENDADO': return styles.statusAgendado;
+      case 'CONFIRMOU': return styles.statusConfirmou;
+      case 'PRESENTE': return styles.statusPresente;
+      case 'ENCAIXE': return styles.statusEncaixe;
+      case 'CANCELADO': return styles.statusCancelado;
+      case 'NAO_COMPARECEU': return styles.statusNaoCompareceu;
+      case 'REALIZADO': return styles.statusRealizado;
+      case 'DESISTIU': return styles.statusDesistiu;
+      case 'REMARCOU': return styles.statusRemarcou;
+      default: return '';
+    }
+  }
+
   return (
     <div>
-      <div className={styles.filtros}>
-        <div className={styles.field}>
-          <label>Data Início</label>
-          <input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
-        </div>
-        <div className={styles.field}>
-          <label>Data Fim</label>
-          <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
-        </div>
-        <div className={styles.field}>
-          <label>Status</label>
-          <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">Todos</option>
-            {Object.values(StatusAgendamento).map((s) => (
-              <option key={s} value={s}>{statusLabels[s]}</option>
-            ))}
-          </select>
-        </div>
-        <button className={styles.filtrarBtn} onClick={() => refetch()}>
-          <HugeiconsIcon icon={Search01Icon} size={16} strokeWidth={2} /> Filtrar
+      <div className={styles.filtrosWrapper}>
+        {/* Botão de Toggle visível apenas no Mobile */}
+        <button
+          type="button"
+          className={styles.filtrosMobileToggleBtn}
+          onClick={() => setShowFiltrosMobile(!showFiltrosMobile)}
+        >
+          <HugeiconsIcon icon={Search01Icon} size={16} strokeWidth={2} />
+          <span>{showFiltrosMobile ? "Ocultar Opções de Filtro" : "Filtrar por Período / Status"}</span>
         </button>
-        <button className={styles.imprimirBtn} onClick={() => window.print()}>
-          <HugeiconsIcon icon={PrinterIcon} size={16} strokeWidth={2} /> Imprimir
-        </button>
+
+        {/* Container de Filtros colapsável */}
+        <div className={`${styles.filtros} ${!showFiltrosMobile ? styles.collapsed : ""}`}>
+          <div className={styles.field}>
+            <label>Data Início</label>
+            <input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Data Fim</label>
+            <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label>Status</label>
+            <select value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="">Todos</option>
+              {Object.values(StatusAgendamento).map((s) => (
+                <option key={s} value={s}>{statusLabels[s]}</option>
+              ))}
+            </select>
+          </div>
+          <div className={styles.filtrosActions}>
+            <button className={styles.filtrarBtn} onClick={() => { refetch(); setShowFiltrosMobile(false); }}>
+              <HugeiconsIcon icon={Search01Icon} size={16} strokeWidth={2} /> Filtrar
+            </button>
+            <button className={styles.imprimirBtn} onClick={() => window.print()}>
+              <HugeiconsIcon icon={PrinterIcon} size={16} strokeWidth={2} /> Imprimir
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className={styles.stats}>
@@ -88,34 +119,76 @@ export function RelatoriosPage() {
         ) : agendamentos.length === 0 ? (
           <div className={styles.empty}>Nenhum registro encontrado.</div>
         ) : (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Hora</th>
-                <th>Paciente</th>
-                <th>Convênio</th>
-                <th>Telefone</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Tabela para Desktop */}
+            <div className={styles.medidasTable}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Hora</th>
+                    <th>Paciente</th>
+                    <th>Convênio</th>
+                    <th>Telefone</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {agendamentos.map((ag: any) => (
+                    <tr key={ag.id}>
+                      <td>{new Date(ag.dataHora).toLocaleDateString('pt-BR')}</td>
+                      <td>
+                        {new Date(ag.dataHora).toLocaleTimeString('pt-BR', {
+                          hour: '2-digit', minute: '2-digit',
+                        })}
+                      </td>
+                      <td>{ag.paciente.nome}</td>
+                      <td>{ag.convenio?.nome || 'Particular'}</td>
+                      <td>{ag.paciente.telefone || '-'}</td>
+                      <td>
+                        <span className={`${styles.statusBadge} ${getStatusClass(ag.status)}`}>
+                          {statusLabels[ag.status] || ag.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Cards para Mobile */}
+            <div className={styles.mobileCards}>
               {agendamentos.map((ag: any) => (
-                <tr key={ag.id}>
-                  <td>{new Date(ag.dataHora).toLocaleDateString('pt-BR')}</td>
-                  <td>
-                    {new Date(ag.dataHora).toLocaleTimeString('pt-BR', {
-                      hour: '2-digit', minute: '2-digit',
-                    })}
-                  </td>
-                  <td>{ag.paciente.nome}</td>
-                  <td>{ag.convenio?.nome || 'Particular'}</td>
-                  <td>{ag.paciente.telefone || '-'}</td>
-                  <td>{statusLabels[ag.status] || ag.status}</td>
-                </tr>
+                <div key={ag.id} className={styles.mobileCard}>
+                  <div className={styles.cardHeader}>
+                    <strong className={styles.cardPacienteName}>{ag.paciente.nome}</strong>
+                    <span className={`${styles.statusBadge} ${getStatusClass(ag.status)}`}>
+                      {statusLabels[ag.status] || ag.status}
+                    </span>
+                  </div>
+                  <div className={styles.cardBody}>
+                    <div className={styles.cardDetailRow}>
+                      <span className={styles.cardDetailLabel}>Horário</span>
+                      <span className={styles.cardDetailValue}>
+                        {new Date(ag.dataHora).toLocaleDateString('pt-BR')} às{' '}
+                        {new Date(ag.dataHora).toLocaleTimeString('pt-BR', {
+                          hour: '2-digit', minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                    <div className={styles.cardDetailRow}>
+                      <span className={styles.cardDetailLabel}>Convênio</span>
+                      <span className={styles.cardDetailValue}>{ag.convenio?.nome || 'Particular'}</span>
+                    </div>
+                    <div className={styles.cardDetailRow}>
+                      <span className={styles.cardDetailLabel}>Telefone</span>
+                      <span className={styles.cardDetailValue}>{ag.paciente.telefone || '-'}</span>
+                    </div>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
     </div>

@@ -13,6 +13,8 @@ import { api } from "@/services/api";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuthStore } from "@/stores/authStore";
 import { QuestionarioSelectorModal } from "@/components/QuestionarioSelectorModal/QuestionarioSelectorModal";
+import { DeleteConfirmModal } from "@/components/DeleteConfirmModal/DeleteConfirmModal";
+import { Skeleton } from "@/components/Loading/Skeleton";
 import styles from "./PacientesPage.module.scss";
 
 type PacienteSelecionado = {
@@ -26,7 +28,12 @@ export function PacientesPage() {
     useState(false);
   const [pacienteSelecionado, setPacienteSelecionado] =
     useState<PacienteSelecionado | null>(null);
+  const [pacienteIdExcluir, setPacienteIdExcluir] = useState<string | null>(
+    null,
+  );
+  const [isExcluirModalOpen, setIsExcluirModalOpen] = useState(false);
   const buscaDebounced = useDebounce(busca);
+  const isDebouncing = busca !== buscaDebounced;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
@@ -35,22 +42,37 @@ export function PacientesPage() {
   const podeCadastrarDefault = perfil === "ADMIN" || perfil === "NUTRICIONISTA";
   const isSecretaria = perfil === "SECRETARIA";
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isFetching } = useQuery({
     queryKey: ["pacientes", buscaDebounced],
     queryFn: () => listarPacientes(buscaDebounced || undefined),
   });
+
+  const isSearching = isDebouncing || isLoading || isFetching;
 
   const excluirMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/pacientes/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pacientes"] });
+      setIsExcluirModalOpen(false);
+      setPacienteIdExcluir(null);
     },
   });
 
-  function handleDelete(id: string) {
-    if (confirm("Deseja realmente excluir este paciente?")) {
-      excluirMutation.mutate(id);
+  function handleDelete(paciente: PacienteSelecionado) {
+    setPacienteIdExcluir(paciente.id);
+    setPacienteSelecionado(paciente);
+    setIsExcluirModalOpen(true);
+  }
+
+  function handleConfirmDelete() {
+    if (pacienteIdExcluir) {
+      excluirMutation.mutate(pacienteIdExcluir);
     }
+  }
+
+  function handleCancelDelete() {
+    setIsExcluirModalOpen(false);
+    setPacienteIdExcluir(null);
   }
 
   function handleAbrirQuestionarios(paciente: PacienteSelecionado) {
@@ -85,81 +107,194 @@ export function PacientesPage() {
       </div>
 
       <div className={styles.container}>
-        {isLoading ? (
-          <div className={styles.empty}>Carregando...</div>
+        {isSearching ? (
+          <div className={styles.desktopTable}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>E-mail</th>
+                  <th>Telefone</th>
+                  <th>Convênio</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i}>
+                    <td>
+                      <Skeleton width={i % 2 === 0 ? "160px" : "120px"} height={16} borderRadius={4} />
+                    </td>
+                    <td>
+                      <Skeleton width={i % 2 === 0 ? "180px" : "140px"} height={16} borderRadius={4} />
+                    </td>
+                    <td>
+                      <Skeleton width="110px" height={16} borderRadius={4} />
+                    </td>
+                    <td>
+                      <Skeleton width="90px" height={16} borderRadius={4} />
+                    </td>
+                    <td>
+                      <div className={styles.actions}>
+                        <Skeleton width={28} height={28} borderRadius={6} />
+                        <Skeleton width={28} height={28} borderRadius={6} />
+                        <Skeleton width={28} height={28} borderRadius={6} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : pacientes.length === 0 ? (
           <div className={styles.empty}>Nenhum paciente encontrado.</div>
         ) : (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>E-mail</th>
-                <th>Telefone</th>
-                <th>Convênio</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            <div className={styles.desktopTable}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>E-mail</th>
+                    <th>Telefone</th>
+                    <th>Convênio</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pacientes.map((p) => (
+                    <tr key={p.id}>
+                      <td>
+                        <span
+                          className={styles.nomeLink}
+                          onClick={() => navigate(`/pacientes/${p.id}`)}
+                        >
+                          {p.nome}
+                        </span>
+                      </td>
+                      <td>{p.email || "-"}</td>
+                      <td>{p.telefone || "-"}</td>
+                      <td>{p.convenio?.nome || "Particular"}</td>
+                      <td>
+                        <div className={styles.actions}>
+                          <button
+                            className={`${styles.actionBtn} ${styles.shortcutBtn}`}
+                            onClick={() =>
+                              handleAbrirQuestionarios({ id: p.id, nome: p.nome })
+                            }
+                            title="Aplicar questionário"
+                          >
+                            <HugeiconsIcon
+                              icon={CheckListIcon}
+                              size={14}
+                              strokeWidth={2}
+                            />
+                            {/* Questionários */}
+                          </button>
+                          <button
+                            className={styles.actionBtn}
+                            onClick={() => navigate(`/pacientes/${p.id}/editar`)}
+                            title="Editar"
+                          >
+                            <HugeiconsIcon
+                              icon={PencilEdit01Icon}
+                              size={16}
+                              strokeWidth={2}
+                            />
+                          </button>
+                          <button
+                            className={`${styles.actionBtn} ${styles.danger}`}
+                            onClick={() => handleDelete({ id: p.id, nome: p.nome })}
+                            title="Excluir"
+                          >
+                            <HugeiconsIcon
+                              icon={Delete02Icon}
+                              size={16}
+                              strokeWidth={2}
+                            />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className={styles.mobileCards}>
               {pacientes.map((p) => (
-                <tr key={p.id}>
-                  <td>
+                <div key={p.id} className={styles.mobileCard}>
+                  <div className={styles.cardHeader}>
                     <span
                       className={styles.nomeLink}
                       onClick={() => navigate(`/pacientes/${p.id}`)}
                     >
                       {p.nome}
                     </span>
-                  </td>
-                  <td>{p.email || "-"}</td>
-                  <td>{p.telefone || "-"}</td>
-                  <td>{p.convenio?.nome || "Particular"}</td>
-                  <td>
-                    <div className={styles.actions}>
-                      <button
-                        className={`${styles.actionBtn} ${styles.shortcutBtn}`}
-                        onClick={() =>
-                          handleAbrirQuestionarios({ id: p.id, nome: p.nome })
-                        }
-                        title="Aplicar questionário"
-                      >
-                        <HugeiconsIcon
-                          icon={CheckListIcon}
-                          size={14}
-                          strokeWidth={2}
-                        />
-                        {/* Questionários */}
-                      </button>
-                      <button
-                        className={styles.actionBtn}
-                        onClick={() => navigate(`/pacientes/${p.id}/editar`)}
-                        title="Editar"
-                      >
-                        <HugeiconsIcon
-                          icon={PencilEdit01Icon}
-                          size={16}
-                          strokeWidth={2}
-                        />
-                      </button>
-                      <button
-                        className={`${styles.actionBtn} ${styles.danger}`}
-                        onClick={() => handleDelete(p.id)}
-                        title="Excluir"
-                      >
-                        <HugeiconsIcon
-                          icon={Delete02Icon}
-                          size={16}
-                          strokeWidth={2}
-                        />
-                      </button>
+                  </div>
+                  <div className={styles.cardBody}>
+                    <div className={styles.cardInfo}>
+                      <strong>E-mail:</strong> {p.email || "-"}
                     </div>
-                  </td>
-                </tr>
+                    <div className={styles.cardInfo}>
+                      <strong>Telefone:</strong> {p.telefone || "-"}
+                    </div>
+                    <div className={styles.cardInfo}>
+                      <strong>Convênio:</strong> {p.convenio?.nome || "Particular"}
+                    </div>
+                  </div>
+                  <div className={styles.cardActions}>
+                    <button
+                      className={`${styles.actionBtn} ${styles.shortcutBtn}`}
+                      onClick={() =>
+                        handleAbrirQuestionarios({ id: p.id, nome: p.nome })
+                      }
+                      title="Aplicar questionário"
+                    >
+                      <HugeiconsIcon
+                        icon={CheckListIcon}
+                        size={14}
+                        strokeWidth={2}
+                      />
+                    </button>
+                    <button
+                      className={styles.actionBtn}
+                      onClick={() => navigate(`/pacientes/${p.id}/editar`)}
+                      title="Editar"
+                    >
+                      <HugeiconsIcon
+                        icon={PencilEdit01Icon}
+                        size={16}
+                        strokeWidth={2}
+                      />
+                    </button>
+                    <button
+                      className={`${styles.actionBtn} ${styles.danger}`}
+                      onClick={() => handleDelete({ id: p.id, nome: p.nome })}
+                      title="Excluir"
+                    >
+                      <HugeiconsIcon
+                        icon={Delete02Icon}
+                        size={16}
+                        strokeWidth={2}
+                      />
+                    </button>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
+
+      <DeleteConfirmModal
+        isOpen={isExcluirModalOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Excluir paciente"
+        description={`Tem certeza que deseja excluir o paciente ${pacienteSelecionado?.nome}? Essa ação não poderá ser desfeita.`}
+        isPending={excluirMutation.isPending}
+      />
 
       <QuestionarioSelectorModal
         open={modalQuestionariosAberto}

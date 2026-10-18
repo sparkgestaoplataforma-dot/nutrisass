@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { DashboardLayout } from '@/components/DashboardLayout/DashboardLayout';
 import { LoginPage } from '@/pages/Login/LoginPage';
+import { LandingPage } from '@/pages/Landing/LandingPage';
 import { DashboardPage } from '@/pages/Dashboard/DashboardPage';
 import { AgendaPage } from '@/pages/Agenda/AgendaPage';
 import { PacientesPage } from '@/pages/Pacientes/Listagem/PacientesPage';
@@ -10,6 +11,8 @@ import { ProntuarioPage } from '@/pages/Pacientes/Prontuario/ProntuarioPage';
 import { ConfigPage } from '@/pages/Configuracoes/ConfigPage';
 import { RelatoriosPage } from '@/pages/Relatorios/RelatoriosPage';
 import { ExamesPage } from '@/pages/Exames/ExamesPage';
+import { AlimentosPage } from '@/pages/Alimentos/AlimentosPage';
+import { PlanoAlimentarPdfPage } from '@/pages/Pacientes/Prontuario/PlanoAlimentarPdfPage';
 import { OnboardingPage } from '@/pages/Onboarding/OnboardingPage';
 import { EsqueciSenhaPage } from '@/pages/RedefinirSenha/EsqueciSenhaPage';
 import { RedefinirSenhaPage } from '@/pages/RedefinirSenha/RedefinirSenhaPage';
@@ -21,6 +24,10 @@ export function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Landing page pública */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* Rotas públicas */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/cadastro" element={<OnboardingPage />} />
         <Route path="/esqueci-senha" element={<EsqueciSenhaPage />} />
@@ -32,9 +39,12 @@ export function AppRoutes() {
           path="/redefinir-senha"
           element={<Navigate to="/esqueci-senha" replace />}
         />
+
+        {/* Rotas protegidas (dashboard) */}
         <Route element={<ProtectedRoute />}>
+          <Route path="/pacientes/:pacienteId/planos/:id/pdf" element={<PlanoAlimentarPdfPage />} />
           <Route element={<DashboardLayout />}>
-            <Route path="/" element={<DashboardPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/agenda" element={<AgendaPage />} />
             <Route path="/pacientes" element={<PacientesPage />} />
             <Route path="/pacientes/novo" element={<PacienteFormPage />} />
@@ -42,6 +52,7 @@ export function AppRoutes() {
             <Route path="/pacientes/:id/editar" element={<PacienteFormPage />} />
             <Route path="/pacientes/:pacienteId/comparativo" element={<ComparativoPage />} />
             <Route path="/exames" element={<ExamesPage />} />
+            <Route path="/alimentos" element={<AlimentosPage />} />
             <Route path="/relatorios" element={<RelatoriosPage />} />
             <Route path="/configuracoes" element={<ConfigPage />} />
             <Route

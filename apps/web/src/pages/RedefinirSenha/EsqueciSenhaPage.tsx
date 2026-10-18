@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router-dom";
 import { verifyEmailSchema, type VerifyEmailInput } from "@nutricao/shared";
 import styles from "./RedefinirSenha.module.scss";
-import { esqueciSenha } from "@/services/user";
+import { esqueciSenha } from "@/services/usuario";
 
 export function EsqueciSenhaPage() {
   const {

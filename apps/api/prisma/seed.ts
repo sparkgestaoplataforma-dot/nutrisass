@@ -1,6 +1,9 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "../src/shared/providers/prisma";
 import { criarQuestionarioPadraoParaClinica } from "../src/modules/questionarios/seed/default-questionario";
+import * as fs from "fs";
+import * as path from "path";
+import { importarTabelaTaco } from "./tabela_taco/import_taco";
 
 async function main() {
   const senhaHash = await bcrypt.hash("123456", 10);
@@ -181,120 +184,695 @@ async function main() {
     });
   }
 
-
   // ===== Exames Base (85 exames laboratoriais) =====
   const examesBase = [
     // HEMOGRAMA
-    { codigo: '40304361', nome: 'Hemograma completo', valorMinimo: null, valorMaximo: null, unidade: null },
-    { codigo: '40304345', nome: 'Hemoglobina', valorMinimo: 12.0, valorMaximo: 17.5, unidade: 'g/dL' },
-    { codigo: '40304337', nome: 'Hematócrito', valorMinimo: 36.0, valorMaximo: 50.0, unidade: '%' },
-    { codigo: '40304370', nome: 'VHS (Hemossedimentação)', valorMinimo: 0, valorMaximo: 20, unidade: 'mm/h' },
-    { codigo: '40304558', nome: 'Reticulócitos', valorMinimo: 0.5, valorMaximo: 2.5, unidade: '%' },
+    {
+      codigo: "40304361",
+      nome: "Hemograma completo",
+      valorMinimo: null,
+      valorMaximo: null,
+      unidade: null,
+    },
+    {
+      codigo: "40304345",
+      nome: "Hemoglobina",
+      valorMinimo: 12.0,
+      valorMaximo: 17.5,
+      unidade: "g/dL",
+    },
+    {
+      codigo: "40304337",
+      nome: "Hematócrito",
+      valorMinimo: 36.0,
+      valorMaximo: 50.0,
+      unidade: "%",
+    },
+    {
+      codigo: "40304370",
+      nome: "VHS (Hemossedimentação)",
+      valorMinimo: 0,
+      valorMaximo: 20,
+      unidade: "mm/h",
+    },
+    {
+      codigo: "40304558",
+      nome: "Reticulócitos",
+      valorMinimo: 0.5,
+      valorMaximo: 2.5,
+      unidade: "%",
+    },
     // PERFIL GLICÊMICO
-    { codigo: '40302040', nome: 'Glicose de jejum', valorMinimo: 70, valorMaximo: 99, unidade: 'mg/dL' },
-    { codigo: '40302733', nome: 'Hemoglobina glicada (HbA1c)', valorMinimo: 4.0, valorMaximo: 5.6, unidade: '%' },
-    { codigo: '40302075', nome: 'Hemoglobina glicada (A1 total)', valorMinimo: 4.0, valorMaximo: 6.0, unidade: '%' },
-    { codigo: '40316360', nome: 'Insulina basal', valorMinimo: 2.0, valorMaximo: 25.0, unidade: 'uUI/mL' },
-    { codigo: '40302709', nome: 'Teste oral tolerância glicose (TOTG)', valorMinimo: 70, valorMaximo: 140, unidade: 'mg/dL' },
-    { codigo: '40301680', nome: 'Curva glicêmica (4 dosagens)', valorMinimo: null, valorMaximo: null, unidade: 'mg/dL' },
-    { codigo: '40301958', nome: 'Frutosaminas', valorMinimo: 205, valorMaximo: 285, unidade: 'umol/L' },
-    { codigo: '40316394', nome: 'Peptídeo C', valorMinimo: 1.1, valorMaximo: 4.4, unidade: 'ng/mL' },
+    {
+      codigo: "40302040",
+      nome: "Glicose de jejum",
+      valorMinimo: 70,
+      valorMaximo: 99,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40302733",
+      nome: "Hemoglobina glicada (HbA1c)",
+      valorMinimo: 4.0,
+      valorMaximo: 5.6,
+      unidade: "%",
+    },
+    {
+      codigo: "40302075",
+      nome: "Hemoglobina glicada (A1 total)",
+      valorMinimo: 4.0,
+      valorMaximo: 6.0,
+      unidade: "%",
+    },
+    {
+      codigo: "40316360",
+      nome: "Insulina basal",
+      valorMinimo: 2.0,
+      valorMaximo: 25.0,
+      unidade: "uUI/mL",
+    },
+    {
+      codigo: "40302709",
+      nome: "Teste oral tolerância glicose (TOTG)",
+      valorMinimo: 70,
+      valorMaximo: 140,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40301680",
+      nome: "Curva glicêmica (4 dosagens)",
+      valorMinimo: null,
+      valorMaximo: null,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40301958",
+      nome: "Frutosaminas",
+      valorMinimo: 205,
+      valorMaximo: 285,
+      unidade: "umol/L",
+    },
+    {
+      codigo: "40316394",
+      nome: "Peptídeo C",
+      valorMinimo: 1.1,
+      valorMaximo: 4.4,
+      unidade: "ng/mL",
+    },
     // PERFIL LIPÍDICO
-    { codigo: '40301605', nome: 'Colesterol total', valorMinimo: null, valorMaximo: 190, unidade: 'mg/dL' },
-    { codigo: '40301583', nome: 'Colesterol HDL', valorMinimo: 40, valorMaximo: null, unidade: 'mg/dL' },
-    { codigo: '40301591', nome: 'Colesterol LDL', valorMinimo: null, valorMaximo: 130, unidade: 'mg/dL' },
-    { codigo: '40302695', nome: 'Colesterol VLDL', valorMinimo: null, valorMaximo: 30, unidade: 'mg/dL' },
-    { codigo: '40302547', nome: 'Triglicerídeos', valorMinimo: null, valorMaximo: 150, unidade: 'mg/dL' },
-    { codigo: '40301354', nome: 'Apolipoproteína A (Apo A)', valorMinimo: 120, valorMaximo: 176, unidade: 'mg/dL' },
-    { codigo: '40301362', nome: 'Apolipoproteína B (Apo B)', valorMinimo: 52, valorMaximo: 129, unidade: 'mg/dL' },
-    { codigo: '40302210', nome: 'Lipoproteína (a) - Lp(a)', valorMinimo: null, valorMaximo: 30, unidade: 'mg/dL' },
-    { codigo: '40302113', nome: 'Homocisteína', valorMinimo: 5.0, valorMaximo: 15.0, unidade: 'umol/L' },
+    {
+      codigo: "40301605",
+      nome: "Colesterol total",
+      valorMinimo: null,
+      valorMaximo: 190,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40301583",
+      nome: "Colesterol HDL",
+      valorMinimo: 40,
+      valorMaximo: null,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40301591",
+      nome: "Colesterol LDL",
+      valorMinimo: null,
+      valorMaximo: 130,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40302695",
+      nome: "Colesterol VLDL",
+      valorMinimo: null,
+      valorMaximo: 30,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40302547",
+      nome: "Triglicerídeos",
+      valorMinimo: null,
+      valorMaximo: 150,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40301354",
+      nome: "Apolipoproteína A (Apo A)",
+      valorMinimo: 120,
+      valorMaximo: 176,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40301362",
+      nome: "Apolipoproteína B (Apo B)",
+      valorMinimo: 52,
+      valorMaximo: 129,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40302210",
+      nome: "Lipoproteína (a) - Lp(a)",
+      valorMinimo: null,
+      valorMaximo: 30,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40302113",
+      nome: "Homocisteína",
+      valorMinimo: 5.0,
+      valorMaximo: 15.0,
+      unidade: "umol/L",
+    },
     // FUNÇÃO HEPÁTICA
-    { codigo: '40302504', nome: 'TGO / AST', valorMinimo: 10, valorMaximo: 40, unidade: 'U/L' },
-    { codigo: '40302512', nome: 'TGP / ALT', valorMinimo: 10, valorMaximo: 40, unidade: 'U/L' },
-    { codigo: '40301990', nome: 'Gama GT (GGT)', valorMinimo: 8, valorMaximo: 61, unidade: 'U/L' },
-    { codigo: '40301885', nome: 'Fosfatase alcalina', valorMinimo: 40, valorMaximo: 129, unidade: 'U/L' },
-    { codigo: '40301397', nome: 'Bilirrubinas totais e frações', valorMinimo: 0.1, valorMaximo: 1.2, unidade: 'mg/dL' },
-    { codigo: '40301729', nome: 'Desidrogenase lática (LDH)', valorMinimo: 80, valorMaximo: 225, unidade: 'U/L' },
+    {
+      codigo: "40302504",
+      nome: "TGO / AST",
+      valorMinimo: 10,
+      valorMaximo: 40,
+      unidade: "U/L",
+    },
+    {
+      codigo: "40302512",
+      nome: "TGP / ALT",
+      valorMinimo: 10,
+      valorMaximo: 40,
+      unidade: "U/L",
+    },
+    {
+      codigo: "40301990",
+      nome: "Gama GT (GGT)",
+      valorMinimo: 8,
+      valorMaximo: 61,
+      unidade: "U/L",
+    },
+    {
+      codigo: "40301885",
+      nome: "Fosfatase alcalina",
+      valorMinimo: 40,
+      valorMaximo: 129,
+      unidade: "U/L",
+    },
+    {
+      codigo: "40301397",
+      nome: "Bilirrubinas totais e frações",
+      valorMinimo: 0.1,
+      valorMaximo: 1.2,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40301729",
+      nome: "Desidrogenase lática (LDH)",
+      valorMinimo: 80,
+      valorMaximo: 225,
+      unidade: "U/L",
+    },
     // FUNÇÃO RENAL
-    { codigo: '40302580', nome: 'Ureia', valorMinimo: 15, valorMaximo: 40, unidade: 'mg/dL' },
-    { codigo: '40301630', nome: 'Creatinina', valorMinimo: 0.7, valorMaximo: 1.3, unidade: 'mg/dL' },
-    { codigo: '40301508', nome: 'Clearance de creatinina', valorMinimo: 80, valorMaximo: 120, unidade: 'mL/min' },
-    { codigo: '40301150', nome: 'Ácido úrico', valorMinimo: 3.0, valorMaximo: 7.0, unidade: 'mg/dL' },
+    {
+      codigo: "40302580",
+      nome: "Ureia",
+      valorMinimo: 15,
+      valorMaximo: 40,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40301630",
+      nome: "Creatinina",
+      valorMinimo: 0.7,
+      valorMaximo: 1.3,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40301508",
+      nome: "Clearance de creatinina",
+      valorMinimo: 80,
+      valorMaximo: 120,
+      unidade: "mL/min",
+    },
+    {
+      codigo: "40301150",
+      nome: "Ácido úrico",
+      valorMinimo: 3.0,
+      valorMaximo: 7.0,
+      unidade: "mg/dL",
+    },
     // PROTEÍNAS
-    { codigo: '40302377', nome: 'Proteínas totais', valorMinimo: 6.0, valorMaximo: 8.0, unidade: 'g/dL' },
-    { codigo: '40301222', nome: 'Albumina', valorMinimo: 3.5, valorMaximo: 5.5, unidade: 'g/dL' },
-    { codigo: '40302326', nome: 'Pré-albumina (Transtiretina)', valorMinimo: 20, valorMaximo: 40, unidade: 'mg/dL' },
-    { codigo: '40302369', nome: 'Proteína ligadora do retinol', valorMinimo: 3.0, valorMaximo: 6.0, unidade: 'mg/dL' },
-    { codigo: '40301761', nome: 'Eletroforese de proteínas', valorMinimo: null, valorMaximo: null, unidade: 'g/dL' },
-    { codigo: '40308391', nome: 'Proteína C reativa (PCR quantitativa)', valorMinimo: null, valorMaximo: 0.5, unidade: 'mg/dL' },
+    {
+      codigo: "40302377",
+      nome: "Proteínas totais",
+      valorMinimo: 6.0,
+      valorMaximo: 8.0,
+      unidade: "g/dL",
+    },
+    {
+      codigo: "40301222",
+      nome: "Albumina",
+      valorMinimo: 3.5,
+      valorMaximo: 5.5,
+      unidade: "g/dL",
+    },
+    {
+      codigo: "40302326",
+      nome: "Pré-albumina (Transtiretina)",
+      valorMinimo: 20,
+      valorMaximo: 40,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40302369",
+      nome: "Proteína ligadora do retinol",
+      valorMinimo: 3.0,
+      valorMaximo: 6.0,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40301761",
+      nome: "Eletroforese de proteínas",
+      valorMinimo: null,
+      valorMaximo: null,
+      unidade: "g/dL",
+    },
+    {
+      codigo: "40308391",
+      nome: "Proteína C reativa (PCR quantitativa)",
+      valorMinimo: null,
+      valorMaximo: 0.5,
+      unidade: "mg/dL",
+    },
     // METABOLISMO DO FERRO
-    { codigo: '40301842', nome: 'Ferro sérico', valorMinimo: 50, valorMaximo: 150, unidade: 'ug/dL' },
-    { codigo: '40316270', nome: 'Ferritina', valorMinimo: 12, valorMaximo: 300, unidade: 'ng/mL' },
-    { codigo: '40302520', nome: 'Transferrina', valorMinimo: 200, valorMaximo: 360, unidade: 'mg/dL' },
-    { codigo: '40301427', nome: 'Capacidade total de ligação do ferro (TIBC)', valorMinimo: 250, valorMaximo: 370, unidade: 'ug/dL' },
-    { codigo: '40301087', nome: 'Ácido fólico eritrocitário', valorMinimo: 2.0, valorMaximo: 20.0, unidade: 'ng/mL' },
-    { codigo: '40316572', nome: 'Vitamina B12', valorMinimo: 200, valorMaximo: 900, unidade: 'pg/mL' },
+    {
+      codigo: "40301842",
+      nome: "Ferro sérico",
+      valorMinimo: 50,
+      valorMaximo: 150,
+      unidade: "ug/dL",
+    },
+    {
+      codigo: "40316270",
+      nome: "Ferritina",
+      valorMinimo: 12,
+      valorMaximo: 300,
+      unidade: "ng/mL",
+    },
+    {
+      codigo: "40302520",
+      nome: "Transferrina",
+      valorMinimo: 200,
+      valorMaximo: 360,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40301427",
+      nome: "Capacidade total de ligação do ferro (TIBC)",
+      valorMinimo: 250,
+      valorMaximo: 370,
+      unidade: "ug/dL",
+    },
+    {
+      codigo: "40301087",
+      nome: "Ácido fólico eritrocitário",
+      valorMinimo: 2.0,
+      valorMaximo: 20.0,
+      unidade: "ng/mL",
+    },
+    {
+      codigo: "40316572",
+      nome: "Vitamina B12",
+      valorMinimo: 200,
+      valorMaximo: 900,
+      unidade: "pg/mL",
+    },
     // ELETRÓLITOS E MINERAIS
-    { codigo: '40302423', nome: 'Sódio', valorMinimo: 136, valorMaximo: 145, unidade: 'mEq/L' },
-    { codigo: '40302318', nome: 'Potássio', valorMinimo: 3.5, valorMaximo: 5.0, unidade: 'mEq/L' },
-    { codigo: '40301400', nome: 'Cálcio total', valorMinimo: 8.6, valorMaximo: 10.2, unidade: 'mg/dL' },
-    { codigo: '40301419', nome: 'Cálcio iônico', valorMinimo: 4.5, valorMaximo: 5.3, unidade: 'mg/dL' },
-    { codigo: '40301931', nome: 'Fósforo', valorMinimo: 2.5, valorMaximo: 4.5, unidade: 'mg/dL' },
-    { codigo: '40302237', nome: 'Magnésio', valorMinimo: 1.6, valorMaximo: 2.6, unidade: 'mg/dL' },
-    { codigo: '40301559', nome: 'Cloro', valorMinimo: 98, valorMaximo: 106, unidade: 'mEq/L' },
-    { codigo: '40313328', nome: 'Zinco', valorMinimo: 70, valorMaximo: 120, unidade: 'ug/dL' },
-    { codigo: '40313255', nome: 'Selênio', valorMinimo: 46, valorMaximo: 143, unidade: 'ug/L' },
-    { codigo: '40301567', nome: 'Cobre', valorMinimo: 70, valorMaximo: 140, unidade: 'ug/dL' },
-    { codigo: '40301273', nome: 'Alumínio', valorMinimo: null, valorMaximo: 10, unidade: 'ug/L' },
-    { codigo: '40313310', nome: 'Cromo', valorMinimo: 0.1, valorMaximo: 0.5, unidade: 'ug/L' },
+    {
+      codigo: "40302423",
+      nome: "Sódio",
+      valorMinimo: 136,
+      valorMaximo: 145,
+      unidade: "mEq/L",
+    },
+    {
+      codigo: "40302318",
+      nome: "Potássio",
+      valorMinimo: 3.5,
+      valorMaximo: 5.0,
+      unidade: "mEq/L",
+    },
+    {
+      codigo: "40301400",
+      nome: "Cálcio total",
+      valorMinimo: 8.6,
+      valorMaximo: 10.2,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40301419",
+      nome: "Cálcio iônico",
+      valorMinimo: 4.5,
+      valorMaximo: 5.3,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40301931",
+      nome: "Fósforo",
+      valorMinimo: 2.5,
+      valorMaximo: 4.5,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40302237",
+      nome: "Magnésio",
+      valorMinimo: 1.6,
+      valorMaximo: 2.6,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40301559",
+      nome: "Cloro",
+      valorMinimo: 98,
+      valorMaximo: 106,
+      unidade: "mEq/L",
+    },
+    {
+      codigo: "40313328",
+      nome: "Zinco",
+      valorMinimo: 70,
+      valorMaximo: 120,
+      unidade: "ug/dL",
+    },
+    {
+      codigo: "40313255",
+      nome: "Selênio",
+      valorMinimo: 46,
+      valorMaximo: 143,
+      unidade: "ug/L",
+    },
+    {
+      codigo: "40301567",
+      nome: "Cobre",
+      valorMinimo: 70,
+      valorMaximo: 140,
+      unidade: "ug/dL",
+    },
+    {
+      codigo: "40301273",
+      nome: "Alumínio",
+      valorMinimo: null,
+      valorMaximo: 10,
+      unidade: "ug/L",
+    },
+    {
+      codigo: "40313310",
+      nome: "Cromo",
+      valorMinimo: 0.1,
+      valorMaximo: 0.5,
+      unidade: "ug/L",
+    },
     // VITAMINAS
-    { codigo: '40302830', nome: 'Vitamina D (25-OH D3)', valorMinimo: 30, valorMaximo: 60, unidade: 'ng/mL' },
-    { codigo: '40302822', nome: 'Vitamina D2', valorMinimo: 30, valorMaximo: 100, unidade: 'ng/mL' },
-    { codigo: '40305015', nome: 'Vitamina D (1,25-dihidroxi)', valorMinimo: 15, valorMaximo: 75, unidade: 'pg/mL' },
-    { codigo: '40302601', nome: 'Vitamina A (Retinol)', valorMinimo: 30, valorMaximo: 80, unidade: 'ug/dL' },
-    { codigo: '40301060', nome: 'Vitamina C (Ácido ascórbico)', valorMinimo: 0.4, valorMaximo: 2.0, unidade: 'mg/dL' },
-    { codigo: '40302610', nome: 'Vitamina E (Tocoferol)', valorMinimo: 5.0, valorMaximo: 18.0, unidade: 'mg/L' },
-    { codigo: '40302849', nome: 'Vitamina K', valorMinimo: 0.1, valorMaximo: 2.2, unidade: 'ng/mL' },
-    { codigo: '40302784', nome: 'Vitamina B1 (Tiamina)', valorMinimo: 70, valorMaximo: 180, unidade: 'nmol/L' },
-    { codigo: '40302792', nome: 'Vitamina B2 (Riboflavina)', valorMinimo: 6.2, valorMaximo: 39.0, unidade: 'nmol/L' },
-    { codigo: '40302806', nome: 'Vitamina B3 (Niacina)', valorMinimo: null, valorMaximo: null, unidade: 'ug/L' },
-    { codigo: '40302814', nome: 'Vitamina B6 (Piridoxina)', valorMinimo: 5.0, valorMaximo: 50.0, unidade: 'ug/L' },
+    {
+      codigo: "40302830",
+      nome: "Vitamina D (25-OH D3)",
+      valorMinimo: 30,
+      valorMaximo: 60,
+      unidade: "ng/mL",
+    },
+    {
+      codigo: "40302822",
+      nome: "Vitamina D2",
+      valorMinimo: 30,
+      valorMaximo: 100,
+      unidade: "ng/mL",
+    },
+    {
+      codigo: "40305015",
+      nome: "Vitamina D (1,25-dihidroxi)",
+      valorMinimo: 15,
+      valorMaximo: 75,
+      unidade: "pg/mL",
+    },
+    {
+      codigo: "40302601",
+      nome: "Vitamina A (Retinol)",
+      valorMinimo: 30,
+      valorMaximo: 80,
+      unidade: "ug/dL",
+    },
+    {
+      codigo: "40301060",
+      nome: "Vitamina C (Ácido ascórbico)",
+      valorMinimo: 0.4,
+      valorMaximo: 2.0,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40302610",
+      nome: "Vitamina E (Tocoferol)",
+      valorMinimo: 5.0,
+      valorMaximo: 18.0,
+      unidade: "mg/L",
+    },
+    {
+      codigo: "40302849",
+      nome: "Vitamina K",
+      valorMinimo: 0.1,
+      valorMaximo: 2.2,
+      unidade: "ng/mL",
+    },
+    {
+      codigo: "40302784",
+      nome: "Vitamina B1 (Tiamina)",
+      valorMinimo: 70,
+      valorMaximo: 180,
+      unidade: "nmol/L",
+    },
+    {
+      codigo: "40302792",
+      nome: "Vitamina B2 (Riboflavina)",
+      valorMinimo: 6.2,
+      valorMaximo: 39.0,
+      unidade: "nmol/L",
+    },
+    {
+      codigo: "40302806",
+      nome: "Vitamina B3 (Niacina)",
+      valorMinimo: null,
+      valorMaximo: null,
+      unidade: "ug/L",
+    },
+    {
+      codigo: "40302814",
+      nome: "Vitamina B6 (Piridoxina)",
+      valorMinimo: 5.0,
+      valorMaximo: 50.0,
+      unidade: "ug/L",
+    },
     // FUNÇÃO TIREOIDEANA
-    { codigo: '40316521', nome: 'TSH', valorMinimo: 0.4, valorMaximo: 4.0, unidade: 'uUI/mL' },
-    { codigo: '40316556', nome: 'T3 total (Triiodotironina)', valorMinimo: 80, valorMaximo: 200, unidade: 'ng/dL' },
-    { codigo: '40316467', nome: 'T3 livre', valorMinimo: 2.0, valorMaximo: 4.4, unidade: 'pg/mL' },
-    { codigo: '40316548', nome: 'T4 total (Tiroxina)', valorMinimo: 4.5, valorMaximo: 12.0, unidade: 'ug/dL' },
-    { codigo: '40316491', nome: 'T4 livre', valorMinimo: 0.9, valorMaximo: 1.7, unidade: 'ng/dL' },
-    { codigo: '40316157', nome: 'Anti-TPO', valorMinimo: null, valorMaximo: 35, unidade: 'UI/mL' },
-    { codigo: '40316106', nome: 'Anti-tireoglobulina', valorMinimo: null, valorMaximo: 115, unidade: 'UI/mL' },
-    { codigo: '40316319', nome: 'TBG (Globulina ligadora da tiroxina)', valorMinimo: 12, valorMaximo: 30, unidade: 'ug/mL' },
+    {
+      codigo: "40316521",
+      nome: "TSH",
+      valorMinimo: 0.4,
+      valorMaximo: 4.0,
+      unidade: "uUI/mL",
+    },
+    {
+      codigo: "40316556",
+      nome: "T3 total (Triiodotironina)",
+      valorMinimo: 80,
+      valorMaximo: 200,
+      unidade: "ng/dL",
+    },
+    {
+      codigo: "40316467",
+      nome: "T3 livre",
+      valorMinimo: 2.0,
+      valorMaximo: 4.4,
+      unidade: "pg/mL",
+    },
+    {
+      codigo: "40316548",
+      nome: "T4 total (Tiroxina)",
+      valorMinimo: 4.5,
+      valorMaximo: 12.0,
+      unidade: "ug/dL",
+    },
+    {
+      codigo: "40316491",
+      nome: "T4 livre",
+      valorMinimo: 0.9,
+      valorMaximo: 1.7,
+      unidade: "ng/dL",
+    },
+    {
+      codigo: "40316157",
+      nome: "Anti-TPO",
+      valorMinimo: null,
+      valorMaximo: 35,
+      unidade: "UI/mL",
+    },
+    {
+      codigo: "40316106",
+      nome: "Anti-tireoglobulina",
+      valorMinimo: null,
+      valorMaximo: 115,
+      unidade: "UI/mL",
+    },
+    {
+      codigo: "40316319",
+      nome: "TBG (Globulina ligadora da tiroxina)",
+      valorMinimo: 12,
+      valorMaximo: 30,
+      unidade: "ug/mL",
+    },
     // HORMÔNIOS
-    { codigo: '40316190', nome: 'Cortisol (manhã)', valorMinimo: 5.0, valorMaximo: 23.0, unidade: 'ug/dL' },
-    { codigo: '40305465', nome: 'Paratormônio (PTH)', valorMinimo: 15, valorMaximo: 65, unidade: 'pg/mL' },
-    { codigo: '40316246', nome: 'Estradiol', valorMinimo: null, valorMaximo: null, unidade: 'pg/mL' },
-    { codigo: '40316513', nome: 'Testosterona total', valorMinimo: null, valorMaximo: null, unidade: 'ng/dL' },
-    { codigo: '40316408', nome: 'Progesterona', valorMinimo: null, valorMaximo: null, unidade: 'ng/mL' },
-    { codigo: '40316300', nome: 'SHBG', valorMinimo: null, valorMaximo: null, unidade: 'nmol/L' },
+    {
+      codigo: "40316190",
+      nome: "Cortisol (manhã)",
+      valorMinimo: 5.0,
+      valorMaximo: 23.0,
+      unidade: "ug/dL",
+    },
+    {
+      codigo: "40305465",
+      nome: "Paratormônio (PTH)",
+      valorMinimo: 15,
+      valorMaximo: 65,
+      unidade: "pg/mL",
+    },
+    {
+      codigo: "40316246",
+      nome: "Estradiol",
+      valorMinimo: null,
+      valorMaximo: null,
+      unidade: "pg/mL",
+    },
+    {
+      codigo: "40316513",
+      nome: "Testosterona total",
+      valorMinimo: null,
+      valorMaximo: null,
+      unidade: "ng/dL",
+    },
+    {
+      codigo: "40316408",
+      nome: "Progesterona",
+      valorMinimo: null,
+      valorMaximo: null,
+      unidade: "ng/mL",
+    },
+    {
+      codigo: "40316300",
+      nome: "SHBG",
+      valorMinimo: null,
+      valorMaximo: null,
+      unidade: "nmol/L",
+    },
     // INFLAMATÓRIOS / IMUNOLOGIA
-    { codigo: '40308383', nome: 'PCR qualitativa', valorMinimo: null, valorMaximo: null, unidade: null },
-    { codigo: '40306305', nome: 'Antigliadina IgA (Doença celíaca)', valorMinimo: null, valorMaximo: 20, unidade: 'U/mL' },
-    { codigo: '40306313', nome: 'Antigliadina IgG (Doença celíaca)', valorMinimo: null, valorMaximo: 20, unidade: 'U/mL' },
-    { codigo: '40306259', nome: 'Antiendomísio IgA', valorMinimo: null, valorMaximo: null, unidade: null },
-    { codigo: '40307220', nome: 'IgA total', valorMinimo: 70, valorMaximo: 400, unidade: 'mg/dL' },
+    {
+      codigo: "40308383",
+      nome: "PCR qualitativa",
+      valorMinimo: null,
+      valorMaximo: null,
+      unidade: null,
+    },
+    {
+      codigo: "40306305",
+      nome: "Antigliadina IgA (Doença celíaca)",
+      valorMinimo: null,
+      valorMaximo: 20,
+      unidade: "U/mL",
+    },
+    {
+      codigo: "40306313",
+      nome: "Antigliadina IgG (Doença celíaca)",
+      valorMinimo: null,
+      valorMaximo: 20,
+      unidade: "U/mL",
+    },
+    {
+      codigo: "40306259",
+      nome: "Antiendomísio IgA",
+      valorMinimo: null,
+      valorMaximo: null,
+      unidade: null,
+    },
+    {
+      codigo: "40307220",
+      nome: "IgA total",
+      valorMinimo: 70,
+      valorMaximo: 400,
+      unidade: "mg/dL",
+    },
     // URINA / DIGESTIVO
-    { codigo: '40301109', nome: 'Ácido lático (Lactato)', valorMinimo: 4.5, valorMaximo: 19.8, unidade: 'mg/dL' },
-    { codigo: '40301125', nome: 'Ácido oxálico (urina 24h)', valorMinimo: null, valorMaximo: 40, unidade: 'mg/24h' },
-    { codigo: '40301281', nome: 'Amilase', valorMinimo: 25, valorMaximo: 125, unidade: 'U/L' },
-    { codigo: '40302199', nome: 'Lipase', valorMinimo: 10, valorMaximo: 140, unidade: 'U/L' },
+    {
+      codigo: "40301109",
+      nome: "Ácido lático (Lactato)",
+      valorMinimo: 4.5,
+      valorMaximo: 19.8,
+      unidade: "mg/dL",
+    },
+    {
+      codigo: "40301125",
+      nome: "Ácido oxálico (urina 24h)",
+      valorMinimo: null,
+      valorMaximo: 40,
+      unidade: "mg/24h",
+    },
+    {
+      codigo: "40301281",
+      nome: "Amilase",
+      valorMinimo: 25,
+      valorMaximo: 125,
+      unidade: "U/L",
+    },
+    {
+      codigo: "40302199",
+      nome: "Lipase",
+      valorMinimo: 10,
+      valorMaximo: 140,
+      unidade: "U/L",
+    },
     // COPROLOGIA
-    { codigo: '40303110', nome: 'Parasitológico de fezes', valorMinimo: null, valorMaximo: null, unidade: null },
-    { codigo: '40303136', nome: 'Sangue oculto nas fezes', valorMinimo: null, valorMaximo: null, unidade: null },
-    { codigo: '40303039', nome: 'Coprológico funcional', valorMinimo: null, valorMaximo: null, unidade: null },
-    { codigo: '40303055', nome: 'Gordura fecal', valorMinimo: null, valorMaximo: 7, unidade: 'g/24h' },
+    {
+      codigo: "40303110",
+      nome: "Parasitológico de fezes",
+      valorMinimo: null,
+      valorMaximo: null,
+      unidade: null,
+    },
+    {
+      codigo: "40303136",
+      nome: "Sangue oculto nas fezes",
+      valorMinimo: null,
+      valorMaximo: null,
+      unidade: null,
+    },
+    {
+      codigo: "40303039",
+      nome: "Coprológico funcional",
+      valorMinimo: null,
+      valorMaximo: null,
+      unidade: null,
+    },
+    {
+      codigo: "40303055",
+      nome: "Gordura fecal",
+      valorMinimo: null,
+      valorMaximo: 7,
+      unidade: "g/24h",
+    },
     // GASOMETRIA
-    { codigo: '40302016', nome: 'Gasometria arterial', valorMinimo: null, valorMaximo: null, unidade: null },
-    { codigo: '40302407', nome: 'Reserva alcalina (Bicarbonato)', valorMinimo: 22, valorMaximo: 26, unidade: 'mEq/L' },
+    {
+      codigo: "40302016",
+      nome: "Gasometria arterial",
+      valorMinimo: null,
+      valorMaximo: null,
+      unidade: null,
+    },
+    {
+      codigo: "40302407",
+      nome: "Reserva alcalina (Bicarbonato)",
+      valorMinimo: 22,
+      valorMaximo: 26,
+      unidade: "mEq/L",
+    },
   ];
 
   for (const exame of examesBase) {
@@ -352,13 +930,17 @@ async function main() {
       // Pulmão (3): asma, falta de fôlego, dificuldade respiratória
       3, 2, 2,
       // Trato Digestivo (7): náuseas, diarreia, constipação, distensão, arrotos, azia, dor estomacal
-      2, 1, 1, 2, 1, 2, 1,
+      2,
+      1, 1, 2, 1, 2, 1,
       // Articulações/Músculos (5): dor articular, artrite, rigidez, dolorido, fraqueza
-      1, 0, 1, 2, 1,
+      1,
+      0, 1, 2, 1,
       // Energia/Atividade (4): fadiga, apatia, hiperatividade, dificuldade de relaxar
-      3, 2, 0, 3,
+      3,
+      2, 0, 3,
       // Mente (8): memória, confusão, concentração, coordenação motora, decisão, repetições, pronúncia, aprendizagem
-      1, 0, 2, 0, 1, 0, 0, 1,
+      1,
+      0, 2, 0, 1, 0, 0, 1,
       // Emocional (4): humor, ansiedade, raiva, depressão
       2, 3, 1, 2,
       // Outros (4): doença frequente, urgência urinária, corrimento, edema
@@ -430,9 +1012,24 @@ async function main() {
     ]; // Total: 18
 
     const pacientesNotas = [
-      { paciente: isabela, notas: notasIsabela, score: 72, data: new Date("2025-11-15") },
-      { paciente: olimpia, notas: notasOlimpia, score: 38, data: new Date("2025-12-03") },
-      { paciente: carlos, notas: notasCarlos, score: 18, data: new Date("2026-01-20") },
+      {
+        paciente: isabela,
+        notas: notasIsabela,
+        score: 72,
+        data: new Date("2025-11-15"),
+      },
+      {
+        paciente: olimpia,
+        notas: notasOlimpia,
+        score: 38,
+        data: new Date("2025-12-03"),
+      },
+      {
+        paciente: carlos,
+        notas: notasCarlos,
+        score: 18,
+        data: new Date("2026-01-20"),
+      },
     ];
 
     for (const { paciente, notas, score, data } of pacientesNotas) {
@@ -444,6 +1041,7 @@ async function main() {
       if (!avaliacaoExistente) {
         await prisma.avaliacao.create({
           data: {
+            clinicaId: clinica.id,
             dataRealizacao: data,
             scoreTotal: score,
             pacienteId: paciente.id,
@@ -464,6 +1062,478 @@ async function main() {
     }
   }
 
+  // Seed Alimentos Globais
+  const alimentosGlobais = [
+    {
+      nome: "Arroz branco, cozido",
+      grupo: "Cereais e derivados",
+      calorias: 128,
+      proteinas: 2.5,
+      carboidratos: 28.1,
+      gorduras: 0.2,
+      fibra: 1.6,
+      medidasCaseiras: [
+        { nome: "Colher de sopa cheia", quantidadeEmGramas: 25 },
+        { nome: "Escumadeira cheia", quantidadeEmGramas: 80 },
+      ],
+    },
+    {
+      nome: "Feijão carioca, cozido",
+      grupo: "Leguminosas e derivados",
+      calorias: 76,
+      proteinas: 4.8,
+      carboidratos: 13.6,
+      gorduras: 0.5,
+      fibra: 8.5,
+      medidasCaseiras: [
+        { nome: "Concha média cheia", quantidadeEmGramas: 86 },
+        { nome: "Colher de sopa cheia", quantidadeEmGramas: 17 },
+      ],
+    },
+    {
+      nome: "Frango, peito, sem pele, grelhado",
+      grupo: "Carnes e ovos",
+      calorias: 159,
+      proteinas: 32.0,
+      carboidratos: 0.0,
+      gorduras: 2.5,
+      fibra: 0.0,
+      medidasCaseiras: [
+        { nome: "Bife pequeno", quantidadeEmGramas: 100 },
+        { nome: "Pedaço médio", quantidadeEmGramas: 130 },
+      ],
+    },
+    {
+      nome: "Ovo de galinha, inteiro, cozido",
+      grupo: "Carnes e ovos",
+      calorias: 146,
+      proteinas: 13.3,
+      carboidratos: 0.6,
+      gorduras: 9.5,
+      fibra: 0.0,
+      medidasCaseiras: [{ nome: "Unidade média", quantidadeEmGramas: 50 }],
+    },
+    {
+      nome: "Banana, prata, crua",
+      grupo: "Frutas e derivados",
+      calorias: 98,
+      proteinas: 1.3,
+      carboidratos: 26.0,
+      gorduras: 0.1,
+      fibra: 2.0,
+      medidasCaseiras: [{ nome: "Unidade média", quantidadeEmGramas: 70 }],
+    },
+  ];
+
+  for (const item of alimentosGlobais) {
+    const { medidasCaseiras, ...alimentoData } = item;
+    const existing = await prisma.alimento.findFirst({
+      where: { nome: alimentoData.nome, clinicaId: null },
+    });
+
+    if (!existing) {
+      await prisma.alimento.create({
+        data: {
+          ...alimentoData,
+          clinicaId: null,
+          medidasCaseiras: {
+            create: medidasCaseiras,
+          },
+        },
+      });
+      console.log(
+        `Alimento global criado com medidas caseiras: ${alimentoData.nome}`,
+      );
+    }
+  }
+
+  // Seed de Alimentos da tabela TACO a partir do JSON (com insert, update e medidas caseiras completas)
+  await importarTabelaTaco();
+
+  // ====== PLANOS ALIMENTARES ======
+  const nutriUser = await prisma.usuario.findFirst({
+    where: { email: "nutri@nutricao.com", clinicaId: clinica.id },
+  });
+
+  if (isabela && olimpia && carlos && nutriUser) {
+    console.log("Recriando planos alimentares elaborados de teste...");
+    for (const pac of [isabela, olimpia, carlos]) {
+      // Remove os planos anteriores para rodar o seed limpo
+      await prisma.planoAlimentar.deleteMany({ where: { pacienteId: pac.id } });
+
+      // Plano 1: Emagrecimento
+      await prisma.planoAlimentar.create({
+        data: {
+          clinicaId: clinica.id,
+          usuarioId: nutriUser.id,
+          pacienteId: pac.id,
+          titulo: "Plano de Emagrecimento Saudável",
+          objetivo: "EMAGRECIMENTO",
+          metaCalorias: 1550,
+          metaProteinas: 130,
+          metaCarboidratos: 140,
+          metaGorduras: 45,
+          recomendacaoAguaMl: 2500,
+          observacoes: "Focar em hidratação e mastigar devagar.",
+          refeicoes: {
+            create: [
+              {
+                nome: "Café da Manhã",
+                horario: "08:00",
+                ordem: 0,
+                opcoes: {
+                  create: [
+                    {
+                      nome: "Opção 1 (Pão com Ovo)",
+                      ordem: 0,
+                      alimentos: {
+                        create: [
+                          {
+                            alimento: "Pão de forma integral",
+                            quantidade: 2,
+                            unidade: "Fatia",
+                            calorias: 120,
+                            proteinas: 6,
+                            carboidratos: 20,
+                            gorduras: 1.5,
+                          },
+                          {
+                            alimento: "Ovo de galinha cozido",
+                            quantidade: 2,
+                            unidade: "Unidade",
+                            calorias: 140,
+                            proteinas: 13,
+                            carboidratos: 1,
+                            gorduras: 10,
+                          },
+                          {
+                            alimento: "Café sem açúcar",
+                            quantidade: 1,
+                            unidade: "Xícara",
+                            calorias: 2,
+                            proteinas: 0,
+                            carboidratos: 0.5,
+                            gorduras: 0,
+                          },
+                        ],
+                      },
+                    },
+                    {
+                      nome: "Opção 2 (Iogurte e Fruta)",
+                      ordem: 1,
+                      alimentos: {
+                        create: [
+                          {
+                            alimento: "Iogurte Natural Desnatado",
+                            quantidade: 1,
+                            unidade: "Pote (170g)",
+                            calorias: 70,
+                            proteinas: 7,
+                            carboidratos: 10,
+                            gorduras: 0,
+                          },
+                          {
+                            alimento: "Mamão Papaia",
+                            quantidade: 0.5,
+                            unidade: "Unidade",
+                            calorias: 60,
+                            proteinas: 1,
+                            carboidratos: 14,
+                            gorduras: 0,
+                          },
+                          {
+                            alimento: "Aveia em flocos",
+                            quantidade: 2,
+                            unidade: "Colher de sopa",
+                            calorias: 105,
+                            proteinas: 4,
+                            carboidratos: 17,
+                            gorduras: 2,
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                nome: "Almoço",
+                horario: "12:30",
+                ordem: 1,
+                opcoes: {
+                  create: [
+                    {
+                      nome: "Opção Padrão",
+                      ordem: 0,
+                      alimentos: {
+                        create: [
+                          {
+                            alimento: "Arroz integral cozido",
+                            quantidade: 100,
+                            unidade: "g",
+                            calorias: 110,
+                            proteinas: 3,
+                            carboidratos: 23,
+                            gorduras: 1,
+                          },
+                          {
+                            alimento: "Feijão carioca cozido",
+                            quantidade: 80,
+                            unidade: "g",
+                            calorias: 60,
+                            proteinas: 4,
+                            carboidratos: 11,
+                            gorduras: 0.5,
+                          },
+                          {
+                            alimento: "Peito de frango grelhado",
+                            quantidade: 120,
+                            unidade: "g",
+                            calorias: 190,
+                            proteinas: 36,
+                            carboidratos: 0,
+                            gorduras: 4,
+                          },
+                          {
+                            alimento: "Salada de folhas verdes",
+                            quantidade: 1,
+                            unidade: "À vontade",
+                            calorias: 15,
+                            proteinas: 1,
+                            carboidratos: 3,
+                            gorduras: 0,
+                          },
+                          {
+                            alimento: "Azeite de oliva extra virgem",
+                            quantidade: 1,
+                            unidade: "Colher de sobremesa",
+                            calorias: 45,
+                            proteinas: 0,
+                            carboidratos: 0,
+                            gorduras: 5,
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                nome: "Lanche da Tarde",
+                horario: "16:00",
+                ordem: 2,
+                opcoes: {
+                  create: [
+                    {
+                      nome: "Opção Prática",
+                      ordem: 0,
+                      alimentos: {
+                        create: [
+                          {
+                            alimento: "Maçã Fuji",
+                            quantidade: 1,
+                            unidade: "Unidade média",
+                            calorias: 70,
+                            proteinas: 0.5,
+                            carboidratos: 19,
+                            gorduras: 0.3,
+                          },
+                          {
+                            alimento: "Castanha de caju",
+                            quantidade: 15,
+                            unidade: "g",
+                            calorias: 85,
+                            proteinas: 2.5,
+                            carboidratos: 4.5,
+                            gorduras: 7,
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                nome: "Jantar",
+                horario: "19:30",
+                ordem: 3,
+                opcoes: {
+                  create: [
+                    {
+                      nome: "Opção Leve",
+                      ordem: 0,
+                      alimentos: {
+                        create: [
+                          {
+                            alimento: "Filé de Tilápia grelhada",
+                            quantidade: 150,
+                            unidade: "g",
+                            calorias: 145,
+                            proteinas: 30,
+                            carboidratos: 0,
+                            gorduras: 2.5,
+                          },
+                          {
+                            alimento: "Brócolis cozido",
+                            quantidade: 80,
+                            unidade: "g",
+                            calorias: 28,
+                            proteinas: 2.5,
+                            carboidratos: 5,
+                            gorduras: 0.3,
+                          },
+                          {
+                            alimento: "Batata doce cozida",
+                            quantidade: 100,
+                            unidade: "g",
+                            calorias: 86,
+                            proteinas: 1.5,
+                            carboidratos: 20,
+                            gorduras: 0.1,
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      });
+
+      // Plano 2: Hipertrofia
+      await prisma.planoAlimentar.create({
+        data: {
+          clinicaId: clinica.id,
+          usuarioId: nutriUser.id,
+          pacienteId: pac.id,
+          titulo: "Plano de Hipertrofia (Ganho de Massa)",
+          objetivo: "HIPERTROFIA",
+          metaCalorias: 2800,
+          metaProteinas: 180,
+          metaCarboidratos: 350,
+          metaGorduras: 80,
+          recomendacaoAguaMl: 3500,
+          observacoes:
+            "Treino de força intenso 5x na semana. Manter sono regulado.",
+          refeicoes: {
+            create: [
+              {
+                nome: "Pré-Treino",
+                horario: "06:30",
+                ordem: 0,
+                opcoes: {
+                  create: [
+                    {
+                      nome: "Vitamina Proteica",
+                      ordem: 0,
+                      alimentos: {
+                        create: [
+                          {
+                            alimento: "Banana Prata",
+                            quantidade: 2,
+                            unidade: "Unidade",
+                            calorias: 140,
+                            proteinas: 2,
+                            carboidratos: 36,
+                            gorduras: 0,
+                          },
+                          {
+                            alimento: "Leite Integral",
+                            quantidade: 300,
+                            unidade: "ml",
+                            calorias: 180,
+                            proteinas: 9,
+                            carboidratos: 14,
+                            gorduras: 9,
+                          },
+                          {
+                            alimento: "Aveia em flocos",
+                            quantidade: 40,
+                            unidade: "g",
+                            calorias: 150,
+                            proteinas: 6,
+                            carboidratos: 22,
+                            gorduras: 3,
+                          },
+                          {
+                            alimento: "Whey Protein Concentrado",
+                            quantidade: 30,
+                            unidade: "g",
+                            calorias: 120,
+                            proteinas: 24,
+                            carboidratos: 3,
+                            gorduras: 2,
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                nome: "Pós-Treino (Almoço)",
+                horario: "12:00",
+                ordem: 1,
+                opcoes: {
+                  create: [
+                    {
+                      nome: "Almoço Reforçado",
+                      ordem: 0,
+                      alimentos: {
+                        create: [
+                          {
+                            alimento: "Arroz Branco Cozido",
+                            quantidade: 250,
+                            unidade: "g",
+                            calorias: 325,
+                            proteinas: 6,
+                            carboidratos: 72,
+                            gorduras: 0.5,
+                          },
+                          {
+                            alimento: "Feijão Preto Cozido",
+                            quantidade: 150,
+                            unidade: "g",
+                            calorias: 115,
+                            proteinas: 7,
+                            carboidratos: 20,
+                            gorduras: 1,
+                          },
+                          {
+                            alimento: "Carne Moída (Patinho)",
+                            quantidade: 150,
+                            unidade: "g",
+                            calorias: 200,
+                            proteinas: 33,
+                            carboidratos: 0,
+                            gorduras: 7,
+                          },
+                          {
+                            alimento: "Azeite de oliva extra virgem",
+                            quantidade: 1,
+                            unidade: "Colher de sopa",
+                            calorias: 110,
+                            proteinas: 0,
+                            carboidratos: 0,
+                            gorduras: 12,
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      });
+    }
+  }
+
+  await seedMedidasLiquidas();
+
   console.log("Seed executado com sucesso!");
   console.log(`Clínica: ${clinica.nome} (${clinica.id})`);
   console.log(
@@ -471,6 +1541,81 @@ async function main() {
   );
   console.log("Senha padrão: 123456");
   console.log("Questionário QRM criado com respostas para 3 pacientes");
+}
+
+async function seedMedidasLiquidas() {
+  console.log("\nSemeando/Atualizando medidas de alimentos líquidos...");
+  const alimentos = await prisma.alimento.findMany({
+    where: { clinicaId: null },
+    include: { medidasCaseiras: true },
+  });
+
+  const liquidTerms = [
+    "suco",
+    "bebida láctea",
+    "bebida lactea",
+    "leite, de vaca, desnatado, uht",
+    "leite, de vaca, integral",
+    "leite, de cabra",
+    "leite, de vaca, achocolatado",
+    "leite, fermentado",
+    "refrigerante",
+    "café",
+    "chá",
+    "cerveja",
+    "vinho",
+    "caldo",
+    "água",
+    "agua",
+  ];
+
+  let totalCriadas = 0;
+
+  for (const alimento of alimentos) {
+    const nomeLower = alimento.nome.toLowerCase();
+    const grupoLower = alimento.grupo ? alimento.grupo.toLowerCase() : "";
+
+    const isLiquid =
+      grupoLower.includes("bebidas") ||
+      liquidTerms.some(
+        (term) =>
+          nomeLower.includes(term) &&
+          !nomeLower.includes("pó") &&
+          !nomeLower.includes("condensado"),
+      );
+
+    if (isLiquid) {
+      const medidasLiquidas = [
+        { nome: "ml", quantidadeEmGramas: 1 },
+        { nome: "Copo (200ml)", quantidadeEmGramas: 200 },
+        { nome: "Xícara (240ml)", quantidadeEmGramas: 240 },
+        { nome: "Lata (350ml)", quantidadeEmGramas: 350 },
+        { nome: "Garrafa (500ml)", quantidadeEmGramas: 500 },
+        { nome: "l", quantidadeEmGramas: 1000 },
+      ];
+
+      for (const med of medidasLiquidas) {
+        const existe = alimento.medidasCaseiras.some(
+          (m) => m.nome.toLowerCase() === med.nome.toLowerCase(),
+        );
+
+        if (!existe) {
+          await prisma.medidaCaseira.create({
+            data: {
+              alimentoId: alimento.id,
+              nome: med.nome,
+              quantidadeEmGramas: med.quantidadeEmGramas,
+            },
+          });
+          totalCriadas++;
+        }
+      }
+    }
+  }
+
+  console.log(
+    `Medidas caseiras líquidas prontas! ${totalCriadas} novas medidas criadas.`,
+  );
 }
 
 main()

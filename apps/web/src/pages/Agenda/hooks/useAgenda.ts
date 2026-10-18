@@ -1,17 +1,21 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   listarAgendaDia,
   criarAgendamento,
   editarAgendamento,
   alterarStatus,
   excluirAgendamento,
-} from '@/services/agenda';
-import type { CreateAgendamentoInput, UpdateAgendamentoInput, UpdateStatusInput } from '@nutricao/shared';
+} from "@/services/agenda";
+import type {
+  CreateAgendamentoInput,
+  UpdateAgendamentoInput,
+  UpdateStatusInput,
+} from "@nutricao/shared";
 
-export function useAgendaDia(data: string) {
+export function useAgendaDia(data: string, nutricionistaId: string) {
   return useQuery({
-    queryKey: ['agenda', data],
-    queryFn: () => listarAgendaDia(data),
+    queryKey: ["agenda", data, nutricionistaId],
+    queryFn: () => listarAgendaDia(data, nutricionistaId),
   });
 }
 
@@ -21,7 +25,7 @@ export function useCriarAgendamento(data: string) {
   return useMutation({
     mutationFn: (input: CreateAgendamentoInput) => criarAgendamento(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['agenda', data] });
+      queryClient.invalidateQueries({ queryKey: ["agenda", data] });
     },
   });
 }
@@ -30,10 +34,15 @@ export function useEditarAgendamento(data: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: UpdateAgendamentoInput }) =>
-      editarAgendamento(id, input),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: UpdateAgendamentoInput;
+    }) => editarAgendamento(id, input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['agenda', data] });
+      queryClient.invalidateQueries({ queryKey: ["agenda", data] });
     },
   });
 }
@@ -45,7 +54,7 @@ export function useAlterarStatus(data: string) {
     mutationFn: ({ id, input }: { id: string; input: UpdateStatusInput }) =>
       alterarStatus(id, input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['agenda', data] });
+      queryClient.invalidateQueries({ queryKey: ["agenda", data] });
     },
   });
 }
@@ -56,7 +65,7 @@ export function useExcluirAgendamento(data: string) {
   return useMutation({
     mutationFn: (id: string) => excluirAgendamento(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['agenda', data] });
+      queryClient.invalidateQueries({ queryKey: ["agenda", data] });
     },
   });
 }

@@ -9,9 +9,12 @@ import { usuariosRoutes } from "../modules/usuarios/infra/usuarios.routes.js";
 import { relatoriosRoutes } from "../modules/relatorios/infra/relatorios.routes.js";
 import { dashboardRoutes } from "../modules/dashboard/infra/dashboard.routes.js";
 import { clinicaRoutes } from "../modules/clinica/infra/clinica.routes.js";
-import { questionariosRoutes } from "@/modules/questionarios/infra/questionarios.routes.js";
-import { modulosRoutes } from "@/modules/modulos/infra/modulos.routes.js";
-import { avaliacoesRoutes } from "@/modules/avaliacoes/infra/avaliacoes.routes.js";
+import { questionariosRoutes } from "../modules/questionarios/infra/questionarios.routes.js";
+import { modulosRoutes } from "../modules/modulos/infra/modulos.routes.js";
+import { avaliacoesRoutes } from "../modules/avaliacoes/infra/avaliacoes.routes.js";
+import { planosAlimentaresRoutes } from "../modules/planos-alimentares/infra/planos-alimentares.routes.js";
+import { alimentosRoutes } from "../modules/alimentos/infra/alimentos.routes.js";
+import { notificacaoRoutes } from "../modules/notificacoes/infra/notificacoes.routes.js";
 
 const router = Router();
 
@@ -28,5 +31,8 @@ router.use("/relatorios", relatoriosRoutes);
 router.use("/questionarios", questionariosRoutes);
 router.use("/modulos", modulosRoutes);
 router.use("/avaliacoes", avaliacoesRoutes);
+router.use("/planos-alimentares", planosAlimentaresRoutes);
+router.use("/alimentos", alimentosRoutes);
+router.use("/notificacoes", notificacaoRoutes);
 
 export { router };

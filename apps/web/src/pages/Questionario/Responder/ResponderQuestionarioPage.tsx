@@ -1,14 +1,18 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import axios from "axios";
+
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { UserGroupIcon } from "@hugeicons/core-free-icons";
+import { UserGroupIcon, Tick01Icon } from "@hugeicons/core-free-icons";
 import {
   buscarQuestionario,
   enviarRespostasQuestionario,
   type RespostaPayload,
 } from "@/services/questionarios";
 import { buscarNomePacientePublico } from "@/services/pacientes";
+import { useDebounce } from "@/hooks/useDebounce";
+import { DraftConfirmationModal } from "./components/DraftConfirmationModal";
 import styles from "./ResponderQuestionarioPage.module.scss";
 
 const OPCOES_NOTA: Record<number, string> = {
@@ -30,6 +34,15 @@ export function ResponderQuestionarioPage() {
   const [tentouEnviar, setTentouEnviar] = useState(false);
   const [exibirLegendaFlutuante, setExibirLegendaFlutuante] = useState(false);
   const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null);
+
+  // Estados para o Rascunho (Draft)
+  const draftKey = `draft_questionario_${questionarioId}_${pacienteId}`;
+  const [mostrarModalDraft, setMostrarModalDraft] = useState(false);
+  const [draftCarregado, setDraftCarregado] = useState(false);
+  const [dataDraft, setDataDraft] = useState<string | undefined>();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const debouncedRespostas = useDebounce(respostas, 800);
 
   const {
     data: questionario,
@@ -98,17 +111,78 @@ export function ResponderQuestionarioPage() {
         payload,
       ),
     onSuccess: (response) => {
+      // Limpa rascunho após sucesso
+      localStorage.removeItem(draftKey);
       setErroFormulario(null);
       setMensagemSucesso(
         response?.message || "Questionário preenchido com sucesso",
       );
     },
-    onError: (error: any) => {
-      setErroFormulario(
-        error?.response?.data?.message || "Erro ao enviar. Tente novamente.",
-      );
+    onError: (error: unknown) => {
+      let errorMessage = "Erro ao enviar. Tente novamente.";
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || errorMessage;
+      }
+      setErroFormulario(errorMessage);
     },
   });
+
+  // 1. Carregar rascunho ao montar componente
+  useEffect(() => {
+    const savedDraft = localStorage.getItem(draftKey);
+    if (savedDraft) {
+      try {
+        const parsed = JSON.parse(savedDraft);
+        if (parsed.respostas && Object.keys(parsed.respostas).length > 0) {
+          setDataDraft(parsed.updatedAt);
+          setMostrarModalDraft(true);
+        }
+      } catch (e) {
+        console.error("Erro ao carregar rascunho", e);
+      }
+    }
+    setDraftCarregado(true);
+  }, [draftKey]);
+
+  // 2. Salvar rascunho automaticamente (Debounce)
+  useEffect(() => {
+    // Só salva se o formulário já foi "iniciado" ou recuperado,
+    // para evitar sobrescrever com um state vazio no mount
+    if (!draftCarregado || Object.keys(debouncedRespostas).length === 0) return;
+
+    const saveDraft = () => {
+      setIsSaving(true);
+      const draft = {
+        respostas: debouncedRespostas,
+        updatedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(draftKey, JSON.stringify(draft));
+
+      // Simulando um tempo de feedback visual
+      setTimeout(() => setIsSaving(false), 600);
+    };
+
+    saveDraft();
+  }, [debouncedRespostas, draftKey, draftCarregado]);
+
+  function handleContinuarDraft() {
+    const savedDraft = localStorage.getItem(draftKey);
+    if (savedDraft) {
+      try {
+        const parsed = JSON.parse(savedDraft);
+        setRespostas(parsed.respostas);
+      } catch (e) {
+        console.error("Erro ao recuperar rascunho", e);
+      }
+    }
+    setMostrarModalDraft(false);
+  }
+
+  function handleDescartarDraft() {
+    localStorage.removeItem(draftKey);
+    setRespostas({});
+    setMostrarModalDraft(false);
+  }
 
   function handleSelecionarNota(perguntaId: string, nota: number) {
     setErroFormulario(null);
@@ -201,10 +275,37 @@ export function ResponderQuestionarioPage() {
       </div>
 
       <div className={styles.container}>
+        {/* Modal de Recuperação de Rascunho */}
+        <DraftConfirmationModal
+          isOpen={mostrarModalDraft}
+          updatedAt={dataDraft}
+          onContinue={handleContinuarDraft}
+          onDiscard={handleDescartarDraft}
+        />
         <header className={styles.header}>
           <div className={styles.headerGrid}>
             <div className={styles.headerMain}>
-              <span className={styles.headerTag}>Questionário</span>
+              <div className={styles.headerTitleRow}>
+                <span className={styles.headerTag}>Questionário</span>
+                {Object.keys(respostas).length > 0 && (
+                  <div
+                    className={`${styles.saveStatus} ${isSaving ? styles.saving : ""}`}
+                  >
+                    {isSaving ? (
+                      "Salvando..."
+                    ) : (
+                      <>
+                        <HugeiconsIcon
+                          icon={Tick01Icon}
+                          size={14}
+                          strokeWidth={2.5}
+                        />{" "}
+                        Salvo
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
               <h1>{questionario?.nome}</h1>
               <p>
                 Avaliação de Hipersensibilidades - Versão {questionario?.versao}

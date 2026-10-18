@@ -1,3 +1,4 @@
+@use "sass:color";
 @use "../../../styles/variables" as *;
 @use "../../../styles/mixins" as *;
 
@@ -692,5 +693,485 @@
 
   .scoreExamplesList {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ===================================== */
+/* MODAL EXCLUIR AVALIAÇÃO (EXCLUSIVO) */
+/* ===================================== */
+
+.excluirOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 7, 18, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: $z-modal;
+  padding: $space-4;
+  backdrop-filter: blur(4px);
+}
+
+.excluirModal {
+  background: $white;
+  width: 100%;
+  max-width: 520px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0px 20px 45px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba($danger, 0.25);
+  animation: excluirFadeIn 0.18s ease-out;
+}
+
+@keyframes excluirFadeIn {
+  from {
+    transform: translateY(10px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0px) scale(1);
+    opacity: 1;
+  }
+}
+
+.excluirHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $space-4 $space-5;
+  border-bottom: 1px solid rgba($danger, 0.15);
+  background: linear-gradient(
+    180deg,
+    rgba($danger, 0.12) 0%,
+    rgba($danger, 0.04) 100%
+  );
+}
+
+.excluirHeaderTitle {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+
+  h3 {
+    margin: 0;
+    font-size: $font-size-base;
+    font-weight: $font-weight-bold;
+    color: $gray-900;
+  }
+}
+
+.excluirIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba($danger, 0.15);
+  border: 1px solid rgba($danger, 0.3);
+  color: $danger;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-md;
+  font-weight: $font-weight-bold;
+}
+
+.excluirCloseBtn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: $gray-500;
+  font-size: $font-size-xl;
+  line-height: 1;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: $gray-900;
+    transform: scale(1.05);
+  }
+}
+
+// ==========================================
+// Pagination
+// ==========================================
+
+.paginationContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: $space-3;
+  margin-top: $space-5;
+}
+
+.paginationBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-full;
+  background-color: $primary;
+  color: $white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all $transition-smooth;
+  box-shadow: $shadow-sm;
+
+  &:hover:not(:disabled) {
+    background-color: $primary-dark;
+    transform: translateY(-1px);
+    box-shadow: $shadow-md;
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    background-color: $gray-100;
+    color: $gray-400;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  svg {
+    font-size: 1.25rem;
+  }
+}
+
+.paginationText {
+  font-size: $font-size-sm;
+  font-weight: 600;
+  color: $gray-500;
+  min-width: 120px;
+  text-align: center;
+}
+
+.excluirBody {
+  padding: $space-5;
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.excluirDescricao {
+  margin: 0;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $gray-800;
+}
+
+.excluirAviso {
+  margin: 0;
+  font-size: $font-size-xs;
+  color: $gray-600;
+  line-height: $line-height-normal;
+
+  strong {
+    color: $danger;
+    font-weight: $font-weight-bold;
+  }
+}
+
+.excluirFooter {
+  padding: $space-4 $space-5;
+  display: flex;
+  justify-content: flex-end;
+  gap: $space-3;
+  border-top: 1px solid rgba($danger, 0.15);
+  background: rgba($gray-50, 0.65);
+}
+
+.excluirCancelBtn {
+  padding: 0.7rem 1.2rem;
+  border-radius: 12px;
+  border: 1px solid $gray-200;
+  background: $white;
+  color: $gray-700;
+  font-weight: $font-weight-semibold;
+  font-size: $font-size-sm;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: $gray-100;
+    border-color: $gray-300;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.excluirDeleteBtn {
+  padding: 0.7rem 1.2rem;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(
+    135deg,
+    $danger,
+    color.adjust($danger, $lightness: -8%)
+  );
+  color: $white;
+  font-weight: $font-weight-semibold;
+  font-size: $font-size-sm;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0px 6px 18px rgba($danger, 0.25);
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0px 10px 24px rgba($danger, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0px);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+// ==========================================
+// Responsive Table / Cards Grid
+// ==========================================
+
+.medidasTable {
+  display: none;
+  width: 100%;
+  overflow-x: auto;
+
+  @media (min-width: $breakpoint-lg) {
+    display: block;
+  }
+}
+
+// ==========================================
+// Collapsible Filters (Mobile-First)
+// ==========================================
+
+.filterContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  @media (min-width: 769px) {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.filterMobileToggleBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border-radius: $radius-md;
+  border: 1px solid rgba($primary, 0.25);
+  background-color: $white;
+  color: $primary-dark;
+  font-size: $font-size-sm;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: $shadow-sm;
+
+  &:hover {
+    background-color: $primary-50;
+    border-color: rgba($primary, 0.4);
+  }
+
+  @media (min-width: 769px) {
+    display: none;
+  }
+}
+
+// Collapsed state on mobile
+@media (max-width: 768px) {
+  .filterRangeInline {
+    &.collapsed {
+      display: none !important;
+    }
+  }
+}
+
+// ==========================================
+// Chart Adjustments on Mobile
+// ==========================================
+
+@media (max-width: 768px) {
+  .chartContainer {
+    padding: 0.75rem;
+    border-radius: 10px;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.15);
+    margin-bottom: 15px;
+  }
+
+  .chartGraphic {
+    height: 200px !important; // Compact height for mobile screens
+  }
+
+  .chartLegendLabel {
+    font-size: $font-size-base;
+  }
+}
+
+// ==========================================
+// Premium Mobile Cards
+// ==========================================
+
+.mobileCards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: $space-4 0;
+
+  @media (min-width: $breakpoint-lg) {
+    display: none;
+  }
+}
+
+.mobileCard {
+  @include card;
+  background: $white;
+  border-radius: $radius-lg;
+  border: 1px solid $gray-200;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: $shadow-sm;
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: $shadow-md;
+  }
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.cardDate {
+  font-size: $font-size-sm;
+  font-weight: 700;
+  color: $gray-800;
+}
+
+.cardScoreBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  background: $primary-light;
+  border: 1px solid rgba($primary, 0.2);
+  border-radius: 100px;
+  color: $primary-dark;
+}
+
+.cardScoreLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.8;
+}
+
+.cardScoreValue {
+  font-size: $font-size-sm;
+  font-weight: 700;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cardObservation {
+  background: $gray-50;
+  border-left: 3px solid $primary;
+  border-radius: $radius-sm;
+  padding: 0.625rem 0.875rem;
+}
+
+.cardLabel {
+  display: block;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: $gray-400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.125rem;
+}
+
+.cardText {
+  margin: 0;
+  font-size: $font-size-sm;
+  font-weight: 600;
+  color: $gray-700;
+  line-height: 1.4;
+}
+
+.cardFooter {
+  display: flex;
+  gap: 0.625rem;
+  margin-top: 0.25rem;
+}
+
+.cardPrimaryBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: linear-gradient(135deg, $primary, $primary-dark);
+  color: $white;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-xs;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 2px 4px rgba($primary, 0.15);
+
+  &:hover {
+    opacity: 0.95;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba($primary, 0.25);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.cardDeleteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $radius-md;
+  color: $gray-400;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: #fef2f2;
+    border-color: rgba($danger, 0.2);
+    color: $danger;
   }
 }

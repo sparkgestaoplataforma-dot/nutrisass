@@ -6,6 +6,14 @@
   gap: 0;
   border-bottom: 2px solid $gray-200;
   margin-bottom: 1.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 
 .tab {
@@ -16,14 +24,25 @@
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
   transition: all 0.2s;
+  white-space: nowrap;
 
   &:hover { color: $gray-700; }
   &.active { color: $primary; border-bottom-color: $primary; }
 }
 
 .header {
-  @include flex-between;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
   margin-bottom: 1rem;
+
+  @media (min-width: $breakpoint-sm) {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0;
+  }
 
   h3 {
     font-size: $font-size-lg;
@@ -33,15 +52,184 @@
 
 .addBtn {
   @include btn;
+  width: 100%;
+  justify-content: center;
+
+  @media (min-width: $breakpoint-sm) {
+    width: auto;
+  }
+}
+
+.headerRight {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+
+  @media (min-width: $breakpoint-sm) {
+    flex-direction: row;
+    align-items: center;
+    width: auto;
+  }
+}
+
+.searchWrapper {
+  position: relative;
+  width: 100%;
+
+  @media (min-width: $breakpoint-sm) {
+    width: 260px;
+  }
+}
+
+.searchIcon {
+  position: absolute;
+  left: $space-3;
+  top: 50%;
+  transform: translateY(-50%);
+  color: $gray-400;
+  pointer-events: none;
+}
+
+.searchInput {
+  @include input-base;
+  padding-left: 2.25rem;
+  font-size: $font-size-sm;
+  width: 100%;
+}
+
+.footer {
+  padding: $space-3 $space-4;
+  border-top: 1px solid $gray-100;
+  font-size: $font-size-xs;
+  color: $gray-500;
+  background: $gray-50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-3;
+
+  @media (min-width: $breakpoint-sm) {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 0;
+  }
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.pageBtn {
+  @include btn-ghost;
+  padding: $space-1 $space-2;
+  font-size: $font-size-xs;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.pageInfo {
+  font-size: $font-size-xs;
+  color: $gray-600;
+  font-weight: $font-weight-medium;
 }
 
 .container {
   @include card;
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .table {
   width: 100%;
+  border-collapse: collapse;
+  min-width: 500px;
+
+  @media (max-width: 639px) {
+    display: block;
+    min-width: 0 !important;
+
+    thead {
+      display: none;
+    }
+
+    tbody {
+      display: block;
+      width: 100%;
+    }
+
+    tr {
+      display: flex;
+      flex-direction: column;
+      background: $white;
+      border: 1px solid $gray-200;
+      border-radius: $radius-md;
+      padding: $space-4;
+      margin-bottom: $space-4;
+      box-shadow: $shadow-xs;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid $gray-50;
+      font-size: $font-size-sm;
+      color: $gray-700;
+      text-align: right;
+      width: 100%;
+
+      &::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: $gray-500;
+        text-transform: uppercase;
+        font-size: $font-size-2xs;
+        margin-right: 1rem;
+        text-align: left;
+      }
+
+      &[data-label="Nome"] {
+        order: -1;
+        font-weight: 600;
+        font-size: $font-size-base;
+        color: $gray-800;
+        border-bottom: 1px solid $gray-200;
+        padding-bottom: 0.5rem;
+        margin-bottom: 0.5rem;
+        text-align: left;
+
+        &::before {
+          display: none;
+        }
+      }
+
+      &[data-label="Ações"] {
+        border-bottom: none;
+        padding-top: 0.75rem;
+        margin-top: 0.5rem;
+        border-top: 1px solid $gray-100;
+        justify-content: flex-end;
+        
+        &::before {
+          display: none;
+        }
+      }
+    }
+  }
 
   th {
     background: $gray-50;
@@ -81,15 +269,23 @@
 
 .formCard {
   @include card;
-  padding: 1.5rem;
+  padding: 1rem;
   margin-bottom: 1rem;
+
+  @media (min-width: $breakpoint-sm) {
+    padding: 1.5rem;
+  }
 }
 
 .formGrid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: 1rem;
   margin-bottom: 1rem;
+
+  @media (min-width: $breakpoint-sm) {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .field {
@@ -110,12 +306,35 @@
 
 .formActions {
   display: flex;
+  flex-direction: column-reverse;
   gap: 0.5rem;
-  justify-content: flex-end;
+
+  @media (min-width: $breakpoint-sm) {
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
 }
 
-.cancelBtn { @include btn($gray-200, $gray-700); }
-.submitBtn { @include btn; }
+.cancelBtn {
+  @include btn($gray-200, $gray-700);
+  width: 100%;
+  justify-content: center;
+
+  @media (min-width: $breakpoint-sm) {
+    width: auto;
+  }
+}
+
+.submitBtn {
+  @include btn;
+  width: 100%;
+  justify-content: center;
+
+  @media (min-width: $breakpoint-sm) {
+    width: auto;
+  }
+}
 
 .badge {
   display: inline-block;
@@ -134,4 +353,84 @@
   text-align: center;
   color: $gray-400;
   font-size: $font-size-sm;
+}
+
+.hint {
+  font-size: $font-size-sm;
+  color: $gray-500;
+  margin: -0.5rem 0 1rem;
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.fieldError {
+  font-size: $font-size-xs;
+  color: $danger;
+  margin-bottom: 0.5rem;
+}
+
+.savedMsg {
+  align-self: center;
+  font-size: $font-size-sm;
+  color: $primary-dark;
+  font-weight: 500;
+}
+
+.logoUpload {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logoPreview {
+  width: 120px;
+  height: 64px;
+  border: 1px dashed $gray-300;
+  border-radius: $radius-sm;
+  background: $gray-50;
+  @include flex-center;
+  overflow: hidden;
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  span {
+    font-size: $font-size-xs;
+    color: $gray-400;
+  }
+}
+
+.logoActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.logoBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid $gray-200;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: 500;
+  color: $gray-700;
+  background: $white;
+  transition: all 0.15s;
+
+  &:hover { border-color: $primary; color: $primary-dark; }
+}
+
+.logoBtnDanger:hover { border-color: $danger; color: $danger; }
+
+.logoThumb {
+  height: 28px;
+  max-width: 72px;
+  object-fit: contain;
+  vertical-align: middle;
 }

@@ -7,15 +7,18 @@ import {
   TestTubeIcon,
   BarChartIcon,
   SettingsIcon,
+  Cancel01Icon,
+  AppleIcon,
 } from '@hugeicons/core-free-icons';
 import { useAuthStore } from '@/stores/authStore';
 import styles from './Sidebar.module.scss';
 
 const navItems = [
-  { to: '/', label: 'Início', icon: DashboardSquareIcon },
+  { to: '/dashboard', label: 'Início', icon: DashboardSquareIcon },
   { to: '/agenda', label: 'Agenda', icon: CalendarIcon },
   { to: '/pacientes', label: 'Pacientes', icon: UserGroupIcon },
   { to: '/exames', label: 'Exames', icon: TestTubeIcon },
+  { to: '/alimentos', label: 'Alimentos', icon: AppleIcon },
   { to: '/relatorios', label: 'Relatórios', icon: BarChartIcon },
   { to: '/configuracoes', label: 'Configurações', icon: SettingsIcon },
 ];
@@ -30,15 +33,28 @@ function getInitials(str: string): string {
     .toUpperCase();
 }
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const user = useAuthStore((s) => s.user);
 
   return (
-    <aside className={styles.sidebar}>
-      {/* Logo */}
+    <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}>
+      {/* Logo + botão fechar (mobile) */}
       <div className={styles.logo}>
         <div className={styles.logoIcon}>N</div>
         <span className={styles.logoText}>NutriSaaS</span>
+
+        <button
+          className={styles.closeBtn}
+          onClick={onClose}
+          aria-label="Fechar menu"
+        >
+          <HugeiconsIcon icon={Cancel01Icon} size={18} strokeWidth={2} />
+        </button>
       </div>
 
       {/* Navigation */}
@@ -48,7 +64,7 @@ export function Sidebar() {
           <NavLink
             key={item.to}
             to={item.to}
-            end={item.to === '/'}
+            end={item.to === '/dashboard'}
             className={({ isActive }) =>
               `${styles.navItem} ${isActive ? styles.active : ''}`
             }

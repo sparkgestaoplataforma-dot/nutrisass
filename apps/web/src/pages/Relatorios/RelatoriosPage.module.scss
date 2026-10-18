@@ -1,20 +1,69 @@
 @use '../../styles/variables' as *;
 @use '../../styles/mixins' as *;
 
+.filtrosWrapper {
+  margin-bottom: 1.5rem;
+}
+
+.filtrosMobileToggleBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border-radius: $radius-md;
+  border: 1px solid rgba($primary, 0.25);
+  background-color: $white;
+  color: $primary-dark;
+  font-size: $font-size-sm;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: $shadow-sm;
+  width: 100%;
+
+  &:hover {
+    background-color: $primary-50;
+    border-color: rgba($primary, 0.4);
+  }
+
+  @media (min-width: $breakpoint-md) {
+    display: none;
+  }
+}
+
 .filtros {
   @include card;
   padding: 1.25rem;
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: flex-end;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 1rem;
-  flex-wrap: wrap;
+  margin-top: 0.75rem;
+
+  @media (max-width: 767px) {
+    &.collapsed {
+      display: none !important;
+    }
+  }
+
+  @media (min-width: $breakpoint-md) {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0;
+  }
 }
 
 .field {
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
+  width: 100%;
+
+  @media (min-width: $breakpoint-md) {
+    width: auto;
+  }
 
   label {
     font-size: $font-size-xs;
@@ -25,48 +74,113 @@
 
   input, select {
     @include input-base;
+    width: 100%;
+    
+    @media (min-width: $breakpoint-md) {
+      width: auto;
+      min-width: 160px;
+    }
+  }
+}
+
+.filtrosActions {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+
+  @media (min-width: $breakpoint-md) {
     width: auto;
-    min-width: 160px;
   }
 }
 
 .filtrarBtn {
   @include btn;
   height: 40px;
+  flex: 1;
+
+  @media (min-width: $breakpoint-md) {
+    flex: none;
+    width: auto;
+  }
 }
 
 .imprimirBtn {
   @include btn($gray-700);
   height: 40px;
+  flex: 1;
+
+  @media (min-width: $breakpoint-md) {
+    flex: none;
+    width: auto;
+  }
 }
 
 .stats {
-  display: flex;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
   margin-bottom: 1.5rem;
+
+  @media (min-width: $breakpoint-sm) {
+    gap: 1rem;
+  }
 }
 
 .stat {
   @include card;
-  padding: 1rem 1.5rem;
-  flex: 1;
+  padding: 0.625rem 0.5rem;
   text-align: center;
+
+  @media (min-width: $breakpoint-sm) {
+    padding: 1rem 1.5rem;
+  }
 
   strong {
     display: block;
-    font-size: $font-size-2xl;
+    font-size: $font-size-md;
+    font-weight: 700;
     color: $gray-800;
+
+    @media (min-width: $breakpoint-sm) {
+      font-size: $font-size-2xl;
+    }
   }
 
   span {
-    font-size: $font-size-sm;
+    display: block;
+    font-size: 0.6875rem;
     color: $gray-500;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+
+    @media (min-width: $breakpoint-sm) {
+      font-size: $font-size-sm;
+      text-transform: none;
+      letter-spacing: normal;
+    }
   }
 }
 
 .container {
-  @include card;
-  overflow: hidden;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+
+  @media (min-width: $breakpoint-lg) {
+    @include card;
+    overflow: hidden;
+  }
+}
+
+.medidasTable {
+  display: none;
+  width: 100%;
+  overflow-x: auto;
+
+  @media (min-width: $breakpoint-lg) {
+    display: block;
+  }
 }
 
 .table {
@@ -92,8 +206,110 @@
 }
 
 .empty {
-  padding: 2rem;
+  @include card;
+  padding: 3rem 1rem;
   text-align: center;
   color: $gray-400;
   font-size: $font-size-sm;
+  border: 1px solid $gray-200;
+}
+
+// ==========================================
+// Premium Mobile Cards & Status Badges
+// ==========================================
+
+.mobileCards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  @media (min-width: $breakpoint-lg) {
+    display: none;
+  }
+}
+
+.mobileCard {
+  @include card;
+  background: $white;
+  border-radius: $radius-lg;
+  border: 1px solid $gray-200;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: $shadow-sm;
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: $shadow-md;
+  }
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.cardPacienteName {
+  font-size: $font-size-sm;
+  font-weight: 700;
+  color: $gray-800;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+
+  &.statusAgendado { background: #dbeafe; color: #1d4ed8; }
+  &.statusConfirmou { background: #e0f2fe; color: #0369a1; }
+  &.statusPresente { background: #d1fae5; color: #065f46; }
+  &.statusEncaixe { background: #fef3c7; color: #92400e; }
+  &.statusCancelado { background: #fee2e2; color: #991b1b; }
+  &.statusNaoCompareceu { background: #fee2e2; color: #991b1b; }
+  &.statusRealizado { background: #e0e7ff; color: #3730a3; }
+  &.statusDesistiu { background: #f3f4f6; color: #6b7280; }
+  &.statusRemarcou { background: #fef3c7; color: #92400e; }
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cardDetailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px dashed $gray-100;
+  padding-bottom: 0.25rem;
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.cardDetailLabel {
+  font-size: $font-size-xs;
+  font-weight: 600;
+  color: $gray-400;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.cardDetailValue {
+  font-size: $font-size-sm;
+  font-weight: 600;
+  color: $gray-700;
 }

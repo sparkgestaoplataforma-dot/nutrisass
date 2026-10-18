@@ -1,0 +1,83 @@
+@use './variables' as *;
+@use './mixins' as *;
+
+/* ============================================================
+   NutriSaaS v4 — Landing Page Scoped Styles
+   Scoped under .landing-page to avoid conflicts with dashboard
+   ============================================================ */
+
+// Body-level overrides when landing is active
+// (overflow-x on body doesn't break sticky, but on a div it does)
+body.is-landing {
+  overflow-x: hidden;
+  background: #ffffff;
+}
+
+.landing-page {
+  // Override dashboard body styles for the landing page
+  font-family: $font-sans;
+  font-size: $text-base;
+  font-weight: $fw-normal;
+  line-height: $lh-normal;
+  color: $color-text;
+  background: $color-bg;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+
+  img, video, svg {
+    display: block;
+    max-width: 100%;
+  }
+
+  ul, ol { list-style: none; }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: $fw-bold;
+    line-height: $lh-snug;
+    letter-spacing: $ls-snug;
+  }
+
+  p { line-height: $lh-relaxed; }
+
+  // ---- Shared utility classes used across components ----
+  .sr-only { @include sr-only; }
+  .gradient-text { @include text-gradient-green; }
+  .text-balance { text-wrap: balance; }
+}
+
+// ---- Global keyframes (must be outside .landing-page scope) ----
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(0.85); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.2); }
+  50%       { box-shadow: 0 0 0 8px rgba(5, 150, 105, 0); }
+}

@@ -1,5 +1,6 @@
 import { api } from "./api";
-import type { ApiResponse } from "@nutricao/shared";
+import type { ApiResponse, PaginatedResponse } from "@nutricao/shared";
+import { formatarDataBrasilia } from "@/utils/date";
 
 export interface RegraInterpretacao {
   id: string;
@@ -12,23 +13,45 @@ export interface RegraInterpretacao {
 export interface Avaliacao {
   id: string;
   dataRealizacao: string;
+  dataRealizacaoFormatada?: string;
   scoreTotal: number;
   pacienteId: string;
   questionarioId: string;
-  regraInterpretacao?: string|null;
+  regraInterpretacao?: string | null;
+  questionario?: {
+    regras: RegraInterpretacao[];
+  };
+}
+
+export interface PerguntaAvaliacao {
+  id: string;
+  descricao: string;
+  ordem: number;
+  respostas: Array<{
+    nota: number;
+  }>;
+}
+
+export interface ModuloAvaliacao {
+  id: string;
+  nome: string;
+  ordem: number;
+  perguntas: PerguntaAvaliacao[];
+}
+
+export interface LabelEscolhaAvaliacao {
+  nota: number;
+  label: string;
 }
 
 export type AvaliacaoComRespostas = Avaliacao & {
   questionario: {
-    regras: {
-      pontuacaoMin: number;
-      pontuacaoMax: number;
-      classificacao: string;
-    }[];
-    modulos: any[];
-    labelEscolha: any[];
+    regras: RegraInterpretacao[];
+    modulos: ModuloAvaliacao[];
+    labelEscolha: LabelEscolhaAvaliacao[];
   };
 };
+
 
 export interface Avaliacoes {
   id: string;
@@ -38,22 +61,46 @@ export interface Avaliacoes {
   questionarioId: string;
 }
 
+
 export async function getAvaliacoesPorId(Id: string) {
-  const response = await api.get<ApiResponse<Avaliacao>>(`/avaliacoes/${Id}`);
+  const response = await api.get<ApiResponse<Avaliacao & { dataRealizacaoFormatada?: string }>>(`/avaliacoes/${Id}`);
+  
+  if (response.data.data) {
+    response.data.data.dataRealizacaoFormatada = formatarDataBrasilia(response.data.data.dataRealizacao);
+  }
+  
   return response.data;
 }
 
 export async function getAvaliacaoComRespostas(Id: string) {
-  const response = await api.get<ApiResponse<AvaliacaoComRespostas>>(
+  const response = await api.get<ApiResponse<AvaliacaoComRespostas & { dataRealizacaoFormatada?: string }>>(
     `/avaliacoes/${Id}/questionario`,
   );
+
+  if (response.data.data) {
+    response.data.data.dataRealizacaoFormatada = formatarDataBrasilia(response.data.data.dataRealizacao);
+  }
+
   return response.data;
 }
 
-export async function getAvaliacoesPorPacienteId(PacienteId: string) {
-  const response = await api.get<ApiResponse<Avaliacao[]>>(
-    `/avaliacoes/paciente/${PacienteId}`,
+export async function getAvaliacoesPorPacienteId(
+  PacienteId: string,
+  page: number = 1,
+  limit: number = 20
+) {
+  const response = await api.get<ApiResponse<PaginatedResponse<Avaliacao & { dataRealizacaoFormatada?: string }>>>(
+    `/pacientes/${PacienteId}/avaliacoes`,
+    { params: { page, limit } }
   );
+
+  if (response.data.data?.data) {
+    response.data.data.data = response.data.data.data.map(av => ({
+      ...av,
+      dataRealizacaoFormatada: formatarDataBrasilia(av.dataRealizacao)
+    }));
+  }
+
   return response.data;
 }
 

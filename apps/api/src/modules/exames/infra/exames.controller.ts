@@ -3,20 +3,51 @@ import { prisma } from '../../../shared/providers/prisma.js';
 import { AppError } from '../../../shared/middlewares/errorHandler.js';
 import { getClinicaId } from '../../../shared/middlewares/auth.js';
 
+function normalizeText(str: string): string {
+  return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
 // Exames Base (config)
 export async function listarExamesBase(req: Request, res: Response) {
   const clinicaId = getClinicaId(req);
   const { tipo } = req.query; // 'base' | 'custom' | undefined (all)
+  const search = (req.query.search || req.query.busca || req.query.q) as string | undefined;
 
   const where: any = { clinicaId };
   if (tipo === 'base') where.isBase = true;
   if (tipo === 'custom') where.isBase = false;
 
-  const exames = await prisma.exameBase.findMany({
+  const pageNum = Math.max(1, parseInt(req.query.page as string, 10) || 1);
+  const requestedLimit = req.query.limit
+    ? parseInt(req.query.limit as string, 10)
+    : (req.query.page ? 20 : 100);
+  const limitNum = Math.min(Math.max(1, requestedLimit || 20), 100);
+
+  let exames = await prisma.exameBase.findMany({
     where,
     orderBy: { nome: 'asc' },
   });
-  return res.json({ success: true, data: exames });
+
+  if (search && search.trim()) {
+    const term = normalizeText(search.trim());
+    exames = exames.filter((e) =>
+      normalizeText(e.nome).includes(term) ||
+      normalizeText(e.codigo).includes(term)
+    );
+  }
+
+  const total = exames.length;
+  const skip = (pageNum - 1) * limitNum;
+  const paginatedExames = exames.slice(skip, skip + limitNum);
+
+  return res.json({
+    success: true,
+    data: paginatedExames,
+    total,
+    page: pageNum,
+    limit: limitNum,
+    totalPages: Math.ceil(total / limitNum) || 1,
+  });
 }
 
 export async function criarExameBase(req: Request, res: Response) {
@@ -85,6 +116,46 @@ export async function solicitarExame(req: Request<{ pacienteId: string }>, res: 
       itens: {
         create: exameBaseIds.map((exameBaseId: string) => ({
           exameBaseId,
+        })),
+      },
+    },
+    include: {
+      itens: { include: { exameBase: true } },
+    },
+  });
+
+  return res.status(201).json({ success: true, data: solicitacao });
+}
+
+// Lança exames externos (não solicitados pela clínica) já com resultado, em uma única operação
+export async function lancarExameExterno(req: Request<{ pacienteId: string }>, res: Response) {
+  const clinicaId = getClinicaId(req);
+  const { pacienteId } = req.params;
+  const { dataResultado, itens } = req.body as {
+    dataResultado: string;
+    itens: { exameBaseId: string; resultado: string }[];
+  };
+
+  const paciente = await prisma.paciente.findFirst({ where: { id: pacienteId, clinicaId } });
+  if (!paciente) throw new AppError('Paciente não encontrado', 404);
+
+  const exameIds = [...new Set(itens.map((i) => i.exameBaseId))];
+  const examesValidos = await prisma.exameBase.count({
+    where: { id: { in: exameIds }, clinicaId },
+  });
+  if (examesValidos !== exameIds.length) throw new AppError('Exame inválido', 400);
+
+  const data = new Date(dataResultado);
+
+  const solicitacao = await prisma.solicitacaoExame.create({
+    data: {
+      pacienteId,
+      dataSolicitada: data,
+      itens: {
+        create: itens.map((item) => ({
+          exameBaseId: item.exameBaseId,
+          resultado: item.resultado,
+          dataResultado: data,
         })),
       },
     },

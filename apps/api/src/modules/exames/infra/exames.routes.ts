@@ -1,5 +1,10 @@
 import { Router } from 'express';
-import { createExameBaseSchema, solicitarExameSchema, registrarResultadoSchema } from '@nutricao/shared';
+import {
+  createExameBaseSchema,
+  solicitarExameSchema,
+  registrarResultadoSchema,
+  lancarExameExternoSchema,
+} from '@nutricao/shared';
 import { validate } from '../../../shared/middlewares/validate.js';
 import { authMiddleware } from '../../../shared/middlewares/auth.js';
 import { roleGuard } from '../../../shared/middlewares/auth.js';
@@ -18,6 +23,7 @@ router.delete('/base/:id', roleGuard('ADMIN'), controller.excluirExameBase);
 // Solicitações por paciente
 router.get('/paciente/:pacienteId', controller.listarSolicitacoes);
 router.post('/paciente/:pacienteId', validate(solicitarExameSchema), controller.solicitarExame);
+router.post('/paciente/:pacienteId/externo', validate(lancarExameExternoSchema), controller.lancarExameExterno);
 router.delete('/:id', controller.excluirSolicitacao);
 
 // Resultado

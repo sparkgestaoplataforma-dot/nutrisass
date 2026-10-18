@@ -6,3 +6,5 @@ export * from "./exame.schema.js";
 export * from "./convenio.schema.js";
 export * from "./clinica.schema.js";
 export * from "./questionario.schema.js";
+export * from "./plano-alimentar.schema.js";
+export * from "./alimento.schema.js";

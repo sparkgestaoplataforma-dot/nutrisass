@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useAuthStore } from '@/stores/authStore';
 
 export const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL ? '/api' : '/api', // Mantendo /api para usar o proxy do Vite em dev
 });
 
 api.interceptors.request.use((config) => {
@@ -18,7 +18,9 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const isLoginRequest = originalRequest?.url?.includes('/auth/login');
+
+    if (error.response?.status === 401 && !originalRequest?._retry && !isLoginRequest) {
       originalRequest._retry = true;
 
       const refreshToken = useAuthStore.getState().refreshToken;
@@ -34,11 +36,15 @@ api.interceptors.response.use(
           return api(originalRequest);
         } catch {
           useAuthStore.getState().logout();
-          window.location.href = '/login';
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
         }
       } else {
         useAuthStore.getState().logout();
-        window.location.href = '/login';
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
     }
 

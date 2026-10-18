@@ -6,7 +6,7 @@ import {
   type ChangePasswordInput,
 } from "@nutricao/shared";
 import styles from "./RedefinirSenha.module.scss";
-import { esqueciSenha } from "@/services/user";
+import { esqueciSenha } from "@/services/usuario";
 
 export function RedefinirSenhaPage() {
   const {

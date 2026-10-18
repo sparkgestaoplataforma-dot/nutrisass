@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import { redisGet, redisSet } from '../../../shared/providers/redis.js';
 import { env } from '../../../config/env.js';
 import { AppError } from '../../../shared/middlewares/errorHandler.js';
+import { prisma } from '../../../shared/providers/prisma.js';
 import type { TokenPayload, AuthTokens } from '@nutricao/shared';
 
 export async function refreshUseCase(refreshToken: string): Promise<AuthTokens> {
@@ -19,11 +20,21 @@ export async function refreshUseCase(refreshToken: string): Promise<AuthTokens> 
     throw new AppError('Refresh token inválido ou expirado', 401);
   }
 
+  const usuario = await prisma.usuario.findUnique({
+    where: { id: decoded.userId },
+    include: { clinica: { select: { tipo: true } } },
+  });
+
+  if (!usuario) {
+    throw new AppError('Usuário não encontrado', 404);
+  }
+
   const payload: TokenPayload = {
-    userId: decoded.userId,
-    clinicaId: decoded.clinicaId,
-    email: decoded.email,
-    perfil: decoded.perfil,
+    userId: usuario.id,
+    clinicaId: usuario.clinicaId,
+    email: usuario.email,
+    perfil: usuario.perfil,
+    tipoClinica: usuario.clinica.tipo,
   };
 
   const newAccessToken = jwt.sign(payload, env.JWT_SECRET, {

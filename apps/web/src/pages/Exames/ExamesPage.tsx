@@ -10,8 +10,14 @@ import {
   Search01Icon,
 } from '@hugeicons/core-free-icons';
 import { api } from '@/services/api';
+import { useDebounce } from '@/hooks/useDebounce';
 import type { CreateExameBaseInput } from '@nutricao/shared';
 import styles from './ExamesPage.module.scss';
+import { Skeleton } from '@/components/Loading/Skeleton';
+
+function normalizeText(str: string): string {
+  return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
 
 type Tab = 'base' | 'meus';
 
@@ -28,11 +34,13 @@ interface ExameBase {
 export function ExamesPage() {
   const [tab, setTab] = useState<Tab>('base');
   const [busca, setBusca] = useState('');
+  const buscaDebounced = useDebounce(busca, 300);
+  const isDebouncing = busca !== buscaDebounced;
   const [formAberto, setFormAberto] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: examesBase = [], isLoading: loadingBase } = useQuery<ExameBase[]>({
+  const { data: examesBase = [], isLoading: loadingBase, isFetching: fetchingBase } = useQuery<ExameBase[]>({
     queryKey: ['exames-page', 'base'],
     queryFn: async () => {
       const { data } = await api.get('/exames/base?tipo=base');
@@ -40,7 +48,7 @@ export function ExamesPage() {
     },
   });
 
-  const { data: meusExames = [], isLoading: loadingMeus } = useQuery<ExameBase[]>({
+  const { data: meusExames = [], isLoading: loadingMeus, isFetching: fetchingMeus } = useQuery<ExameBase[]>({
     queryKey: ['exames-page', 'custom'],
     queryFn: async () => {
       const { data } = await api.get('/exames/base?tipo=custom');
@@ -77,16 +85,18 @@ export function ExamesPage() {
 
   const listaAtual = tab === 'base' ? examesBase : meusExames;
   const isLoading = tab === 'base' ? loadingBase : loadingMeus;
+  const isFetching = tab === 'base' ? fetchingBase : fetchingMeus;
+  const isSearching = isDebouncing || isLoading || isFetching;
 
   const examesFiltrados = useMemo(() => {
-    if (!busca.trim()) return listaAtual;
-    const termo = busca.toLowerCase();
+    if (!buscaDebounced.trim()) return listaAtual;
+    const termo = normalizeText(buscaDebounced.trim());
     return listaAtual.filter(
       (ex) =>
-        ex.nome.toLowerCase().includes(termo) ||
-        ex.codigo.toLowerCase().includes(termo)
+        normalizeText(ex.nome).includes(termo) ||
+        normalizeText(ex.codigo).includes(termo)
     );
-  }, [listaAtual, busca]);
+  }, [listaAtual, buscaDebounced]);
 
   function fecharForm() {
     setFormAberto(false);
@@ -193,8 +203,50 @@ export function ExamesPage() {
       )}
 
       {/* Content */}
-      {isLoading ? (
-        <div className={styles.loading}>Carregando exames...</div>
+      {isSearching ? (
+        <div className={styles.tableCard}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>{isMeus ? 'Código' : 'Código TUSS'}</th>
+                <th>Nome</th>
+                <th>Valor Mín</th>
+                <th>Valor Máx</th>
+                <th>Unidade</th>
+                {isMeus && <th>Ações</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <tr key={i}>
+                  <td data-label="Código" className={styles.codeCell}>
+                    <Skeleton width={i % 2 === 0 ? "70px" : "50px"} height={16} borderRadius={4} />
+                  </td>
+                  <td data-label="Nome">
+                    <Skeleton width={i % 2 === 0 ? "75%" : "55%"} height={16} borderRadius={4} />
+                  </td>
+                  <td data-label="Min" className={styles.valueCell}>
+                    <Skeleton width={35} height={16} borderRadius={4} />
+                  </td>
+                  <td data-label="Max" className={styles.valueCell}>
+                    <Skeleton width={35} height={16} borderRadius={4} />
+                  </td>
+                  <td data-label="Unidade">
+                    <Skeleton width={50} height={16} borderRadius={4} />
+                  </td>
+                  {isMeus && (
+                    <td data-label="Ações">
+                      <div className={styles.actions}>
+                        <Skeleton width={28} height={28} borderRadius={6} />
+                        <Skeleton width={28} height={28} borderRadius={6} />
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : isMeus && meusExames.length === 0 && !busca.trim() && !formAberto ? (
         /* Empty state para Meus Exames */
         <div className={styles.tableCard}>
@@ -239,21 +291,21 @@ export function ExamesPage() {
             <tbody>
               {examesFiltrados.map((ex) => (
                 <tr key={ex.id}>
-                  <td className={styles.codeCell}>{ex.codigo}</td>
-                  <td>{ex.nome}</td>
-                  <td className={styles.valueCell}>
+                  <td data-label="Código" className={styles.codeCell}>{ex.codigo}</td>
+                  <td data-label="Nome">{ex.nome}</td>
+                  <td data-label="Min" className={styles.valueCell}>
                     {ex.valorMinimo != null ? ex.valorMinimo : '-'}
                   </td>
-                  <td className={styles.valueCell}>
+                  <td data-label="Max" className={styles.valueCell}>
                     {ex.valorMaximo != null ? ex.valorMaximo : '-'}
                   </td>
-                  <td>
+                  <td data-label="Unidade">
                     {ex.unidade ? (
                       <span className={styles.unitBadge}>{ex.unidade}</span>
                     ) : '-'}
                   </td>
                   {isMeus && (
-                    <td>
+                    <td data-label="Ações">
                       <div className={styles.actions}>
                         <button className={styles.actionBtn} onClick={() => editar(ex)} title="Editar">
                           <HugeiconsIcon icon={PencilEdit01Icon} size={16} strokeWidth={2} />

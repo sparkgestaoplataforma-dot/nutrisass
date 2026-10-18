@@ -5,6 +5,83 @@
   max-width: $content-max-width;
 }
 
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: $space-4;
+  margin-bottom: $space-6;
+  background: $white;
+  padding: $space-5;
+  border-radius: $radius-xl;
+  border: 1px solid $gray-100;
+  box-shadow: $shadow-sm;
+
+  @media (min-width: $breakpoint-md) {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0;
+    padding: $space-6;
+  }
+}
+
+.titleGroup {
+  h1 {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    color: $gray-900;
+    margin-bottom: $space-1;
+  }
+
+  p {
+    font-size: $font-size-sm;
+    color: $gray-500;
+  }
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: $space-2;
+  width: 100%;
+
+  @media (min-width: $breakpoint-sm) {
+    flex-direction: row;
+    align-items: center;
+    gap: $space-3;
+    width: auto;
+  }
+
+  label {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $gray-700;
+    white-space: nowrap;
+  }
+}
+
+.nutriSelect {
+  @include input-base;
+  width: 100%;
+  background-color: $white;
+  border-color: $gray-200;
+  font-size: $font-size-sm;
+  padding: $space-2 $space-3;
+  cursor: pointer;
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 2px rgba($primary, 0.1);
+  }
+
+  @media (min-width: $breakpoint-sm) {
+    width: auto;
+    min-width: 220px;
+  }
+}
+
 // ==========================================
 // Loading
 // ==========================================
@@ -37,38 +114,83 @@
 
 .kpiGrid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: $space-3;
   margin-bottom: $space-6;
 
-  @media (max-width: $breakpoint-lg) {
+  @media (min-width: $breakpoint-sm) {
     grid-template-columns: repeat(3, 1fr);
   }
 
-  @media (max-width: $breakpoint-sm) {
-    grid-template-columns: repeat(2, 1fr);
+  @media (min-width: $breakpoint-lg) {
+    grid-template-columns: repeat(5, 1fr);
   }
 }
 
 .kpiCard {
   @include card;
-  padding: $space-4;
+  padding: $space-2 + 0.1rem;
   display: flex;
   align-items: center;
-  gap: $space-3;
+  gap: $space-2;
   transition: box-shadow $transition-smooth;
 
   &:hover {
     box-shadow: $shadow-md;
   }
+
+  @media (min-width: 400px) {
+    padding: $space-3;
+    gap: $space-2;
+  }
+
+  @media (min-width: $breakpoint-sm) {
+    padding: $space-3 + 0.1rem;
+    gap: $space-3;
+  }
+
+  @media (min-width: $breakpoint-lg) {
+    padding: $space-4;
+  }
 }
 
 .kpiIcon {
-  width: 42px;
-  height: 42px;
-  border-radius: $radius-lg;
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-md;
   @include flex-center;
   flex-shrink: 0;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (min-width: 400px) {
+    width: 36px;
+    height: 36px;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  @media (min-width: $breakpoint-sm) {
+    width: 40px;
+    height: 40px;
+    border-radius: $radius-lg;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  @media (min-width: $breakpoint-lg) {
+    width: 42px;
+    height: 42px;
+  }
 }
 
 .kpiGreen {
@@ -102,18 +224,30 @@
 }
 
 .kpiValue {
-  font-size: $font-size-xl;
+  font-size: $font-size-md;
   font-weight: $font-weight-bold;
   color: $gray-900;
   line-height: 1.2;
+
+  @media (min-width: 400px) {
+    font-size: $font-size-lg;
+  }
+
+  @media (min-width: $breakpoint-sm) {
+    font-size: $font-size-xl;
+  }
 }
 
 .kpiLabel {
-  font-size: $font-size-2xs;
+  font-size: 0.6rem;
   font-weight: $font-weight-semibold;
   color: $gray-400;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+
+  @media (min-width: 400px) {
+    font-size: $font-size-2xs;
+  }
 }
 
 // ==========================================
@@ -127,9 +261,20 @@
 }
 
 .agendaHeader {
-  @include flex-between;
-  padding: $space-5 $space-6;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $space-3;
+  padding: $space-4 $space-5;
   border-bottom: 1px solid $gray-100;
+
+  @media (min-width: $breakpoint-sm) {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0;
+    padding: $space-5 $space-6;
+  }
 }
 
 .agendaTitle {
@@ -260,9 +405,16 @@
 
 .appointmentTop {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: $space-3;
+  flex-direction: column;
+  align-items: stretch;
+  gap: $space-2;
+
+  @media (min-width: $breakpoint-sm) {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $space-3;
+  }
 }
 
 .appointmentInfo {
@@ -309,6 +461,92 @@
   @include badge;
 }
 
+.statusDropdownWrapper {
+  position: relative;
+}
+
+.statusTrigger {
+  @include badge;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all $transition-smooth;
+  user-select: none;
+
+  &:hover {
+    filter: brightness(0.93);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  }
+}
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot_blue { background: #2563eb; }
+.dot_green { background: #059669; }
+.dot_orange { background: #ea580c; }
+.dot_red { background: #dc2626; }
+.dot_teal { background: $teal; }
+
+.statusMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 170px;
+  background: $white;
+  border: 1px solid $gray-100;
+  border-radius: $radius-md;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+  z-index: $z-dropdown;
+  padding: 4px;
+  animation: menuSlideIn 0.15s ease-out;
+}
+
+@keyframes menuSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.statusMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: $radius-sm;
+  font-size: $font-size-2xs;
+  font-weight: $font-weight-medium;
+  color: $gray-600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all $transition-fast;
+  text-align: left;
+
+  &:hover {
+    background: $gray-50;
+    color: $gray-900;
+  }
+}
+
+.statusMenuItemActive {
+  background: $primary-50;
+  color: $primary-dark;
+  font-weight: $font-weight-semibold;
+}
+
 .badge_blue {
   background: $info-light;
   color: #2563eb;
@@ -342,12 +580,26 @@
   @include badge($orange-light, #ea580c);
 }
 
+.badgeNutri {
+  @include badge(#eef2ff, #4f46e5);
+  font-style: italic;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 // ==========================================
 // Atender Button
 // ==========================================
 
 .appointmentActions {
   flex-shrink: 0;
+  align-self: flex-end;
+
+  @media (min-width: $breakpoint-sm) {
+    align-self: auto;
+  }
 }
 
 .startBtn {

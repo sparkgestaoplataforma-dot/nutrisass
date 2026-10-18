@@ -10,6 +10,7 @@ import type { TokenPayload, AuthTokens } from '@nutricao/shared';
 export async function loginUseCase(input: LoginInput): Promise<AuthTokens> {
   const usuario = await prisma.usuario.findUnique({
     where: { email: input.email },
+    include: { clinica: { select: { tipo: true } } },
   });
 
   if (!usuario) {
@@ -27,6 +28,7 @@ export async function loginUseCase(input: LoginInput): Promise<AuthTokens> {
     clinicaId: usuario.clinicaId,
     email: usuario.email,
     perfil: usuario.perfil,
+    tipoClinica: usuario.clinica.tipo,
   };
 
   const accessToken = jwt.sign(payload, env.JWT_SECRET, {

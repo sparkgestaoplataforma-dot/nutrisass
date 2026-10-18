@@ -6,42 +6,31 @@ import { buscarNomePacientePublico } from "@/services/pacientes";
 import {
   getAvaliacoesPorPacienteId,
   DeleteAvaliacao,
+  type RegraInterpretacao,
+  type Avaliacao,
 } from "@/services/avaliacao";
+import type { ApiResponse, PaginatedResponse } from "@nutricao/shared";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GraficoComparativo } from "./components/GraficoComparativo";
 import { FilterComparativo } from "./components/FilterComparativo";
 import { TabelaComparativo } from "./components/TabelaComparativo";
-
-type FaixaScore = {
-  pontuacaoMin: number;
-  pontuacaoMax: number;
-  classificacao: string;
-};
-
-const FAIXAS_SCORE: FaixaScore[] = [
-  {
-    pontuacaoMin: 0,
-    pontuacaoMax: 30,
-    classificacao:
-      "Pessoa mais saudável, menores chances de hipersensibilidades",
-  },
-  {
-    pontuacaoMin: 31,
-    pontuacaoMax: 39,
-    classificacao: "Indicativo de existência de hipersensibilidades",
-  },
-  {
-    pontuacaoMin: 40,
-    pontuacaoMax: 99,
-    classificacao: "Absoluta certeza de existência de hipersensibilidade",
-  },
-  {
-    pontuacaoMin: 100,
-    pontuacaoMax: 9999,
-    classificacao:
-      "Saúde muito ruim - alta dificuldade para tarefas diárias, possível associação com doenças crônicas e degenerativas",
-  },
-];
+import { InfoAvaliacaoModal } from "./components/InfoAvaliacaoModal";
+import { DeleteConfirmModal } from "@/components/DeleteConfirmModal/DeleteConfirmModal";
+import {
+  getInterpretacaoScore,
+} from "@/utils/scoreInterpretacao";
+import { formatarDataBrasilia } from "@/utils/date";
+import { Skeleton } from "@/components/Loading/Skeleton";
+import { SkeletonTable } from "@/components/Loading/skeletons/SkeletonTable";
+import { LoadingError } from "@/components/Loading/LoadingError";
+import { EmptyState } from "@/components/Loading/EmptyState";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  ClipboardIcon,
+} from "@hugeicons/core-free-icons";
 
 const EXEMPLOS_CALCULO = [
   {
@@ -79,11 +68,17 @@ export function ComparativoPage() {
 
   const [dataInicio, setDataInicio] = useState<string>("");
   const [dataFim, setDataFim] = useState<string>(() => getDataAtualInput());
+  const [page, setPage] = useState(1);
+  const limit = 20;
 
   const [modalInfoPontuacaoAberto, setModalInfoPontuacaoAberto] =
     useState(false);
+  const [excluirAvaliacaoModalAberto, setExcluirAvaliacaoModalAberto] =
+    useState(false);
+  const [avaliacaoIdParaExcluir, setAvaliacaoIdParaExcluir] =
+    useState<string>("");
 
-  const { data: nomePaciente } = useQuery({
+  const { data: nomePaciente, isLoading: isLoadingNome } = useQuery({
     queryKey: ["paciente-nome-publico", pacienteId],
     queryFn: () => buscarNomePacientePublico(pacienteId!),
     enabled: !!pacienteId,
@@ -91,68 +86,51 @@ export function ComparativoPage() {
     refetchOnWindowFocus: true,
   });
 
-  const { data: avaliacoesResponse } = useQuery({
-    queryKey: ["avaliacoes", pacienteId],
-    queryFn: () => getAvaliacoesPorPacienteId(pacienteId!),
+  const { 
+    data: avaliacoesResponse,
+    isLoading: isLoadingAvaliacoes,
+    isError: isErrorAvaliacoes,
+    refetch: refetchAvaliacoes
+  } = useQuery({
+    queryKey: ["avaliacoes", pacienteId, page, limit],
+    queryFn: () => getAvaliacoesPorPacienteId(pacienteId!, page, limit),
     enabled: !!pacienteId,
-    refetchOnMount: true,
     refetchOnWindowFocus: true,
+    refetchOnMount: "always",
   });
 
-  const avaliacoes = avaliacoesResponse?.data || [];
-
-  function formatarData(dataISO: string) {
-    const data = new Date(dataISO);
-
-    return data.toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  }
-
-  function parseDateInput(value: string) {
-    const [year, month, day] = value.split("-").map(Number);
-    return new Date(year, month - 1, day);
-  }
-
-  function handleAbrirModalInfoPontuacao() {
-    setModalInfoPontuacaoAberto(true);
-  }
-
-  function handleFecharModalInfoPontuacao() {
-    setModalInfoPontuacaoAberto(false);
-  }
-
-  function getClassificacaoPorScore(score: number) {
-    const faixaEncontrada = FAIXAS_SCORE.find(
-      (faixa) => score >= faixa.pontuacaoMin && score <= faixa.pontuacaoMax,
-    );
-
-    return faixaEncontrada?.classificacao || "Fora da faixa configurada";
-  }
-
-  const deleteMutation = useMutation({
+  const deleteAvaliacaoMutation = useMutation({
     mutationFn: (id: string) => DeleteAvaliacao(id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ["avaliacoes", pacienteId] });
-      const previousData = queryClient.getQueryData<any>([
+      const previousData = queryClient.getQueryData<ApiResponse<PaginatedResponse<Avaliacao>>>([
         "avaliacoes",
         pacienteId,
+        "full",
       ]);
 
-      queryClient.setQueryData(["avaliacoes", pacienteId], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          data: old.data.filter((avaliacao: any) => avaliacao.id != id),
-        };
-      });
+      queryClient.setQueryData(
+        ["avaliacoes", pacienteId],
+        (old: ApiResponse<PaginatedResponse<Avaliacao>> | undefined) => {
+          if (!old || !old.data || !old.data.data) return old;
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              data: old.data.data.filter((avaliacao) => avaliacao.id != id),
+            }
+          };
+        },
+      );
+
       return { previousData };
+    },
+    onSuccess: () => {
+      setExcluirAvaliacaoModalAberto(false);
     },
     onError: (err, id, context) => {
       queryClient.setQueryData(
-        ["avaliacoes", pacienteId],
+        ["avaliacoes", pacienteId, "full"],
         context?.previousData,
       );
     },
@@ -162,24 +140,46 @@ export function ComparativoPage() {
     },
   });
 
-  const resultadosFiltrados = avaliacoes.filter((item) => {
-    const dataAvaliacao = new Date(item.dataRealizacao);
+  const paginatedData = avaliacoesResponse?.data;
+  const avaliacoes = paginatedData?.data || [];
+  const totalPages = paginatedData?.totalPages || 1;
 
-    let rangeData = true;
+  const formatarData = (dataISO: string) => {
+    return formatarDataBrasilia(dataISO);
+  };
 
-    if (dataInicio) {
-      const inicio = parseDateInput(dataInicio);
-      rangeData = rangeData && dataAvaliacao >= inicio;
-    }
-
-    if (dataFim) {
-      const fim = parseDateInput(dataFim);
-      fim.setHours(23, 59, 59, 999);
-      rangeData = rangeData && dataAvaliacao <= fim;
-    }
-
-    return rangeData;
+  const resultadosFiltrados = avaliacoes.filter((avaliacao) => {
+    const data = avaliacao.dataRealizacao.slice(0, 10);
+    const inicioOk = !dataInicio || data >= dataInicio;
+    const fimOk = !dataFim || data <= dataFim;
+    return inicioOk && fimOk;
   });
+
+
+  const regrasDoQuestionario: RegraInterpretacao[] =
+    avaliacoes[0]?.questionario?.regras ?? [];
+
+  const parseDateInput = (value: string) => {
+    const [year, month, day] = value.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  const handleAbrirModalInfoPontuacao = () => {
+    setModalInfoPontuacaoAberto(true);
+  };
+
+  const handleFecharModalInfoPontuacao = () => {
+    setModalInfoPontuacaoAberto(false);
+  };
+
+  const handleAbrirModalExcluirAvaliacao = (id: string) => {
+    setExcluirAvaliacaoModalAberto(true);
+    setAvaliacaoIdParaExcluir(id);
+  };
+
+  const handleFecharModalExcluirAvaliacao = () => {
+    setExcluirAvaliacaoModalAberto(false);
+  };
 
   const graficoDados = resultadosFiltrados
     .slice()
@@ -188,21 +188,32 @@ export function ComparativoPage() {
         new Date(a.dataRealizacao).getTime() -
         new Date(b.dataRealizacao).getTime(),
     )
-    .map((item) => ({
-      data: formatarData(item.dataRealizacao),
+    .map((item: any) => ({
+      data: item.dataRealizacaoFormatada || formatarData(item.dataRealizacao),
       score: item.scoreTotal,
     }));
 
   return (
     <div>
-      <HeaderComparativo nomePaciente={nomePaciente} />
+      <HeaderComparativo nomePaciente={nomePaciente} isLoadingNome={isLoadingNome}/>
       <div className={styles.chartContainer}>
-        <div className={styles.chartGraphic}>
-          <GraficoComparativo
-            graficoDados={graficoDados}
-            onInfoClick={handleAbrirModalInfoPontuacao}
+        {isLoadingAvaliacoes ? (
+          <div className={styles.chartGraphic}>
+            <Skeleton width="100%" height="300px" borderRadius="12px" />
+          </div>
+        ) : isErrorAvaliacoes ? (
+          <LoadingError 
+            message="Erro ao carregar dados do gráfico." 
+            onRetry={() => refetchAvaliacoes()} 
           />
-        </div>
+        ) : (
+          <div className={styles.chartGraphic}>
+            <GraficoComparativo
+              graficoDados={graficoDados}
+              onInfoClick={handleAbrirModalInfoPontuacao}
+            />
+          </div>
+        )}
       </div>
 
       <div className={styles.header}>
@@ -215,18 +226,55 @@ export function ComparativoPage() {
       </div>
 
       <div className={styles.container}>
-        {resultadosFiltrados.length === 0 ? (
-          <div className={styles.empty}>Nenhum resultado encontrado.</div>
+        {isLoadingAvaliacoes ? (
+          <SkeletonTable />
+        ) : isErrorAvaliacoes ? (
+          <LoadingError 
+            message="Erro ao carregar histórico de avaliações." 
+            onRetry={() => refetchAvaliacoes()} 
+          />
+        ) : resultadosFiltrados.length === 0 ? (
+          <EmptyState 
+            title={avaliacoes.length === 0 ? "Não há avaliações para comparação" : "Nenhum resultado no período selecionado"} 
+            description={avaliacoes.length === 0 ? "Aplique pelo menos uma avaliação para ver o comparativo aqui." : "Tente ajustar os filtros de data acima."}
+            icon={ClipboardIcon} 
+          />
         ) : (
           <TabelaComparativo
             pacienteId={pacienteId!}
             resultadosFiltrados={resultadosFiltrados}
             formatarData={formatarData}
             navigate={navigate}
-            deleteMutation={deleteMutation}
+            handleAbrirModalExcluirAvaliacao={handleAbrirModalExcluirAvaliacao}
           />
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className={styles.paginationContainer}>
+          <button
+            className={styles.paginationBtn}
+            disabled={page === 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            title="Anterior"
+          >
+            <HugeiconsIcon icon={ArrowLeft01Icon} />
+          </button>
+
+          <span className={styles.paginationText}>
+            {page} de {totalPages}
+          </span>
+
+          <button
+            className={styles.paginationBtn}
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            title="Próxima"
+          >
+            <HugeiconsIcon icon={ArrowRight01Icon} />
+          </button>
+        </div>
+      )}
 
       {modalInfoPontuacaoAberto && (
         <div
@@ -269,54 +317,81 @@ export function ComparativoPage() {
 
               <div className={styles.scoreSection}>
                 <h4>Faixas de observação (conforme regra do score)</h4>
-                <div className={styles.scoreTableWrapper}>
-                  <table className={styles.scoreTable}>
-                    <thead>
-                      <tr>
-                        <th>Pontuação mínima</th>
-                        <th>Pontuação máxima</th>
-                        <th>Observação</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {FAIXAS_SCORE.map((faixa) => (
-                        <tr key={`${faixa.pontuacaoMin}-${faixa.pontuacaoMax}`}>
-                          <td>{faixa.pontuacaoMin}</td>
-                          <td>
-                            {faixa.pontuacaoMax === 9999
-                              ? ">100"
-                              : faixa.pontuacaoMax}
-                          </td>
-                          <td>{faixa.classificacao}</td>
+                {regrasDoQuestionario.length === 0 ? (
+                  <p className={styles.modalSubtitulo}>
+                    Nenhuma avaliação disponível para exibir as faixas.
+                  </p>
+                ) : (
+                  <div className={styles.scoreTableWrapper}>
+                    <table className={styles.scoreTable}>
+                      <thead>
+                        <tr>
+                          <th>Pontuação mínima</th>
+                          <th>Pontuação máxima</th>
+                          <th>Observação</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {[...regrasDoQuestionario]
+                          .sort((a, b) => a.pontuacaoMin - b.pontuacaoMin)
+                          .map((regra) => (
+                            <tr key={`${regra.pontuacaoMin}-${regra.pontuacaoMax}`}>
+                              <td>{regra.pontuacaoMin}</td>
+                              <td>{regra.pontuacaoMax}</td>
+                              <td>{regra.classificacao}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
 
               <div className={styles.scoreSection}>
                 <h4>Exemplos de cálculo</h4>
                 <div className={styles.scoreExamplesList}>
-                  {EXEMPLOS_CALCULO.map((exemplo) => (
-                    <div
-                      key={exemplo.descricao}
-                      className={styles.scoreExampleItem}
-                    >
-                      <strong>{exemplo.descricao}</strong>
-                      <p>{exemplo.formula}</p>
-                      <p>
-                        <strong>Score:</strong> {exemplo.score} -{" "}
-                        {getClassificacaoPorScore(exemplo.score)}
-                      </p>
-                    </div>
-                  ))}
+                  {EXEMPLOS_CALCULO.map((exemplo) => {
+                    const { classificacao } = getInterpretacaoScore(
+                      exemplo.score,
+                      regrasDoQuestionario,
+                    );
+                    return (
+                      <div
+                        key={exemplo.descricao}
+                        className={styles.scoreExampleItem}
+                      >
+                        <strong>{exemplo.descricao}</strong>
+                        <p>{exemplo.formula}</p>
+                        <p>
+                          <strong>Score:</strong> {exemplo.score} –{" "}
+                          {classificacao}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* {modalInfoPontuacaoAberto && (
+  <InfoAvaliacaoModal
+    handleFecharModalInfoPontuacao={handleFecharModalInfoPontuacao}
+    FAIXAS_SCORE={FAIXAS_SCORE}
+    EXEMPLOS_CALCULO={EXEMPLOS_CALCULO}
+    getClassificacaoPorScore={getClassificacaoPorScore}
+  />
+)} */}
+      <DeleteConfirmModal
+        isOpen={excluirAvaliacaoModalAberto}
+        onClose={handleFecharModalExcluirAvaliacao}
+        onConfirm={() => deleteAvaliacaoMutation.mutate(avaliacaoIdParaExcluir)}
+        title="Excluir Avaliação"
+        description="Tem certeza que deseja excluir esta avaliação?"
+        isPending={deleteAvaliacaoMutation.isPending}
+      />
     </div>
   );
 }

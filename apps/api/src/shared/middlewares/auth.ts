@@ -45,10 +45,19 @@ export function getClinicaId(req: Request): string {
   return req.user.clinicaId;
 }
 
+export function getUsuarioId(req: Request): string {
+  if (!req.user?.userId) throw new AppError('Usuário não identificado', 401);
+  return req.user.userId;
+}
+
 export function roleGuard(...roles: string[]) {
   return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.user) {
       throw new AppError('Não autenticado', 401);
+    }
+
+    if (req.user.tipoClinica === 'AUTONOMO') {
+      return next();
     }
 
     if (!roles.includes(req.user.perfil)) {

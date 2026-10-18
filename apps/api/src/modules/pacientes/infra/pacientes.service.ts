@@ -1,8 +1,9 @@
 import { prisma } from "../../../shared/providers/prisma.js";
 import { AppError } from "../../../shared/middlewares/errorHandler.js";
 import { CreatePacienteQuestionarioAvaliacaoInput } from "@nutricao/shared";
+import { pegarAvaliacoesPorPacienteId as buscarAvaliacoesService } from "../../avaliacoes/infra/avaliacoes.service.js";
 
-export async function criarAvaliacao(
+export async function criarAvaliacaoPaciente(
   id: string,
   questionarioId: string,
   data: CreatePacienteQuestionarioAvaliacaoInput,
@@ -32,10 +33,18 @@ export async function criarAvaliacao(
     );
   }
 
+  if (paciente.clinicaId !== questionario.clinicaId) {
+    throw new AppError(
+      "Paciente e questionário não pertencem à mesma clínica",
+      400,
+    );
+  }
+
   const scoreTotal = respostas.reduce((acc, r) => acc + r.nota, 0);
 
   const avaliacao = await prisma.avaliacao.create({
     data: {
+      clinicaId: paciente.clinicaId,
       pacienteId: id,
       questionarioId,
       scoreTotal,
@@ -52,7 +61,7 @@ export async function criarAvaliacao(
   return avaliacao;
 }
 
-export async function buscarNomePorId(id: string) {
+export async function pegarNomePacientePorId(id: string) {
   const paciente = await prisma.paciente.findUnique({
     where: { id },
     select: { nome: true },
@@ -63,4 +72,13 @@ export async function buscarNomePorId(id: string) {
   }
 
   return paciente.nome;
+}
+
+export async function pegarAvaliacoesPaciente(
+  pacienteId: string,
+  clinicaId: string,
+  page?: number,
+  limit?: number,
+) {
+  return buscarAvaliacoesService(pacienteId, clinicaId, page, limit);
 }
