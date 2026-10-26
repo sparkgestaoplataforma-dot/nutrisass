@@ -3,7 +3,7 @@ import { useClinicalAccess } from '@/hooks/useClinicalAccess';
 
 /**
  * Guarda de rota para páginas de acesso estritamente clínico.
- * Se o usuário não tiver permissão clínica (ex: ADMIN ou SECRETARIA em clínica do tipo CLINICA),
+ * Se o usuário não tiver permissão clínica (ex: SECRETARIA em clínica do tipo CLINICA),
  * redireciona de forma segura para a listagem cadastral de pacientes (/pacientes).
  */
 export function ClinicalRoute() {

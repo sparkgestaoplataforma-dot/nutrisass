@@ -50,7 +50,7 @@ test.describe('Autorização Clínica - Regra de Acesso (Testes Unitários)', ()
     expect(canAccessClinical(user)).toBe(true);
   });
 
-  test('deve bloquear acesso clínico para ADMIN em clínica do tipo CLINICA', () => {
+  test('deve permitir acesso clínico para ADMIN em clínica do tipo CLINICA', () => {
     const user: TokenPayload = {
       userId: 'user-5',
       clinicaId: 'clinica-2',
@@ -58,7 +58,7 @@ test.describe('Autorização Clínica - Regra de Acesso (Testes Unitários)', ()
       perfil: 'ADMIN',
       tipoClinica: 'CLINICA',
     };
-    expect(canAccessClinical(user)).toBe(false);
+    expect(canAccessClinical(user)).toBe(true);
   });
 
   test('deve bloquear acesso clínico para SECRETARIA em clínica do tipo CLINICA', () => {
@@ -227,7 +227,7 @@ async function mockCommonApis(page: Page) {
   });
 }
 
-test.describe('Proteção de Rotas e Interface para ADMIN em clínica CLINICA', () => {
+test.describe('Acesso Clínico Permitido para ADMIN em clínica CLINICA', () => {
   test.beforeEach(async ({ page }) => {
     await injectAuth(page, {
       userId: 'usr-admin-clinica',
@@ -239,41 +239,24 @@ test.describe('Proteção de Rotas e Interface para ADMIN em clínica CLINICA', 
     await mockCommonApis(page);
   });
 
-  test('deve redirecionar acesso direto à URL de comparativo clínico para /pacientes', async ({ page }) => {
-    await page.goto('/pacientes/pac-123/comparativo');
-    await expect(page).toHaveURL(/\/pacientes$/);
-  });
-
-  test('deve redirecionar acesso direto à URL de detalhes de avaliação para /pacientes', async ({ page }) => {
-    await page.goto('/avaliacoes/av-123/pac-123');
-    await expect(page).toHaveURL(/\/pacientes$/);
-  });
-
-  test('deve redirecionar acesso direto à URL de PDF de plano alimentar para /pacientes', async ({ page }) => {
-    await page.goto('/pacientes/pac-123/planos/plano-123/pdf');
-    await expect(page).toHaveURL(/\/pacientes$/);
-  });
-
-  test('na página do paciente (/pacientes/:id), deve exibir dados cadastrais e ocultar seções clínicas', async ({ page }) => {
+  test('na página do paciente (/pacientes/:id), deve exibir seções clínicas e cadastrais', async ({ page }) => {
     await page.goto('/pacientes/pac-123');
 
-    // Dados cadastrais devem estar visíveis
+    // Dados cadastrais visíveis
     await expect(page.getByRole('heading', { name: 'Maria da Silva' })).toBeVisible();
     await expect(page.getByText('Rua das Flores, 100')).toBeVisible();
     await expect(page.getByRole('button', { name: /editar/i })).toBeVisible();
-    await expect(page.getByText('Histórico de Consultas')).toBeVisible();
 
-    // Seções clínicas NÃO devem estar presentes no DOM
-    await expect(page.locator('button:has-text("Iniciar Atendimento")')).not.toBeVisible();
-    await expect(page.locator('button:has-text("Plano Alimentar")')).not.toBeVisible();
-    await expect(page.locator('button:has-text("Medidas")')).not.toBeVisible();
-    await expect(page.locator('h2:has-text("Estado Clínico")')).not.toBeVisible();
-    await expect(page.locator('h4:has-text("Resultados de Questionários")')).not.toBeVisible();
+    // Seções clínicas DEVEM estar visíveis para ADMIN
+    await expect(page.getByRole('button', { name: /iniciar atendimento/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /plano alimentar/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /medidas/i })).toBeVisible();
+    await expect(page.getByText('Estado Clínico')).toBeVisible();
   });
 
-  test('no Dashboard, o botão "Atender" não deve estar visível', async ({ page }) => {
+  test('no Dashboard, o botão "Atender" deve estar visível', async ({ page }) => {
     await page.goto('/dashboard');
-    await expect(page.getByRole('button', { name: /atender/i })).not.toBeVisible();
+    await expect(page.getByRole('button', { name: /atender/i })).toBeVisible();
   });
 });
 

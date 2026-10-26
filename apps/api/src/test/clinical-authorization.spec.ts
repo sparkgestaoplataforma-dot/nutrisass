@@ -431,23 +431,23 @@ describe("autorização clínica (HTTP)", () => {
       endpoint.dbCalls().forEach((fn) => expect(fn).not.toHaveBeenCalled());
     });
 
-    it.each<Perfil>(["ADMIN", "SECRETARIA"])(
-      "retorna 403 para %s em clínica e não toca o banco",
+    it("retorna 403 para SECRETARIA em clínica e não toca o banco", async () => {
+      endpoint.arrange();
+      const res = await request(tokenFor("SECRETARIA", "CLINICA"));
+      expect(res.status).toBe(403);
+      expect(res.body).toMatchObject({ success: false });
+      endpoint.dbCalls().forEach((fn) => expect(fn).not.toHaveBeenCalled());
+    });
+
+    it.each<Perfil>(["NUTRICIONISTA", "ADMIN"])(
+      "permite %s em clínica e aplica o efeito no banco",
       async (perfil) => {
         endpoint.arrange();
         const res = await request(tokenFor(perfil, "CLINICA"));
-        expect(res.status).toBe(403);
-        expect(res.body).toMatchObject({ success: false });
-        endpoint.dbCalls().forEach((fn) => expect(fn).not.toHaveBeenCalled());
+        expect(res.status).toBe(endpoint.expectedStatus);
+        expect(endpoint.effect()).toHaveBeenCalledTimes(1);
       },
     );
-
-    it("permite NUTRICIONISTA em clínica e aplica o efeito no banco", async () => {
-      endpoint.arrange();
-      const res = await request(tokenFor("NUTRICIONISTA", "CLINICA"));
-      expect(res.status).toBe(endpoint.expectedStatus);
-      expect(endpoint.effect()).toHaveBeenCalledTimes(1);
-    });
 
     it.each<Perfil>(["ADMIN", "SECRETARIA", "NUTRICIONISTA"])(
       "mantém acesso total para %s em clínica AUTONOMO",
@@ -461,6 +461,7 @@ describe("autorização clínica (HTTP)", () => {
 
     it.each<[Perfil, TipoClinica]>([
       ["NUTRICIONISTA", "CLINICA"],
+      ["ADMIN", "CLINICA"],
       ["NUTRICIONISTA", "AUTONOMO"],
       ["ADMIN", "AUTONOMO"],
     ])(
@@ -504,22 +505,25 @@ describe("autorização clínica (HTTP)", () => {
   });
 
   describe("validação preservada após a autorização", () => {
-    it("NUTRICIONISTA recebe 422 com corpo inválido (validate continua ativo)", async () => {
-      const res = await call(
-        "POST",
-        `/api/prontuario/${PACIENTE_ID}/medidas`,
-        tokenFor("NUTRICIONISTA"),
-        { pacienteId: "nao-e-uuid" },
-      );
-      expect(res.status).toBe(422);
-      expect(db.medida.create).not.toHaveBeenCalled();
-    });
+    it.each<Perfil>(["NUTRICIONISTA", "ADMIN"])(
+      "%s recebe 422 com corpo inválido (validate continua ativo)",
+      async (perfil) => {
+        const res = await call(
+          "POST",
+          `/api/prontuario/${PACIENTE_ID}/medidas`,
+          tokenFor(perfil),
+          { pacienteId: "nao-e-uuid" },
+        );
+        expect(res.status).toBe(422);
+        expect(db.medida.create).not.toHaveBeenCalled();
+      },
+    );
 
-    it("ADMIN recebe 403 (e não 422) com corpo inválido: o guard roda antes da validação", async () => {
+    it("SECRETARIA recebe 403 (e não 422) com corpo inválido: o guard roda antes da validação", async () => {
       const res = await call(
         "POST",
         `/api/prontuario/${PACIENTE_ID}/medidas`,
-        tokenFor("ADMIN"),
+        tokenFor("SECRETARIA"),
         { pacienteId: "nao-e-uuid" },
       );
       expect(res.status).toBe(403);

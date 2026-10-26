@@ -22,8 +22,8 @@ describe("clinicalGuard", () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it.each(["ADMIN", "SECRETARIA"])("deve retornar 403 para %s em clínica", (perfil) => {
-    const { next, error } = run({ perfil, tipoClinica: "CLINICA" });
+  it("deve retornar 403 para SECRETARIA em clínica", () => {
+    const { next, error } = run({ perfil: "SECRETARIA", tipoClinica: "CLINICA" });
     expect(error).toBeInstanceOf(AppError);
     expect((error as AppError).statusCode).toBe(403);
     expect(next).not.toHaveBeenCalled();
@@ -35,8 +35,8 @@ describe("clinicalGuard", () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it("deve permitir NUTRICIONISTA em clínica", () => {
-    const { next, error } = run({ perfil: "NUTRICIONISTA", tipoClinica: "CLINICA" });
+  it.each(["NUTRICIONISTA", "ADMIN"])("deve permitir %s em clínica", (perfil) => {
+    const { next, error } = run({ perfil, tipoClinica: "CLINICA" });
     expect(error).toBeUndefined();
     expect(next).toHaveBeenCalledOnce();
   });

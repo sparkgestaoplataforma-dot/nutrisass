@@ -7,8 +7,8 @@ import type { TokenPayload } from '@nutricao/shared';
  * Regras:
  * - Se não autenticado (user nulo/indefinido): acesso negado (false).
  * - Se a clínica for AUTONOMO: acesso total permitido a qualquer perfil (true).
- * - Se a clínica for CLINICA: apenas o perfil NUTRICIONISTA tem acesso clínico (true).
- *   Perfis ADMIN, SECRETARIA e outros têm acesso negado a dados clínicos (false).
+ * - Se a clínica for CLINICA: os perfis NUTRICIONISTA e ADMIN têm acesso clínico total (true).
+ *   Apenas o perfil SECRETARIA tem acesso negado a dados clínicos (false).
  */
 export function canAccessClinical(user: TokenPayload | null | undefined): boolean {
   if (!user || !user.tipoClinica || !user.perfil) {
@@ -19,7 +19,7 @@ export function canAccessClinical(user: TokenPayload | null | undefined): boolea
     return true;
   }
 
-  return user.perfil === 'NUTRICIONISTA';
+  return user.perfil === 'NUTRICIONISTA' || user.perfil === 'ADMIN';
 }
 
 /**
