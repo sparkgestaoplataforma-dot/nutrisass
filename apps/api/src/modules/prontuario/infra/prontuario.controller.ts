@@ -1,10 +1,20 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../../shared/providers/prisma.js';
 import { AppError } from '../../../shared/middlewares/errorHandler.js';
+import { getClinicaId } from '../../../shared/middlewares/auth.js';
+
+async function garantirPacienteDaClinica(pacienteId: string, clinicaId: string) {
+  const paciente = await prisma.paciente.findFirst({ where: { id: pacienteId, clinicaId } });
+  if (!paciente) throw new AppError('Paciente não encontrado', 404);
+  return paciente;
+}
 
 // Evolução Clínica
 export async function listarEvolucoes(req: Request<{ pacienteId: string }>, res: Response) {
+  const clinicaId = getClinicaId(req);
   const { pacienteId } = req.params;
+
+  await garantirPacienteDaClinica(pacienteId, clinicaId);
 
   const evolucoes = await prisma.evolucaoClinica.findMany({
     where: { pacienteId },
@@ -15,10 +25,10 @@ export async function listarEvolucoes(req: Request<{ pacienteId: string }>, res:
 }
 
 export async function criarEvolucao(req: Request<{ pacienteId: string }>, res: Response) {
+  const clinicaId = getClinicaId(req);
   const { pacienteId } = req.params;
 
-  const paciente = await prisma.paciente.findUnique({ where: { id: pacienteId } });
-  if (!paciente) throw new AppError('Paciente não encontrado', 404);
+  await garantirPacienteDaClinica(pacienteId, clinicaId);
 
   const evolucao = await prisma.evolucaoClinica.create({
     data: { ...req.body, pacienteId },
@@ -28,9 +38,12 @@ export async function criarEvolucao(req: Request<{ pacienteId: string }>, res: R
 }
 
 export async function editarEvolucao(req: Request<{ id: string }>, res: Response) {
+  const clinicaId = getClinicaId(req);
   const { id } = req.params;
 
-  const existente = await prisma.evolucaoClinica.findUnique({ where: { id } });
+  const existente = await prisma.evolucaoClinica.findFirst({
+    where: { id, paciente: { clinicaId } },
+  });
   if (!existente) throw new AppError('Evolução não encontrada', 404);
 
   const evolucao = await prisma.evolucaoClinica.update({
@@ -43,7 +56,10 @@ export async function editarEvolucao(req: Request<{ id: string }>, res: Response
 
 // Medidas
 export async function listarMedidas(req: Request<{ pacienteId: string }>, res: Response) {
+  const clinicaId = getClinicaId(req);
   const { pacienteId } = req.params;
+
+  await garantirPacienteDaClinica(pacienteId, clinicaId);
 
   const medidas = await prisma.medida.findMany({
     where: { pacienteId },
@@ -54,10 +70,10 @@ export async function listarMedidas(req: Request<{ pacienteId: string }>, res: R
 }
 
 export async function criarMedida(req: Request<{ pacienteId: string }>, res: Response) {
+  const clinicaId = getClinicaId(req);
   const { pacienteId } = req.params;
 
-  const paciente = await prisma.paciente.findUnique({ where: { id: pacienteId } });
-  if (!paciente) throw new AppError('Paciente não encontrado', 404);
+  await garantirPacienteDaClinica(pacienteId, clinicaId);
 
   const medida = await prisma.medida.create({
     data: {
@@ -71,9 +87,12 @@ export async function criarMedida(req: Request<{ pacienteId: string }>, res: Res
 }
 
 export async function excluirMedida(req: Request<{ id: string }>, res: Response) {
+  const clinicaId = getClinicaId(req);
   const { id } = req.params;
 
-  const existente = await prisma.medida.findUnique({ where: { id } });
+  const existente = await prisma.medida.findFirst({
+    where: { id, paciente: { clinicaId } },
+  });
   if (!existente) throw new AppError('Medida não encontrada', 404);
 
   await prisma.medida.delete({ where: { id } });

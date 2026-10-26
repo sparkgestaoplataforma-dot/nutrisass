@@ -281,6 +281,22 @@
   }
 }
 
+.layoutCadastralOnly {
+  grid-template-columns: 1fr;
+
+  @media (min-width: $breakpoint-lg) {
+    grid-template-columns: 1fr 340px;
+    gap: 1.5rem;
+  }
+}
+
+.sidebarRightCadastral {
+  @media (max-width: 1023px) {
+    display: block !important;
+    margin-top: 1rem;
+  }
+}
+
 .center {
   min-width: 0;
   width: 100%;

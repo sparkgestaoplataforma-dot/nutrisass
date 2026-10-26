@@ -7,6 +7,7 @@ import {
 
 import { validate } from "../../../shared/middlewares/validate.js";
 import { authMiddleware } from "../../../shared/middlewares/auth.js";
+import { clinicalGuard } from "../../../shared/middlewares/clinicalGuard.js";
 import { publicRateLimiter } from "../../../shared/middlewares/rateLimiter.js";
 import * as controller from "./pacientes.controller.js";
 
@@ -26,7 +27,7 @@ router.get("/:id/nome", controller.buscarNomePorId);
 router.use(authMiddleware);
 
 router.get("/", controller.listar);
-router.get("/:id/avaliacoes", controller.listarAvaliacoes);
+router.get("/:id/avaliacoes", clinicalGuard, controller.listarAvaliacoes);
 router.get("/:id", controller.buscarPorId);
 router.post("/", validate(createPacienteSchema), controller.criar);
 router.put("/:id", validate(updatePacienteSchema), controller.editar);

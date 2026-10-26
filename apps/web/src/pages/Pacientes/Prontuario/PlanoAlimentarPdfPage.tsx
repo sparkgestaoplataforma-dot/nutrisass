@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { PrinterIcon, ArrowLeft01Icon } from '@hugeicons/core-free-icons';
 import { buscarPlano } from '@/services/planoAlimentar';
+import { useClinicalAccess } from '@/hooks/useClinicalAccess';
 import styles from './PlanoAlimentarPdfPage.module.scss';
 
 function calcularIdade(dataNascimento: string | Date | null | undefined): string {
@@ -21,6 +22,7 @@ function calcularIdade(dataNascimento: string | Date | null | undefined): string
 export function PlanoAlimentarPdfPage() {
   const { pacienteId, id } = useParams<{ pacienteId: string; id: string }>();
   const navigate = useNavigate();
+  const hasClinicalAccess = useClinicalAccess();
 
   const handleBack = () => {
     window.close();
@@ -36,7 +38,7 @@ export function PlanoAlimentarPdfPage() {
   const { data: response, isLoading, error } = useQuery({
     queryKey: ['plano-alimentar', id],
     queryFn: () => buscarPlano(id!),
-    enabled: !!id,
+    enabled: hasClinicalAccess && !!id,
   });
 
   const plano = response?.data;

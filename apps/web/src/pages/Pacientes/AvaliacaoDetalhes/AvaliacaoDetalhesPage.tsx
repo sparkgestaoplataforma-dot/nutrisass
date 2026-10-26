@@ -19,11 +19,13 @@ import { LoadingError } from "@/components/Loading/LoadingError";
 import { EmptyState } from "@/components/Loading/EmptyState";
 import { ClipboardIcon, Menu01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useClinicalAccess } from "@/hooks/useClinicalAccess";
 
 export function AvaliacaoDetalhesPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { avaliacaoId, pacienteId } = useParams();
+  const hasClinicalAccess = useClinicalAccess();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [showMobileLeft, setShowMobileLeft] = useState(false);
   const [showMobileRight, setShowMobileRight] = useState(false);
@@ -39,7 +41,7 @@ export function AvaliacaoDetalhesPage() {
       const response = await getAvaliacaoComRespostas(avaliacaoId!);
       return response.data ?? null;
     },
-    enabled: !!avaliacaoId,
+    enabled: hasClinicalAccess && !!avaliacaoId,
   });
   const { data: paciente, isLoading: isLoadingPaciente } = useQuery({
     queryKey: ["paciente", pacienteId],

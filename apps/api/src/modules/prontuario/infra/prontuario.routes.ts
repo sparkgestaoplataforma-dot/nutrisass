@@ -2,11 +2,13 @@ import { Router } from 'express';
 import { createEvolucaoSchema, createMedidaSchema } from '@nutricao/shared';
 import { validate } from '../../../shared/middlewares/validate.js';
 import { authMiddleware } from '../../../shared/middlewares/auth.js';
+import { clinicalGuard } from '../../../shared/middlewares/clinicalGuard.js';
 import * as controller from './prontuario.controller.js';
 
 const router = Router();
 
 router.use(authMiddleware);
+router.use(clinicalGuard);
 
 // Evoluções
 router.get('/:pacienteId/evolucoes', controller.listarEvolucoes);
