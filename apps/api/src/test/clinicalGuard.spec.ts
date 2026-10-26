@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { clinicalGuard } from "./clinicalGuard";
-import { AppError } from "./errorHandler";
+import { clinicalGuard } from "../shared/middlewares/clinicalGuard";
+import { AppError } from "../shared/middlewares/errorHandler";
 
 function run(user?: { perfil: string; tipoClinica: "AUTONOMO" | "CLINICA" }) {
   const next = vi.fn();

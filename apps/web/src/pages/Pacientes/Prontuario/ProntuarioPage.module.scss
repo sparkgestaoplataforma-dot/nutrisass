@@ -10,6 +10,10 @@
   margin: 0 auto;
 }
 
+.pageCadastral {
+  max-width: 900px;
+}
+
 .loadingState {
   display: flex;
   flex-direction: column;
@@ -53,6 +57,7 @@
   cursor: pointer;
   font-weight: 500;
   transition: color 0.15s;
+
   &:hover {
     color: $primary-dark;
     text-decoration: underline;
@@ -197,10 +202,12 @@
 }
 
 @keyframes timerPulse {
+
   0%,
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.8;
   }
@@ -282,18 +289,19 @@
 }
 
 .layoutCadastralOnly {
-  grid-template-columns: 1fr;
+  display: flex;
+  justify-content: center;
+  width: 100%;
 
   @media (min-width: $breakpoint-lg) {
-    grid-template-columns: 1fr 340px;
-    gap: 1.5rem;
+    display: flex;
+    justify-content: center;
   }
-}
 
-.sidebarRightCadastral {
-  @media (max-width: 1023px) {
-    display: block !important;
-    margin-top: 1rem;
+  .center {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
   }
 }
 
@@ -464,9 +472,11 @@
   font-size: 1rem;
   transition: all 0.2s;
 }
+
 .statusGreen {
   color: $success;
 }
+
 .statusYellow {
   color: $warning;
 }
@@ -474,6 +484,7 @@
 .statusOrange {
   color: $orange;
 }
+
 .statusRed {
   color: $danger;
 }
@@ -523,6 +534,7 @@
   color: $gray-400;
   line-height: 1.3;
 }
+
 .chevron {
   color: $gray-300;
 }
@@ -811,6 +823,12 @@
     top: calc($header-height + 1.5rem);
     order: 0;
   }
+}
+
+.rightStack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 }
 
 .rightCard {
@@ -1373,7 +1391,7 @@
   align-items: center;
   border-bottom: 1px solid $gray-100;
   padding-bottom: $space-2;
-  
+
   strong {
     font-size: $font-size-sm;
     color: $gray-900;
@@ -1415,7 +1433,7 @@
 .cardInfo {
   font-size: $font-size-sm;
   color: $gray-700;
-  
+
   strong {
     color: $gray-900;
     font-weight: 600;
@@ -1439,7 +1457,7 @@
     padding: 0.5rem;
     border-radius: $radius-md;
     cursor: pointer;
-    
+
     &:hover {
       background: $gray-100;
     }
@@ -1622,9 +1640,20 @@
   white-space: nowrap;
 }
 
-.statusOk { background: $success-light; color: $primary-dark; }
-.statusPendente { background: $info-light; color: #1d4ed8; }
-.statusFalta { background: #fef2f2; color: #b91c1c; }
+.statusOk {
+  background: $success-light;
+  color: $primary-dark;
+}
+
+.statusPendente {
+  background: $info-light;
+  color: #1d4ed8;
+}
+
+.statusFalta {
+  background: #fef2f2;
+  color: #b91c1c;
+}
 
 .historicoEmpty {
   font-size: $font-size-xs;
