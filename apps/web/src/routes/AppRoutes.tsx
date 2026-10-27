@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
+import { ClinicalRoute } from './ClinicalRoute';
 import { DashboardLayout } from '@/components/DashboardLayout/DashboardLayout';
 import { LoginPage } from '@/pages/Login/LoginPage';
 import { LandingPage } from '@/pages/Landing/LandingPage';
@@ -42,7 +43,9 @@ export function AppRoutes() {
 
         {/* Rotas protegidas (dashboard) */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/pacientes/:pacienteId/planos/:id/pdf" element={<PlanoAlimentarPdfPage />} />
+          <Route element={<ClinicalRoute />}>
+            <Route path="/pacientes/:pacienteId/planos/:id/pdf" element={<PlanoAlimentarPdfPage />} />
+          </Route>
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/agenda" element={<AgendaPage />} />
@@ -50,15 +53,19 @@ export function AppRoutes() {
             <Route path="/pacientes/novo" element={<PacienteFormPage />} />
             <Route path="/pacientes/:id" element={<ProntuarioPage />} />
             <Route path="/pacientes/:id/editar" element={<PacienteFormPage />} />
-            <Route path="/pacientes/:pacienteId/comparativo" element={<ComparativoPage />} />
             <Route path="/exames" element={<ExamesPage />} />
             <Route path="/alimentos" element={<AlimentosPage />} />
             <Route path="/relatorios" element={<RelatoriosPage />} />
             <Route path="/configuracoes" element={<ConfigPage />} />
-            <Route
-              path="/avaliacoes/:avaliacaoId/:pacienteId"
-              element={<AvaliacaoDetalhesPage />}
-            />
+
+            {/* Rotas exclusivamente clínicas */}
+            <Route element={<ClinicalRoute />}>
+              <Route path="/pacientes/:pacienteId/comparativo" element={<ComparativoPage />} />
+              <Route
+                path="/avaliacoes/:avaliacaoId/:pacienteId"
+                element={<AvaliacaoDetalhesPage />}
+              />
+            </Route>
           </Route>
         </Route>
 

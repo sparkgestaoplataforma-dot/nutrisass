@@ -22,6 +22,17 @@ import {
   AlertCircleIcon,
   Restaurant01Icon,
   Menu01Icon,
+  WhatsappIcon,
+  User02Icon,
+  Briefcase01Icon,
+  UniversityIcon,
+  UserAccountIcon,
+  UserIdVerificationIcon,
+  IdentityCardIcon,
+  CreditCardIcon,
+  Copy01Icon,
+  Tick01Icon,
+  HelpCircleIcon,
 } from "@hugeicons/core-free-icons";
 import { Skeleton } from "@/components/Loading/Skeleton";
 import { SkeletonObservacao } from "@/components/Loading/skeletons/SkeletonObservacao";
@@ -29,6 +40,7 @@ import { EmptyState } from "@/components/Loading/EmptyState";
 import { api } from "@/services/api";
 import { getPacientePorId, type Paciente } from "@/services/pacientes";
 import { useAuthStore } from "@/stores/authStore";
+import { useClinicalAccess } from "@/hooks/useClinicalAccess";
 import { EstadoClinicoTimeline } from "./components/EstadoClinicoTimeline";
 import { MedidasTab } from "./components/MedidasTab";
 import { ExamesTab } from "./components/ExamesTab";
@@ -43,6 +55,7 @@ import {
   getInterpretacaoScore,
   getClasseCorPorNivel,
 } from "@/utils/scoreInterpretacao";
+import { formatarDataBrasilia } from "@/utils/date";
 import { LoadingError } from "@/components/Loading/LoadingError";
 
 type View = "atendimento" | "medidas" | "exames" | "planoAlimentar";
@@ -64,6 +77,44 @@ function getAge(dateStr: string): number {
   const m = today.getMonth() - birth.getMonth();
   if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
   return age;
+}
+
+function formatarDataSimples(dataStr: string | null | undefined): string {
+  if (!dataStr) return "Não informada";
+  const formatted = formatarDataBrasilia(dataStr);
+  return formatted && formatted !== "-" && formatted !== "Data inválida"
+    ? formatted.split(" ")[0]
+    : "Não informada";
+}
+
+function formatarCpf(cpf: string | null | undefined): string {
+  if (!cpf) return "Não informado";
+  const clean = cpf.replace(/\D/g, "");
+  if (clean.length === 11) {
+    return clean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+  }
+  return cpf;
+}
+
+function formatarCep(cep: string | null | undefined): string {
+  if (!cep) return "Não informado";
+  const clean = cep.replace(/\D/g, "");
+  if (clean.length === 8) {
+    return clean.replace(/(\d{5})(\d{3})/, "$1-$2");
+  }
+  return cep;
+}
+
+function formatarTelefone(tel: string | null | undefined): string {
+  if (!tel) return "Não informado";
+  const clean = tel.replace(/\D/g, "");
+  if (clean.length === 11) {
+    return clean.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+  }
+  if (clean.length === 10) {
+    return clean.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
+  }
+  return tel;
 }
 
 function formatDuration(seconds: number): string {
@@ -95,6 +146,7 @@ export function ProntuarioPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
+  const hasClinicalAccess = useClinicalAccess();
 
   const [view, setView] = useState<View>("atendimento");
   const [avaliacoesPage, setAvaliacoesPage] = useState(1);
@@ -108,6 +160,13 @@ export function ProntuarioPage() {
 
   const [showMobileNav, setShowMobileNav] = useState(false);
   const [showMobileRight, setShowMobileRight] = useState(false);
+  const [cpfCopiado, setCpfCopiado] = useState(false);
+
+  const handleCopiarCpf = (cpfText: string) => {
+    navigator.clipboard.writeText(cpfText);
+    setCpfCopiado(true);
+    setTimeout(() => setCpfCopiado(false), 2000);
+  };
 
   // --- Queries ---
   const {
@@ -130,7 +189,7 @@ export function ProntuarioPage() {
   } = useQuery({
     queryKey: ["avaliacoes", id, avaliacoesPage],
     queryFn: () => getAvaliacoesPorPacienteId(id!, avaliacoesPage, 20),
-    enabled: !!id,
+    enabled: hasClinicalAccess && !!id,
     refetchOnMount: "always",
   });
 
@@ -151,7 +210,7 @@ export function ProntuarioPage() {
   } = useQuery({
     queryKey: ["avaliacao-selecionada", avaliacaoSelecionadaId],
     queryFn: () => getAvaliacoesPorId(avaliacaoSelecionadaId!),
-    enabled: !!avaliacaoSelecionadaId,
+    enabled: hasClinicalAccess && !!avaliacaoSelecionadaId,
   });
 
   const selectedAvaliacao = avaliacaoSelecionadaResponse?.data;
@@ -184,10 +243,10 @@ export function ProntuarioPage() {
 
   // Remove global loading, use granular skeletons instead
 
-  const isNutricionista = user?.perfil === "NUTRICIONISTA";
+  const isNutricionista = user?.perfil === "NUTRICIONISTA" || hasClinicalAccess;
 
   // Sub-views (Medidas / Exames)
-  if (view === "planoAlimentar") {
+  if (hasClinicalAccess && view === "planoAlimentar") {
     return (
       <div>
         <button
@@ -211,7 +270,7 @@ export function ProntuarioPage() {
     );
   }
 
-  if (view === "medidas" || view === "exames") {
+  if (hasClinicalAccess && (view === "medidas" || view === "exames")) {
     return (
       <div>
         <button
@@ -238,6 +297,42 @@ export function ProntuarioPage() {
     );
   }
 
+  const isSecretaria = (user?.perfil || "").toUpperCase() === "SECRETARIA";
+
+  const dataNascimentoFormatadaStr = paciente?.dataNascimentoFormatada
+    ? paciente.dataNascimentoFormatada.split(" ")[0]
+    : paciente?.dataNascimento
+      ? formatarDataSimples(paciente.dataNascimento)
+      : null;
+  const dataNascimentoExibicao = dataNascimentoFormatadaStr
+    ? `${dataNascimentoFormatadaStr}${paciente?.dataNascimento ? ` (${getAge(paciente.dataNascimento)} anos)` : ""}`
+    : "Não informada";
+
+  const sexoExibicao =
+    paciente?.sexo === "MASCULINO"
+      ? "Masculino"
+      : paciente?.sexo === "FEMININO"
+        ? "Feminino"
+        : "Não informado";
+
+  const cpfFormatado = formatarCpf(paciente?.cpf);
+  const rgExibicao = paciente?.identidade
+    ? `${paciente.identidade}${paciente.orgaoExpedidor ? ` ${paciente.orgaoExpedidor}` : ""}${paciente.ufIdentidade ? `/${paciente.ufIdentidade}` : ""}`
+    : "Não informada";
+
+  const cepFormatado = formatarCep(paciente?.cep);
+  const telefoneFormatado = formatarTelefone(paciente?.telefone);
+  const whatsappFormatado = formatarTelefone(paciente?.whatsapp);
+  const whatsappNumeros = (paciente?.whatsapp || "").replace(/\D/g, "");
+
+  const cidadeUfExibicao =
+    [paciente?.municipio, paciente?.uf].filter(Boolean).join(" / ") ||
+    "Não informado";
+
+  const validadeCarteiraExibicao = paciente?.validadeCarteira
+    ? formatarDataSimples(paciente.validadeCarteira)
+    : "Não informada";
+
   const endereco = paciente
     ? [
       paciente.endereco,
@@ -249,7 +344,7 @@ export function ProntuarioPage() {
       .join(", ")
     : "";
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${!hasClinicalAccess ? styles.pageCadastral : ""}`}>
       {/* Breadcrumb */}
       <nav className={styles.breadcrumb}>
         <span className={styles.breadcrumbLink} onClick={() => navigate("/dashboard")}>
@@ -267,7 +362,7 @@ export function ProntuarioPage() {
       </nav>
 
       {/* Timer Bar */}
-      {isNutricionista && (
+      {hasClinicalAccess && (
         <div
           className={`${styles.timerBar} ${timerActive ? styles.timerBarActive : ""}`}
         >
@@ -324,75 +419,79 @@ export function ProntuarioPage() {
       )}
 
       {/* Layout principal */}
-      <div className={styles.layout}>
+      <div className={`${styles.layout} ${!hasClinicalAccess ? styles.layoutCadastralOnly : ""}`}>
         {/* Mobile Top Controls */}
-        <div className={styles.mobileControls}>
-          <button
-            className={`${styles.mobileControlBtn} ${showMobileNav ? styles.active : ''}`}
-            onClick={() => {
-              setShowMobileNav(!showMobileNav);
-              if (!showMobileNav) setShowMobileRight(false);
-            }}
-          >
-            <HugeiconsIcon icon={Menu01Icon} size={16} />
-            Navegação
-          </button>
-          <button
-            className={`${styles.mobileControlBtn} ${showMobileRight ? styles.active : ''}`}
-            onClick={() => {
-              setShowMobileRight(!showMobileRight);
-              if (!showMobileRight) setShowMobileNav(false);
-            }}
-          >
-            <HugeiconsIcon icon={ClipboardIcon} size={16} />
-            Questionários
-          </button>
-        </div>
+        {hasClinicalAccess && (
+          <div className={styles.mobileControls}>
+            <button
+              className={`${styles.mobileControlBtn} ${showMobileNav ? styles.active : ''}`}
+              onClick={() => {
+                setShowMobileNav(!showMobileNav);
+                if (!showMobileNav) setShowMobileRight(false);
+              }}
+            >
+              <HugeiconsIcon icon={Menu01Icon} size={16} />
+              Navegação
+            </button>
+            <button
+              className={`${styles.mobileControlBtn} ${showMobileRight ? styles.active : ''}`}
+              onClick={() => {
+                setShowMobileRight(!showMobileRight);
+                if (!showMobileRight) setShowMobileNav(false);
+              }}
+            >
+              <HugeiconsIcon icon={ClipboardIcon} size={16} />
+              Questionários
+            </button>
+          </div>
+        )}
 
         {/* Sidebar Esquerda */}
-        <aside className={`${styles.sidebarLeft} ${!showMobileNav ? styles.mobileHidden : ""}`}>
-          <p className={styles.sidebarLabel}>Navegação</p>
-          <button
-            className={styles.sideNavItem}
-            onClick={() => { setView("medidas"); setShowMobileNav(false); }}
-          >
-            <div className={styles.sideNavIcon}>
-              <HugeiconsIcon icon={RulerIcon} size={16} strokeWidth={1.8} />
-            </div>
-            <span>Medidas</span>
-            <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
-          </button>
-          <button
-            className={styles.sideNavItem}
-            onClick={() => { setView("exames"); setShowMobileNav(false); }}
-          >
-            <div className={styles.sideNavIcon}>
-              <HugeiconsIcon icon={TestTubeIcon} size={16} strokeWidth={1.8} />
-            </div>
-            <span>Exames</span>
-            <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
-          </button>
-          <button
-            className={styles.sideNavItem}
-            onClick={() => navigate(`/pacientes/${id!}/comparativo`)}
-          >
-            <div className={styles.sideNavIcon}>
-              <HugeiconsIcon icon={ClipboardIcon} size={16} strokeWidth={1.8} />
-            </div>
-            <span>Questionários</span>
-            <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
-          </button>
-          <button
-            className={styles.sideNavItem}
-            onClick={() => { setView("planoAlimentar"); setShowMobileNav(false); }}
-          >
-            <div className={styles.sideNavIcon}>
-              <HugeiconsIcon icon={Restaurant01Icon} size={16} strokeWidth={1.8} />
-            </div>
-            <span>Plano Alimentar</span>
-            <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
-          </button>
-        </aside>
+        {hasClinicalAccess && (
+          <aside className={`${styles.sidebarLeft} ${!showMobileNav ? styles.mobileHidden : ""}`}>
+            <p className={styles.sidebarLabel}>Navegação</p>
+            <button
+              className={styles.sideNavItem}
+              onClick={() => { setView("medidas"); setShowMobileNav(false); }}
+            >
+              <div className={styles.sideNavIcon}>
+                <HugeiconsIcon icon={RulerIcon} size={16} strokeWidth={1.8} />
+              </div>
+              <span>Medidas</span>
+              <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
+            </button>
+            <button
+              className={styles.sideNavItem}
+              onClick={() => { setView("exames"); setShowMobileNav(false); }}
+            >
+              <div className={styles.sideNavIcon}>
+                <HugeiconsIcon icon={TestTubeIcon} size={16} strokeWidth={1.8} />
+              </div>
+              <span>Exames</span>
+              <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
+            </button>
+            <button
+              className={styles.sideNavItem}
+              onClick={() => navigate(`/pacientes/${id!}/comparativo`)}
+            >
+              <div className={styles.sideNavIcon}>
+                <HugeiconsIcon icon={ClipboardIcon} size={16} strokeWidth={1.8} />
+              </div>
+              <span>Questionários</span>
+              <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
+            </button>
+            <button
+              className={styles.sideNavItem}
+              onClick={() => { setView("planoAlimentar"); setShowMobileNav(false); }}
+            >
+              <div className={styles.sideNavIcon}>
+                <HugeiconsIcon icon={Restaurant01Icon} size={16} strokeWidth={1.8} />
+              </div>
+              <span>Plano Alimentar</span>
+              <HugeiconsIcon icon={ArrowRight01Icon} size={12} strokeWidth={2} />
+            </button>
+          </aside>
+        )}
 
         {/* Conteúdo Central */}
         <main className={styles.center}>
@@ -451,260 +550,652 @@ export function ProntuarioPage() {
                   )}
                 </div>
 
-                <div className={styles.heroDetails}>
-                  <div className={styles.heroDetail}>
-                    <HugeiconsIcon
-                      icon={Calendar01Icon}
-                      size={15}
-                      strokeWidth={1.8}
-                    />
-                    <span>
-                      {isLoadingPaciente ? (
-                        <Skeleton width="80px" height="14px" />
-                      ) : paciente?.dataNascimentoFormatada ? (
-                        paciente.dataNascimentoFormatada.split(' ')[0] // Pega apenas a parte da data
-                      ) : (
-                        "Não informada"
-                      )}
-                    </span>
+                {!hasClinicalAccess || isSecretaria ? (
+                  <div className={styles.cadastralSections}>
+                    {/* Dados Pessoais e Contato - Largura Total (4 colunas em telas grandes) */}
+                    <div className={styles.cadastralSection}>
+                      <div className={styles.sectionHeader}>
+                        <div className={styles.sectionHeaderIcon}>
+                          <HugeiconsIcon icon={User02Icon} size={14} strokeWidth={2} />
+                        </div>
+                        <h3 className={styles.sectionTitle}>Dados Pessoais e Contato</h3>
+                      </div>
+                      <div className={styles.cadastralGrid4Cols}>
+                        <div className={styles.infoTile}>
+                          <div className={styles.tileIcon}>
+                            <HugeiconsIcon icon={Calendar01Icon} size={15} strokeWidth={1.8} />
+                          </div>
+                          <div className={styles.tileBody}>
+                            <span className={styles.tileLabel}>Nascimento</span>
+                            <div className={`${styles.tileValue} ${!dataNascimentoFormatadaStr ? styles.tileValueEmpty : ""}`}>
+                              {isLoadingPaciente ? (
+                                <Skeleton width="120px" height="14px" />
+                              ) : (
+                                <span>{dataNascimentoExibicao}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className={styles.infoTile}>
+                          <div className={styles.tileIcon}>
+                            <HugeiconsIcon icon={User02Icon} size={15} strokeWidth={1.8} />
+                          </div>
+                          <div className={styles.tileBody}>
+                            <span className={styles.tileLabel}>Sexo</span>
+                            <div className={`${styles.tileValue} ${!paciente?.sexo ? styles.tileValueEmpty : ""}`}>
+                              {isLoadingPaciente ? (
+                                <Skeleton width="80px" height="14px" />
+                              ) : (
+                                <span>{sexoExibicao}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className={styles.infoTile}>
+                          <div className={styles.tileIcon}>
+                            <HugeiconsIcon icon={SmartPhone01Icon} size={15} strokeWidth={1.8} />
+                          </div>
+                          <div className={styles.tileBody}>
+                            <span className={styles.tileLabel}>Telefone</span>
+                            <div className={`${styles.tileValue} ${!paciente?.telefone ? styles.tileValueEmpty : ""}`}>
+                              {isLoadingPaciente ? (
+                                <Skeleton width="110px" height="14px" />
+                              ) : paciente?.telefone ? (
+                                <a href={`tel:${paciente.telefone.replace(/\D/g, "")}`}>
+                                  {telefoneFormatado}
+                                </a>
+                              ) : (
+                                <span>Não informado</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className={styles.infoTile}>
+                          <div className={styles.tileIcon}>
+                            <HugeiconsIcon icon={WhatsappIcon} size={15} strokeWidth={1.8} />
+                          </div>
+                          <div className={styles.tileBody}>
+                            <span className={styles.tileLabel}>WhatsApp</span>
+                            <div className={`${styles.tileValue} ${!paciente?.whatsapp ? styles.tileValueEmpty : ""}`}>
+                              {isLoadingPaciente ? (
+                                <Skeleton width="110px" height="14px" />
+                              ) : paciente?.whatsapp ? (
+                                <a
+                                  href={`https://wa.me/55${whatsappNumeros}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  {whatsappFormatado}
+                                </a>
+                              ) : (
+                                <span>Não informado</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className={styles.infoTile}>
+                          <div className={styles.tileIcon}>
+                            <HugeiconsIcon icon={Mail01Icon} size={15} strokeWidth={1.8} />
+                          </div>
+                          <div className={styles.tileBody}>
+                            <span className={styles.tileLabel}>E-mail</span>
+                            <div className={`${styles.tileValue} ${!paciente?.email ? styles.tileValueEmpty : ""}`}>
+                              {isLoadingPaciente ? (
+                                <Skeleton width="140px" height="14px" />
+                              ) : paciente?.email ? (
+                                <a href={`mailto:${paciente.email}`}>
+                                  {paciente.email}
+                                </a>
+                              ) : (
+                                <span>Não informado</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className={styles.infoTile}>
+                          <div className={styles.tileIcon}>
+                            <HugeiconsIcon icon={Briefcase01Icon} size={15} strokeWidth={1.8} />
+                          </div>
+                          <div className={styles.tileBody}>
+                            <span className={styles.tileLabel}>Profissão</span>
+                            <div className={`${styles.tileValue} ${!paciente?.profissao ? styles.tileValueEmpty : ""}`}>
+                              {isLoadingPaciente ? (
+                                <Skeleton width="100px" height="14px" />
+                              ) : (
+                                <span>{paciente?.profissao || "Não informada"}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className={styles.infoTile}>
+                          <div className={styles.tileIcon}>
+                            <HugeiconsIcon icon={UniversityIcon} size={15} strokeWidth={1.8} />
+                          </div>
+                          <div className={styles.tileBody}>
+                            <span className={styles.tileLabel}>Escolaridade</span>
+                            <div className={`${styles.tileValue} ${!paciente?.escolaridade ? styles.tileValueEmpty : ""}`}>
+                              {isLoadingPaciente ? (
+                                <Skeleton width="120px" height="14px" />
+                              ) : (
+                                <span>{paciente?.escolaridade || "Não informada"}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className={styles.infoTile}>
+                          <div className={styles.tileIcon}>
+                            <HugeiconsIcon icon={UserAccountIcon} size={15} strokeWidth={1.8} />
+                          </div>
+                          <div className={styles.tileBody}>
+                            <span className={styles.tileLabel}>Nome da Mãe</span>
+                            <div className={`${styles.tileValue} ${!paciente?.nomeMae ? styles.tileValueEmpty : ""}`}>
+                              {isLoadingPaciente ? (
+                                <Skeleton width="130px" height="14px" />
+                              ) : (
+                                <span>{paciente?.nomeMae || "Não informado"}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Linha Inferior com 2 colunas: Endereço de um lado, Documentos e Convênio do outro */}
+                    <div className={styles.cadastralBottomRow}>
+                      {/* Endereço */}
+                      <div className={styles.cadastralSection}>
+                        <div className={styles.sectionHeader}>
+                          <div className={styles.sectionHeaderIcon}>
+                            <HugeiconsIcon icon={Location01Icon} size={14} strokeWidth={2} />
+                          </div>
+                          <h3 className={styles.sectionTitle}>Endereço</h3>
+                        </div>
+                        <div className={styles.cadastralGridAddress}>
+                          <div className={styles.infoTile}>
+                            <div className={styles.tileIcon}>
+                              <HugeiconsIcon icon={Location01Icon} size={15} strokeWidth={1.8} />
+                            </div>
+                            <div className={styles.tileBody}>
+                              <span className={styles.tileLabel}>CEP</span>
+                              <div className={`${styles.tileValue} ${!paciente?.cep ? styles.tileValueEmpty : ""}`}>
+                                {isLoadingPaciente ? (
+                                  <Skeleton width="90px" height="14px" />
+                                ) : (
+                                  <span>{cepFormatado}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className={styles.infoTile}>
+                            <div className={styles.tileIcon}>
+                              <HugeiconsIcon icon={Location01Icon} size={15} strokeWidth={1.8} />
+                            </div>
+                            <div className={styles.tileBody}>
+                              <span className={styles.tileLabel}>Cidade / UF</span>
+                              <div className={`${styles.tileValue} ${!paciente?.municipio && !paciente?.uf ? styles.tileValueEmpty : ""}`}>
+                                {isLoadingPaciente ? (
+                                  <Skeleton width="120px" height="14px" />
+                                ) : (
+                                  <span>{cidadeUfExibicao}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className={styles.infoTile}>
+                            <div className={styles.tileIcon}>
+                              <HugeiconsIcon icon={Location01Icon} size={15} strokeWidth={1.8} />
+                            </div>
+                            <div className={styles.tileBody}>
+                              <span className={styles.tileLabel}>Bairro</span>
+                              <div className={`${styles.tileValue} ${!paciente?.bairro ? styles.tileValueEmpty : ""}`}>
+                                {isLoadingPaciente ? (
+                                  <Skeleton width="100px" height="14px" />
+                                ) : (
+                                  <span>{paciente?.bairro || "Não informado"}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className={`${styles.infoTile} ${styles.tileFullWidthAddress}`}>
+                            <div className={styles.tileIcon}>
+                              <HugeiconsIcon icon={Location01Icon} size={15} strokeWidth={1.8} />
+                            </div>
+                            <div className={styles.tileBody}>
+                              <span className={styles.tileLabel}>Logradouro / Endereço</span>
+                              <div className={`${styles.tileValue} ${!paciente?.endereco ? styles.tileValueEmpty : ""}`}>
+                                {isLoadingPaciente ? (
+                                  <Skeleton width="220px" height="14px" />
+                                ) : (
+                                  <span>{paciente?.endereco || "Não informado"}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Documentos e Convênio agrupados na coluna lateral */}
+                      <div className={styles.cadastralColumnGroup}>
+                        {/* Documentos */}
+                        <div className={styles.cadastralSection}>
+                          <div className={styles.sectionHeader}>
+                            <div className={styles.sectionHeaderIcon}>
+                              <HugeiconsIcon icon={UserIdVerificationIcon} size={14} strokeWidth={2} />
+                            </div>
+                            <h3 className={styles.sectionTitle}>Documentos</h3>
+                          </div>
+                          <div className={styles.cadastralGridDocs}>
+                            <div className={styles.infoTile}>
+                              <div className={styles.tileIcon}>
+                                <HugeiconsIcon icon={UserIdVerificationIcon} size={15} strokeWidth={1.8} />
+                              </div>
+                              <div className={styles.tileBody}>
+                                <span className={styles.tileLabel}>CPF</span>
+                                <div className={`${styles.tileValue} ${!paciente?.cpf ? styles.tileValueEmpty : ""}`}>
+                                  {isLoadingPaciente ? (
+                                    <Skeleton width="110px" height="14px" />
+                                  ) : (
+                                    <>
+                                      <span>{cpfFormatado}</span>
+                                      {paciente?.cpf && (
+                                        <>
+                                          {cpfCopiado ? (
+                                            <span className={styles.copiedTag}>
+                                              <HugeiconsIcon icon={Tick01Icon} size={11} strokeWidth={2.5} />
+                                              Copiado
+                                            </span>
+                                          ) : (
+                                            <button
+                                              type="button"
+                                              className={styles.copyBtn}
+                                              onClick={() => handleCopiarCpf(cpfFormatado)}
+                                              title="Copiar CPF"
+                                            >
+                                              <HugeiconsIcon icon={Copy01Icon} size={12} strokeWidth={2} />
+                                            </button>
+                                          )}
+                                        </>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className={styles.infoTile}>
+                              <div className={styles.tileIcon}>
+                                <HugeiconsIcon icon={IdentityCardIcon} size={15} strokeWidth={1.8} />
+                              </div>
+                              <div className={styles.tileBody}>
+                                <span className={styles.tileLabel}>Identidade (RG)</span>
+                                <div className={`${styles.tileValue} ${!paciente?.identidade ? styles.tileValueEmpty : ""}`}>
+                                  {isLoadingPaciente ? (
+                                    <Skeleton width="110px" height="14px" />
+                                  ) : (
+                                    <span>{rgExibicao}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Convênio e Plano */}
+                        <div className={styles.cadastralSection}>
+                          <div className={styles.sectionHeader}>
+                            <div className={styles.sectionHeaderIcon}>
+                              <HugeiconsIcon icon={CreditCardIcon} size={14} strokeWidth={2} />
+                            </div>
+                            <h3 className={styles.sectionTitle}>Convênio e Plano</h3>
+                          </div>
+                          <div className={styles.cadastralGridConvenio}>
+                            <div className={styles.infoTile}>
+                              <div className={styles.tileIcon}>
+                                <HugeiconsIcon icon={CreditCardIcon} size={15} strokeWidth={1.8} />
+                              </div>
+                              <div className={styles.tileBody}>
+                                <span className={styles.tileLabel}>Convênio</span>
+                                <div className={styles.tileValue}>
+                                  {isLoadingPaciente ? (
+                                    <Skeleton width="100px" height="14px" />
+                                  ) : (
+                                    <span>{paciente?.convenio?.nome || "Particular"}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className={styles.infoTile}>
+                              <div className={styles.tileIcon}>
+                                <HugeiconsIcon icon={CreditCardIcon} size={15} strokeWidth={1.8} />
+                              </div>
+                              <div className={styles.tileBody}>
+                                <span className={styles.tileLabel}>Nº da Carteira</span>
+                                <div className={`${styles.tileValue} ${!paciente?.numeroCarteira ? styles.tileValueEmpty : ""}`}>
+                                  {isLoadingPaciente ? (
+                                    <Skeleton width="110px" height="14px" />
+                                  ) : (
+                                    <span>{paciente?.numeroCarteira || "Não informado"}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className={styles.infoTile}>
+                              <div className={styles.tileIcon}>
+                                <HugeiconsIcon icon={Calendar01Icon} size={15} strokeWidth={1.8} />
+                              </div>
+                              <div className={styles.tileBody}>
+                                <span className={styles.tileLabel}>Validade</span>
+                                <div className={`${styles.tileValue} ${!paciente?.validadeCarteira ? styles.tileValueEmpty : ""}`}>
+                                  {isLoadingPaciente ? (
+                                    <Skeleton width="100px" height="14px" />
+                                  ) : (
+                                    <span>{validadeCarteiraExibicao}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className={styles.heroDetail}>
-                    <HugeiconsIcon
-                      icon={Mail01Icon}
-                      size={15}
-                      strokeWidth={1.8}
-                    />
-                    <span>
-                      {isLoadingPaciente ? (
-                        <Skeleton width="150px" height="14px" />
-                      ) : (
-                        paciente?.email || "Não informado"
-                      )}
-                    </span>
+                ) : (
+                  <div className={styles.heroDetails}>
+                    <div className={styles.heroDetail}>
+                      <HugeiconsIcon
+                        icon={Calendar01Icon}
+                        size={15}
+                        strokeWidth={1.8}
+                      />
+                      <span>
+                        {isLoadingPaciente ? (
+                          <Skeleton width="80px" height="14px" />
+                        ) : paciente?.dataNascimentoFormatada ? (
+                          paciente.dataNascimentoFormatada.split(' ')[0] // Pega apenas a parte da data
+                        ) : (
+                          "Não informada"
+                        )}
+                      </span>
+                    </div>
+                    <div className={styles.heroDetail}>
+                      <HugeiconsIcon
+                        icon={Mail01Icon}
+                        size={15}
+                        strokeWidth={1.8}
+                      />
+                      <span>
+                        {isLoadingPaciente ? (
+                          <Skeleton width="150px" height="14px" />
+                        ) : (
+                          paciente?.email || "Não informado"
+                        )}
+                      </span>
+                    </div>
+                    <div className={styles.heroDetail}>
+                      <HugeiconsIcon
+                        icon={SmartPhone01Icon}
+                        size={15}
+                        strokeWidth={1.8}
+                      />
+                      <span>
+                        {isLoadingPaciente ? (
+                          <Skeleton width="100px" height="14px" />
+                        ) : (
+                          paciente?.telefone || "Não informado"
+                        )}
+                      </span>
+                    </div>
+                    <div className={styles.heroDetail}>
+                      <HugeiconsIcon
+                        icon={Location01Icon}
+                        size={15}
+                        strokeWidth={1.8}
+                      />
+                      <span>
+                        {isLoadingPaciente ? (
+                          <Skeleton width="200px" height="14px" />
+                        ) : (
+                          endereco || "Endereço não informado"
+                        )}
+                      </span>
+                    </div>
                   </div>
-                  <div className={styles.heroDetail}>
-                    <HugeiconsIcon
-                      icon={SmartPhone01Icon}
-                      size={15}
-                      strokeWidth={1.8}
-                    />
-                    <span>
-                      {isLoadingPaciente ? (
-                        <Skeleton width="100px" height="14px" />
-                      ) : (
-                        paciente?.telefone || "Não informado"
-                      )}
-                    </span>
-                  </div>
-                  <div className={styles.heroDetail}>
-                    <HugeiconsIcon
-                      icon={Location01Icon}
-                      size={15}
-                      strokeWidth={1.8}
-                    />
-                    <span>
-                      {isLoadingPaciente ? (
-                        <Skeleton width="200px" height="14px" />
-                      ) : (
-                        endereco || "Endereço não informado"
-                      )}
-                    </span>
-                  </div>
-                </div>
+                )}
               </>
             )}
           </section>
 
           {/* Ações Rápidas */}
-          <section className={styles.quickActions}>
-            <div className={styles.actionGroup}>
-              <p className={styles.actionGroupLabel}>Exames</p>
-              <div className={styles.actionBtns}>
-                <button
-                  className={`${styles.actionBtn} ${styles.actionBlue}`}
-                  onClick={() => setView("exames")}
-                >
-                  <HugeiconsIcon
-                    icon={FilePlusIcon}
-                    size={13}
-                    strokeWidth={2}
-                  />
-                  Solicitar
-                </button>
-                <button
-                  className={`${styles.actionBtn} ${styles.actionOrange}`}
-                  onClick={() => setView("exames")}
-                >
-                  <HugeiconsIcon
-                    icon={FileSearchIcon}
-                    size={13}
-                    strokeWidth={2}
-                  />
-                  Solicitados
-                </button>
-                <button
-                  className={`${styles.actionBtn} ${styles.actionGreen}`}
-                  onClick={() => setView("exames")}
-                >
-                  <HugeiconsIcon
-                    icon={FileValidationIcon}
-                    size={13}
-                    strokeWidth={2}
-                  />
-                  Resultados
-                </button>
+          {hasClinicalAccess && (
+            <section className={styles.quickActions}>
+              <div className={styles.actionGroup}>
+                <p className={styles.actionGroupLabel}>Exames</p>
+                <div className={styles.actionBtns}>
+                  <button
+                    className={`${styles.actionBtn} ${styles.actionBlue}`}
+                    onClick={() => setView("exames")}
+                  >
+                    <HugeiconsIcon
+                      icon={FilePlusIcon}
+                      size={13}
+                      strokeWidth={2}
+                    />
+                    Solicitar
+                  </button>
+                  <button
+                    className={`${styles.actionBtn} ${styles.actionOrange}`}
+                    onClick={() => setView("exames")}
+                  >
+                    <HugeiconsIcon
+                      icon={FileSearchIcon}
+                      size={13}
+                      strokeWidth={2}
+                    />
+                    Solicitados
+                  </button>
+                  <button
+                    className={`${styles.actionBtn} ${styles.actionGreen}`}
+                    onClick={() => setView("exames")}
+                  >
+                    <HugeiconsIcon
+                      icon={FileValidationIcon}
+                      size={13}
+                      strokeWidth={2}
+                    />
+                    Resultados
+                  </button>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
 
           {/* Estado Clínico */}
-          <section className={styles.clinicalSection}>
-            <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Estado Clínico</h2>
-              <span className={styles.sectionSubtitle}>
-                Histórico de evoluções do paciente
-              </span>
-            </div>
-            <EstadoClinicoTimeline pacienteId={id!} />
-          </section>
+          {hasClinicalAccess && (
+            <section className={styles.clinicalSection}>
+              <div className={styles.sectionHeader}>
+                <h2 className={styles.sectionTitle}>Estado Clínico</h2>
+                <span className={styles.sectionSubtitle}>
+                  Histórico de evoluções do paciente
+                </span>
+              </div>
+              <EstadoClinicoTimeline pacienteId={id!} />
+            </section>
+          )}
         </main>
+
+
+
 
         {/* Sidebar Direita */}
         <aside className={`${styles.sidebarRight} ${!showMobileRight ? styles.mobileHidden : ""}`}>
           <div className={styles.rightStack}>
-            <div className={styles.rightCard}>
-              <h4 className={styles.rightTitle}>Resultados de Questionários</h4>
-              <select
-                className={styles.rightSelect}
-                value={avaliacaoSelecionadaId || ""}
-                onChange={(e) => setAvaliacaoSelecionadaId(e.target.value)}
-              >
-                {listAvaliacoes.length > 0 ? (
-                  listAvaliacoes.map((av: Avaliacao & { dataRealizacaoFormatada?: string }) => (
-                    <option key={av.id} value={av.id}>
-                      {av.dataRealizacaoFormatada || av.dataRealizacao}
-                    </option>
-                  ))
-                ) : (
-                  <option value="">Selecione um questionário</option>
-                )}
-              </select>
-
-              {totalPagesAvaliacoes > 1 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', marginBottom: '1rem', fontSize: '0.8rem' }}>
-                  <button
-                    style={{ border: 'none', background: 'transparent', cursor: avaliacoesPage === 1 ? 'not-allowed' : 'pointer', color: '#6b7280' }}
-                    onClick={() => setAvaliacoesPage(p => Math.max(1, p - 1))}
-                    disabled={avaliacoesPage === 1}
-                  >
-                    &laquo; Anterior
-                  </button>
-                  <span style={{ color: '#9ca3af' }}>{avaliacoesPage} / {totalPagesAvaliacoes}</span>
-                  <button
-                    style={{ border: 'none', background: 'transparent', cursor: avaliacoesPage >= totalPagesAvaliacoes ? 'not-allowed' : 'pointer', color: '#6b7280' }}
-                    onClick={() => setAvaliacoesPage(p => Math.min(totalPagesAvaliacoes, p + 1))}
-                    disabled={avaliacoesPage >= totalPagesAvaliacoes}
-                  >
-                    Próxima &raquo;
-                  </button>
-                </div>
-              )}
-
-              {selectedAvaliacao?.regraInterpretacao && (() => {
-                const regras = selectedAvaliacao.questionario?.regras ?? [];
-                const { nivel } = getInterpretacaoScore(
-                  selectedAvaliacao.scoreTotal,
-                  regras,
-                );
-                const corClasse = getClasseCorPorNivel(nivel, styles);
-                return (
-                  <div
-                    className={`${styles.observacaoCard} ${corClasse}`}
-                    style={{
-                      borderColor: isLoadingAvaliacaoDetalhe ? "#e5e7eb" : undefined,
-                      background: isLoadingAvaliacaoDetalhe ? "#f9fafb" : undefined,
-                      borderLeftColor: isLoadingAvaliacaoDetalhe ? "#e5e7eb" : undefined
-                    }}
-                  >
-                    <span className={styles.observacaoLabel}>Observação</span>
-                    {isLoadingAvaliacaoDetalhe ? (
-                      <SkeletonObservacao />
-                    ) : selectedAvaliacao ? (
-                      <>
-                        <p className={styles.observacaoText}>
-                          {selectedAvaliacao.regraInterpretacao}
-                        </p>
-                        <span className={styles.observacaoScore}>
-                          Score: {selectedAvaliacao.scoreTotal}
-                        </span>
-                      </>
-                    ) : (
-                      <p className={styles.observacaoText} style={{ color: "#9ca3af", fontStyle: "italic", fontWeight: "normal" }}>
-                        {listAvaliacoes.length === 0 ? "Nenhum questionário aplicado" : "Nenhuma observação cadastrada"}
-                      </p>
-                    )}
-                  </div>
-                );
-              })()}
-
-              <div className={styles.sideNavTopic}>
-                <div className={styles.sideNavIcon}>
-                  <HugeiconsIcon
-                    icon={Calendar01Icon}
-                    size={16}
-                    strokeWidth={1.8}
-                  />
-                </div>
-                <div className={styles.TopicContent}>
-                  <div className={styles.topicTitle}>Data</div>
-                  <div className={styles.topicDescription}>
-                    {(isLoadingAvaliacaoDetalhe || isLoadingAvaliacoes) ? (
-                      <Skeleton width="80px" height="14px" />
-                    ) : (selectedAvaliacao as any)?.dataRealizacaoFormatada ? (
-                      (selectedAvaliacao as any).dataRealizacaoFormatada
-                    ) : (
-                      "Nenhuma selecionada"
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {isLoadingAvaliacaoDetalhe || isLoadingAvaliacoes ? (
-                <Skeleton width="100%" height="44px" borderRadius="8px" />
-              ) : (
-                <button
-                  className={styles.sideNavItem}
-                  onClick={() => {
-                    const idToUse = avaliacaoSelecionadaId;
-                    if (idToUse) {
-                      navigate(`/avaliacoes/${idToUse}/${id}`);
-                    }
-                  }}
-                  disabled={!avaliacaoSelecionadaId}
-                  style={{
-                    opacity: !avaliacaoSelecionadaId ? 0.5 : 1,
-                  }}
+            {hasClinicalAccess && (
+              <div className={styles.rightCard}>
+                <h4 className={styles.rightTitle}>Resultados de Questionários</h4>
+                <select
+                  className={styles.rightSelect}
+                  value={avaliacaoSelecionadaId || ""}
+                  onChange={(e) => setAvaliacaoSelecionadaId(e.target.value)}
                 >
+                  {listAvaliacoes.length > 0 ? (
+                    listAvaliacoes.map((av: Avaliacao & { dataRealizacaoFormatada?: string }) => (
+                      <option key={av.id} value={av.id}>
+                        {av.dataRealizacaoFormatada || av.dataRealizacao}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">Selecione um questionário</option>
+                  )}
+                </select>
+
+                {totalPagesAvaliacoes > 1 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', marginBottom: '1rem', fontSize: '0.8rem' }}>
+                    <button
+                      style={{ border: 'none', background: 'transparent', cursor: avaliacoesPage === 1 ? 'not-allowed' : 'pointer', color: '#6b7280' }}
+                      onClick={() => setAvaliacoesPage(p => Math.max(1, p - 1))}
+                      disabled={avaliacoesPage === 1}
+                    >
+                      &laquo; Anterior
+                    </button>
+                    <span style={{ color: '#9ca3af' }}>{avaliacoesPage} / {totalPagesAvaliacoes}</span>
+                    <button
+                      style={{ border: 'none', background: 'transparent', cursor: avaliacoesPage >= totalPagesAvaliacoes ? 'not-allowed' : 'pointer', color: '#6b7280' }}
+                      onClick={() => setAvaliacoesPage(p => Math.min(totalPagesAvaliacoes, p + 1))}
+                      disabled={avaliacoesPage >= totalPagesAvaliacoes}
+                    >
+                      Próxima &raquo;
+                    </button>
+                  </div>
+                )}
+
+                {selectedAvaliacao?.regraInterpretacao && (() => {
+                  const regras = selectedAvaliacao.questionario?.regras ?? [];
+                  const { nivel } = getInterpretacaoScore(
+                    selectedAvaliacao.scoreTotal,
+                    regras,
+                  );
+                  const corClasse = getClasseCorPorNivel(nivel, styles);
+                  return (
+                    <div
+                      className={`${styles.observacaoCard} ${corClasse}`}
+                      style={{
+                        borderColor: isLoadingAvaliacaoDetalhe ? "#e5e7eb" : undefined,
+                        background: isLoadingAvaliacaoDetalhe ? "#f9fafb" : undefined,
+                        borderLeftColor: isLoadingAvaliacaoDetalhe ? "#e5e7eb" : undefined
+                      }}
+                    >
+                      <span className={styles.observacaoLabel}>Observação</span>
+                      {isLoadingAvaliacaoDetalhe ? (
+                        <SkeletonObservacao />
+                      ) : selectedAvaliacao ? (
+                        <>
+                          <p className={styles.observacaoText}>
+                            {selectedAvaliacao.regraInterpretacao}
+                          </p>
+                          <span className={styles.observacaoScore}>
+                            Score: {selectedAvaliacao.scoreTotal}
+                          </span>
+                        </>
+                      ) : (
+                        <p className={styles.observacaoText} style={{ color: "#9ca3af", fontStyle: "italic", fontWeight: "normal" }}>
+                          {listAvaliacoes.length === 0 ? "Nenhum questionário aplicado" : "Nenhuma observação cadastrada"}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                <div className={styles.sideNavTopic}>
                   <div className={styles.sideNavIcon}>
                     <HugeiconsIcon
-                      icon={ClipboardIcon}
+                      icon={Calendar01Icon}
                       size={16}
                       strokeWidth={1.8}
                     />
                   </div>
-                  <span>Ver Respostas</span>
-                  <HugeiconsIcon
-                    icon={ArrowRight01Icon}
-                    size={12}
-                    strokeWidth={2}
-                  />
-                </button>
-              )}
-            </div>
+                  <div className={styles.TopicContent}>
+                    <div className={styles.topicTitle}>Data</div>
+                    <div className={styles.topicDescription}>
+                      {(isLoadingAvaliacaoDetalhe || isLoadingAvaliacoes) ? (
+                        <Skeleton width="80px" height="14px" />
+                      ) : (selectedAvaliacao as any)?.dataRealizacaoFormatada ? (
+                        (selectedAvaliacao as any).dataRealizacaoFormatada
+                      ) : (
+                        "Nenhuma selecionada"
+                      )}
+                    </div>
+                  </div>
+                </div>
 
+                {isLoadingAvaliacaoDetalhe || isLoadingAvaliacoes ? (
+                  <Skeleton width="100%" height="44px" borderRadius="8px" />
+                ) : (
+                  <button
+                    className={styles.sideNavItem}
+                    onClick={() => {
+                      const idToUse = avaliacaoSelecionadaId;
+                      if (idToUse) {
+                        navigate(`/avaliacoes/${idToUse}/${id}`);
+                      }
+                    }}
+                    disabled={!avaliacaoSelecionadaId}
+                    style={{
+                      opacity: !avaliacaoSelecionadaId ? 0.5 : 1,
+                    }}
+                  >
+                    <div className={styles.sideNavIcon}>
+                      <HugeiconsIcon
+                        icon={ClipboardIcon}
+                        size={16}
+                        strokeWidth={1.8}
+                      />
+                    </div>
+                    <span>Ver Respostas</span>
+                    <HugeiconsIcon
+                      icon={ArrowRight01Icon}
+                      size={12}
+                      strokeWidth={2}
+                    />
+                  </button>
+                )}
+              </div>
+
+            )}
             {/* Histórico de Consultas */}
             <div className={styles.rightCard}>
-              <h4 className={styles.rightTitle}>Histórico de Consultas</h4>
+              <div className={styles.rightHeader}>
+                <div className={styles.rightTitleWrapper}>
+                  <h4 className={styles.rightTitle}>Histórico de Consultas</h4>
+                  <div
+                    className={styles.helpTooltipContainer}
+                  >
+                    <HugeiconsIcon
+                      icon={HelpCircleIcon}
+                      size={14}
+                      strokeWidth={2}
+                      className={styles.helpIcon}
+                    />
+                    <span className={styles.tooltipText}>
+                      Exibe os 10 agendamentos mais recentes
+                    </span>
+                  </div>
+                </div>
+                {paciente?.agendamentos && paciente.agendamentos.length > 0 && (
+                  <span className={styles.countBadge}>{paciente.agendamentos.length}</span>
+                )}
+              </div>
               {paciente?.agendamentos?.length ? (
                 <ul className={styles.historicoList}>
                   {paciente.agendamentos.map((ag) => {
@@ -733,28 +1224,17 @@ export function ProntuarioPage() {
                   })}
                 </ul>
               ) : (
-                <p className={styles.historicoEmpty}>Nenhuma consulta registrada.</p>
+                <div className={styles.historicoEmpty}>
+                  <HugeiconsIcon icon={Calendar01Icon} size={28} strokeWidth={1.5} />
+                  <p>Nenhuma consulta registrada</p>
+                  <span>Os agendamentos deste paciente aparecerão aqui.</span>
+                </div>
               )}
             </div>
           </div>
         </aside>
+
       </div>
     </div>
   );
-}
-
-{
-  /* <aside className={styles.sidebarRight}>
-  <div className={styles.rightCard}>
-    <h4 className={styles.rightTitle}>Resultados de Questionários</h4>
-    <select className={styles.rightSelect}>
-      <option>Selecione um questionário</option>
-    </select>
-    <div className={styles.rightEmpty}>
-      <HugeiconsIcon icon={ClipboardIcon} size={32} strokeWidth={1.5} style={{ color: '#d1d5db' }} />
-      <p>Nenhum questionário aplicado</p>
-      <span>Aplique um questionário durante o atendimento para ver os resultados aqui.</span>
-    </div>
-  </div>
-</aside> */
 }

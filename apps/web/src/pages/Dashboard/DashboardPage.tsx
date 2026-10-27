@@ -18,6 +18,7 @@ import { alterarStatus } from "@/services/agenda";
 import type { UpdateStatusInput } from "@nutricao/shared";
 import { pegarDadosDashboard } from "@/services/dashboard";
 import { useIsAutonomo } from "@/hooks/useIsAutonomo";
+import { useClinicalAccess } from "@/hooks/useClinicalAccess";
 import styles from "./DashboardPage.module.scss";
 
 const statusLabels: Record<string, string> = {
@@ -70,6 +71,7 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const isAutonomo = useIsAutonomo();
+  const hasClinicalAccess = useClinicalAccess();
   const [nutricionistaId, setNutricionistaId] = useState<string | undefined>(
     (user?.perfil === "SECRETARIA" || user?.perfil === "ADMIN") ? undefined : user?.userId,
   );
@@ -133,7 +135,6 @@ export function DashboardPage() {
   } = data;
 
   const timeSlots = generateTimeSlots();
-  const isNutricionista = user?.perfil === "NUTRICIONISTA";
 
   // Agrupar agendamentos por hora
   const agendamentosPorHora: Record<string, any[]> = {};
@@ -332,7 +333,7 @@ export function DashboardPage() {
                           </div>
                         </div>
                         <div className={styles.appointmentActions}>
-                          {isNutricionista && (
+                          {hasClinicalAccess && (
                             <button
                               className={styles.startBtn}
                               onClick={() =>

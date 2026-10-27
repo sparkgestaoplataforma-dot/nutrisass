@@ -8,6 +8,7 @@ import {
 import { validate } from '../../../shared/middlewares/validate.js';
 import { authMiddleware } from '../../../shared/middlewares/auth.js';
 import { roleGuard } from '../../../shared/middlewares/auth.js';
+import { clinicalGuard } from '../../../shared/middlewares/clinicalGuard.js';
 import * as controller from './exames.controller.js';
 
 const router = Router();
@@ -21,12 +22,12 @@ router.put('/base/:id', roleGuard('ADMIN', 'NUTRICIONISTA'), controller.editarEx
 router.delete('/base/:id', roleGuard('ADMIN'), controller.excluirExameBase);
 
 // Solicitações por paciente
-router.get('/paciente/:pacienteId', controller.listarSolicitacoes);
-router.post('/paciente/:pacienteId', validate(solicitarExameSchema), controller.solicitarExame);
-router.post('/paciente/:pacienteId/externo', validate(lancarExameExternoSchema), controller.lancarExameExterno);
-router.delete('/:id', controller.excluirSolicitacao);
+router.get('/paciente/:pacienteId', clinicalGuard, controller.listarSolicitacoes);
+router.post('/paciente/:pacienteId', clinicalGuard, validate(solicitarExameSchema), controller.solicitarExame);
+router.post('/paciente/:pacienteId/externo', clinicalGuard, validate(lancarExameExternoSchema), controller.lancarExameExterno);
+router.delete('/:id', clinicalGuard, controller.excluirSolicitacao);
 
 // Resultado
-router.post('/resultado', validate(registrarResultadoSchema), controller.registrarResultado);
+router.post('/resultado', clinicalGuard, validate(registrarResultadoSchema), controller.registrarResultado);
 
 export { router as examesRoutes };

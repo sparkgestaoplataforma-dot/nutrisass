@@ -10,6 +10,7 @@ import {
   type Avaliacao,
 } from "@/services/avaliacao";
 import type { ApiResponse, PaginatedResponse } from "@nutricao/shared";
+import { useClinicalAccess } from "@/hooks/useClinicalAccess";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GraficoComparativo } from "./components/GraficoComparativo";
@@ -65,6 +66,7 @@ export function ComparativoPage() {
   const navigate = useNavigate();
   const { pacienteId } = useParams();
   const queryClient = useQueryClient();
+  const hasClinicalAccess = useClinicalAccess();
 
   const [dataInicio, setDataInicio] = useState<string>("");
   const [dataFim, setDataFim] = useState<string>(() => getDataAtualInput());
@@ -94,7 +96,7 @@ export function ComparativoPage() {
   } = useQuery({
     queryKey: ["avaliacoes", pacienteId, page, limit],
     queryFn: () => getAvaliacoesPorPacienteId(pacienteId!, page, limit),
-    enabled: !!pacienteId,
+    enabled: hasClinicalAccess && !!pacienteId,
     refetchOnWindowFocus: true,
     refetchOnMount: "always",
   });

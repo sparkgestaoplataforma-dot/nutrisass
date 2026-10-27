@@ -184,6 +184,92 @@ async function main() {
     });
   }
 
+  // Agendamentos para Carlos Eduardo Silva (3 meses anteriores e 3 meses futuros a partir da data atual)
+  const nutri = await prisma.usuario.findFirst({
+    where: { clinicaId: clinica.id, email: "nutri@nutricao.com" },
+  });
+  const secretaria = await prisma.usuario.findFirst({
+    where: { clinicaId: clinica.id, email: "secretaria@nutricao.com" },
+  });
+
+  if (carlos && nutri) {
+    await prisma.agendamento.deleteMany({
+      where: { pacienteId: carlos.id },
+    });
+
+    function criarDataRelativa(mesesOffset: number, dia: number, hora: number, minuto: number = 0): Date {
+      const data = new Date();
+      data.setMonth(data.getMonth() + mesesOffset);
+      const maxDiasNoMes = new Date(data.getFullYear(), data.getMonth() + 1, 0).getDate();
+      data.setDate(Math.min(dia, maxDiasNoMes));
+      data.setHours(hora, minuto, 0, 0);
+
+      // Ajusta para dia útil caso caia em sábado ou domingo
+      if (data.getDay() === 0) data.setDate(data.getDate() + 1); // Domingo -> Segunda
+      if (data.getDay() === 6) data.setDate(data.getDate() + 2); // Sábado -> Segunda
+
+      return data;
+    }
+
+    const agendamentosCarlos = [
+      // 3 meses anteriores
+      {
+        dataHora: criarDataRelativa(-3, 10, 9, 0),
+        tipo: "CONSULTA" as const,
+        status: "REALIZADO" as const,
+        observacao: "Primeira consulta: avaliação nutricional completa e anamnese.",
+      },
+      {
+        dataHora: criarDataRelativa(-2, 18, 14, 30),
+        tipo: "RETORNO" as const,
+        status: "REALIZADO" as const,
+        observacao: "Retorno: avaliação da adesão à dieta e ajustes calóricos.",
+      },
+      {
+        dataHora: criarDataRelativa(-1, 22, 10, 0),
+        tipo: "RETORNO" as const,
+        status: "REALIZADO" as const,
+        observacao: "Acompanhamento mensal: reavaliação de medidas e bioimpedância.",
+      },
+      // 3 meses futuros
+      {
+        dataHora: criarDataRelativa(1, 12, 8, 30),
+        tipo: "RETORNO" as const,
+        status: "CONFIRMOU" as const,
+        observacao: "Retorno agendado: verificação de metas e plano para ganho de massa.",
+      },
+      {
+        dataHora: criarDataRelativa(2, 15, 11, 0),
+        tipo: "RETORNO" as const,
+        status: "AGENDADO" as const,
+        observacao: "Consulta periódica trimestral de manutenção.",
+      },
+      {
+        dataHora: criarDataRelativa(3, 20, 15, 0),
+        tipo: "RETORNO" as const,
+        status: "AGENDADO" as const,
+        observacao: "Check-up nutricional semestral e renovação de plano alimentar.",
+      },
+    ];
+
+    for (const ag of agendamentosCarlos) {
+      await prisma.agendamento.create({
+        data: {
+          clinicaId: clinica.id,
+          pacienteId: carlos.id,
+          nutricionistaId: nutri.id,
+          criadoPorUsuarioId: secretaria?.id || nutri.id,
+          convenioId: convenio.id,
+          dataHora: ag.dataHora,
+          tipo: ag.tipo,
+          status: ag.status,
+          encaixe: false,
+          observacao: ag.observacao,
+        },
+      });
+    }
+  }
+
   // ===== Exames Base (85 exames laboratoriais) =====
   const examesBase = [
     // HEMOGRAMA

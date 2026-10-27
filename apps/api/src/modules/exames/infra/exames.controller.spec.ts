@@ -71,32 +71,75 @@ describe("exames.controller", () => {
 
   describe("Solicitações", () => {
     it("deve listar solicitações", async () => {
+      prismaMock.paciente.findFirst.mockResolvedValue({ id: "paciente-1" } as any);
       prismaMock.solicitacaoExame.findMany.mockResolvedValue([{ id: "sol-1" }] as any);
       await listarSolicitacoes(mockReq, mockRes);
+      expect(prismaMock.paciente.findFirst).toHaveBeenCalledWith({ where: { id: "paciente-1", clinicaId: "clinica-1" } });
       expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    });
+
+    it("não deve listar solicitações de paciente de outra clínica", async () => {
+      prismaMock.paciente.findFirst.mockResolvedValue(null);
+      await expect(listarSolicitacoes(mockReq, mockRes)).rejects.toMatchObject({ statusCode: 404 });
+      expect(prismaMock.solicitacaoExame.findMany).not.toHaveBeenCalled();
     });
 
     it("deve solicitar exames", async () => {
       mockReq.body.exameBaseIds = ["ex-1"];
-      prismaMock.paciente.findUnique.mockResolvedValue({ id: "paciente-1" } as any);
+      prismaMock.paciente.findFirst.mockResolvedValue({ id: "paciente-1" } as any);
+      prismaMock.exameBase.count.mockResolvedValue(1);
       prismaMock.solicitacaoExame.create.mockResolvedValue({ id: "sol-new" } as any);
       await solicitarExame(mockReq, mockRes);
       expect(mockRes.status).toHaveBeenCalledWith(201);
     });
 
+    it("não deve solicitar exames para paciente de outra clínica", async () => {
+      mockReq.body.exameBaseIds = ["ex-1"];
+      prismaMock.paciente.findFirst.mockResolvedValue(null);
+      await expect(solicitarExame(mockReq, mockRes)).rejects.toMatchObject({ statusCode: 404 });
+      expect(prismaMock.solicitacaoExame.create).not.toHaveBeenCalled();
+    });
+
+    it("não deve solicitar exames base de outra clínica", async () => {
+      mockReq.body.exameBaseIds = ["ex-1", "ex-outra-clinica"];
+      prismaMock.paciente.findFirst.mockResolvedValue({ id: "paciente-1" } as any);
+      prismaMock.exameBase.count.mockResolvedValue(1);
+      await expect(solicitarExame(mockReq, mockRes)).rejects.toMatchObject({ statusCode: 400 });
+      expect(prismaMock.solicitacaoExame.create).not.toHaveBeenCalled();
+    });
+
     it("deve registrar resultado", async () => {
       mockReq.body = { itemId: "item-1", dataResultado: "2026-05-12", resultado: "OK" };
-      prismaMock.solicitacaoExameItem.findUnique.mockResolvedValue({ id: "item-1" } as any);
+      prismaMock.solicitacaoExameItem.findFirst.mockResolvedValue({ id: "item-1" } as any);
       prismaMock.solicitacaoExameItem.update.mockResolvedValue({ id: "item-1", resultado: "OK" } as any);
       await registrarResultado(mockReq, mockRes);
+      expect(prismaMock.solicitacaoExameItem.findFirst).toHaveBeenCalledWith({
+        where: { id: "item-1", solicitacao: { paciente: { clinicaId: "clinica-1" } } },
+      });
       expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
     });
 
+    it("não deve registrar resultado de item de outra clínica", async () => {
+      mockReq.body = { itemId: "item-1", dataResultado: "2026-05-12", resultado: "OK" };
+      prismaMock.solicitacaoExameItem.findFirst.mockResolvedValue(null);
+      await expect(registrarResultado(mockReq, mockRes)).rejects.toMatchObject({ statusCode: 404 });
+      expect(prismaMock.solicitacaoExameItem.update).not.toHaveBeenCalled();
+    });
+
     it("deve excluir solicitação", async () => {
-      prismaMock.solicitacaoExame.findUnique.mockResolvedValue({ id: "sol-1" } as any);
+      prismaMock.solicitacaoExame.findFirst.mockResolvedValue({ id: "sol-1" } as any);
       prismaMock.solicitacaoExame.delete.mockResolvedValue({} as any);
       await excluirSolicitacao(mockReq, mockRes);
+      expect(prismaMock.solicitacaoExame.findFirst).toHaveBeenCalledWith({
+        where: { id: "exame-1", paciente: { clinicaId: "clinica-1" } },
+      });
       expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    });
+
+    it("não deve excluir solicitação de outra clínica", async () => {
+      prismaMock.solicitacaoExame.findFirst.mockResolvedValue(null);
+      await expect(excluirSolicitacao(mockReq, mockRes)).rejects.toMatchObject({ statusCode: 404 });
+      expect(prismaMock.solicitacaoExame.delete).not.toHaveBeenCalled();
     });
   });
 });
