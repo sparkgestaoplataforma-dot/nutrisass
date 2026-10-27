@@ -21,14 +21,14 @@ export async function pegarTodosNutricionistas(clinicaId: string) {
   const nutricionistas = await prisma.usuario.findMany({
     where: {
       clinicaId,
-      perfil: "NUTRICIONISTA",
+      perfil: { in: ["NUTRICIONISTA", "ADMIN"] },
     },
-    select:{
+    select: {
       id: true,
-      nome:true,
-      perfil:true
+      nome: true,
+      perfil: true
     },
-    orderBy: {nome: "asc" }
+    orderBy: { nome: "asc" }
   });
 
   return nutricionistas;
@@ -39,7 +39,7 @@ export async function criarUsuario(clinicaId: string, data: any) {
     where: { id: clinicaId },
     select: { tipo: true },
   });
-  
+
   if (clinica?.tipo === 'AUTONOMO') {
     throw new AppError(
       "Não é possível adicionar novos usuários no modo Autônomo. Migre para o modo Clínica primeiro.",

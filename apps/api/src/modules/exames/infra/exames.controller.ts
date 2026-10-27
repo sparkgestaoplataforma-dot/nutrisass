@@ -88,7 +88,11 @@ export async function excluirExameBase(req: Request<{ id: string }>, res: Respon
 
 // Solicitações de Exame (por paciente)
 export async function listarSolicitacoes(req: Request<{ pacienteId: string }>, res: Response) {
+  const clinicaId = getClinicaId(req);
   const { pacienteId } = req.params;
+
+  const paciente = await prisma.paciente.findFirst({ where: { id: pacienteId, clinicaId } });
+  if (!paciente) throw new AppError('Paciente não encontrado', 404);
 
   const solicitacoes = await prisma.solicitacaoExame.findMany({
     where: { pacienteId },
@@ -104,11 +108,18 @@ export async function listarSolicitacoes(req: Request<{ pacienteId: string }>, r
 }
 
 export async function solicitarExame(req: Request<{ pacienteId: string }>, res: Response) {
+  const clinicaId = getClinicaId(req);
   const { pacienteId } = req.params;
   const { exameBaseIds } = req.body;
 
-  const paciente = await prisma.paciente.findUnique({ where: { id: pacienteId } });
+  const paciente = await prisma.paciente.findFirst({ where: { id: pacienteId, clinicaId } });
   if (!paciente) throw new AppError('Paciente não encontrado', 404);
+
+  const exameIds = [...new Set<string>(exameBaseIds)];
+  const examesValidos = await prisma.exameBase.count({
+    where: { id: { in: exameIds }, clinicaId },
+  });
+  if (examesValidos !== exameIds.length) throw new AppError('Exame inválido', 400);
 
   const solicitacao = await prisma.solicitacaoExame.create({
     data: {
@@ -168,10 +179,11 @@ export async function lancarExameExterno(req: Request<{ pacienteId: string }>, r
 }
 
 export async function registrarResultado(req: Request, res: Response) {
+  const clinicaId = getClinicaId(req);
   const { itemId, dataResultado, resultado } = req.body;
 
-  const item = await prisma.solicitacaoExameItem.findUnique({
-    where: { id: itemId },
+  const item = await prisma.solicitacaoExameItem.findFirst({
+    where: { id: itemId, solicitacao: { paciente: { clinicaId } } },
   });
   if (!item) throw new AppError('Item de solicitação não encontrado', 404);
 
@@ -188,9 +200,12 @@ export async function registrarResultado(req: Request, res: Response) {
 }
 
 export async function excluirSolicitacao(req: Request<{ id: string }>, res: Response) {
+  const clinicaId = getClinicaId(req);
   const { id } = req.params;
 
-  const existente = await prisma.solicitacaoExame.findUnique({ where: { id } });
+  const existente = await prisma.solicitacaoExame.findFirst({
+    where: { id, paciente: { clinicaId } },
+  });
   if (!existente) throw new AppError('Solicitação não encontrada', 404);
 
   await prisma.solicitacaoExame.delete({ where: { id } });
