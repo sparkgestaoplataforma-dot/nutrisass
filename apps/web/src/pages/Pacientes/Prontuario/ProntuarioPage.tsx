@@ -32,6 +32,7 @@ import {
   CreditCardIcon,
   Copy01Icon,
   Tick01Icon,
+  HelpCircleIcon,
 } from "@hugeicons/core-free-icons";
 import { Skeleton } from "@/components/Loading/Skeleton";
 import { SkeletonObservacao } from "@/components/Loading/skeletons/SkeletonObservacao";
@@ -549,9 +550,9 @@ export function ProntuarioPage() {
                   )}
                 </div>
 
-                {isSecretaria ? (
+                {!hasClinicalAccess || isSecretaria ? (
                   <div className={styles.cadastralSections}>
-                    {/* Dados Pessoais e Contato */}
+                    {/* Dados Pessoais e Contato - Largura Total (4 colunas em telas grandes) */}
                     <div className={styles.cadastralSection}>
                       <div className={styles.sectionHeader}>
                         <div className={styles.sectionHeaderIcon}>
@@ -559,7 +560,7 @@ export function ProntuarioPage() {
                         </div>
                         <h3 className={styles.sectionTitle}>Dados Pessoais e Contato</h3>
                       </div>
-                      <div className={styles.cadastralGrid}>
+                      <div className={styles.cadastralGrid4Cols}>
                         <div className={styles.infoTile}>
                           <div className={styles.tileIcon}>
                             <HugeiconsIcon icon={Calendar01Icon} size={15} strokeWidth={1.8} />
@@ -706,198 +707,204 @@ export function ProntuarioPage() {
                       </div>
                     </div>
 
-                    {/* Documentos */}
-                    <div className={styles.cadastralSection}>
-                      <div className={styles.sectionHeader}>
-                        <div className={styles.sectionHeaderIcon}>
-                          <HugeiconsIcon icon={UserIdVerificationIcon} size={14} strokeWidth={2} />
-                        </div>
-                        <h3 className={styles.sectionTitle}>Documentos</h3>
-                      </div>
-                      <div className={styles.cadastralGrid}>
-                        <div className={styles.infoTile}>
-                          <div className={styles.tileIcon}>
-                            <HugeiconsIcon icon={UserIdVerificationIcon} size={15} strokeWidth={1.8} />
+                    {/* Linha Inferior com 2 colunas: Endereço de um lado, Documentos e Convênio do outro */}
+                    <div className={styles.cadastralBottomRow}>
+                      {/* Endereço */}
+                      <div className={styles.cadastralSection}>
+                        <div className={styles.sectionHeader}>
+                          <div className={styles.sectionHeaderIcon}>
+                            <HugeiconsIcon icon={Location01Icon} size={14} strokeWidth={2} />
                           </div>
-                          <div className={styles.tileBody}>
-                            <span className={styles.tileLabel}>CPF</span>
-                            <div className={`${styles.tileValue} ${!paciente?.cpf ? styles.tileValueEmpty : ""}`}>
-                              {isLoadingPaciente ? (
-                                <Skeleton width="110px" height="14px" />
-                              ) : (
-                                <>
-                                  <span>{cpfFormatado}</span>
-                                  {paciente?.cpf && (
+                          <h3 className={styles.sectionTitle}>Endereço</h3>
+                        </div>
+                        <div className={styles.cadastralGridAddress}>
+                          <div className={styles.infoTile}>
+                            <div className={styles.tileIcon}>
+                              <HugeiconsIcon icon={Location01Icon} size={15} strokeWidth={1.8} />
+                            </div>
+                            <div className={styles.tileBody}>
+                              <span className={styles.tileLabel}>CEP</span>
+                              <div className={`${styles.tileValue} ${!paciente?.cep ? styles.tileValueEmpty : ""}`}>
+                                {isLoadingPaciente ? (
+                                  <Skeleton width="90px" height="14px" />
+                                ) : (
+                                  <span>{cepFormatado}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className={styles.infoTile}>
+                            <div className={styles.tileIcon}>
+                              <HugeiconsIcon icon={Location01Icon} size={15} strokeWidth={1.8} />
+                            </div>
+                            <div className={styles.tileBody}>
+                              <span className={styles.tileLabel}>Cidade / UF</span>
+                              <div className={`${styles.tileValue} ${!paciente?.municipio && !paciente?.uf ? styles.tileValueEmpty : ""}`}>
+                                {isLoadingPaciente ? (
+                                  <Skeleton width="120px" height="14px" />
+                                ) : (
+                                  <span>{cidadeUfExibicao}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className={styles.infoTile}>
+                            <div className={styles.tileIcon}>
+                              <HugeiconsIcon icon={Location01Icon} size={15} strokeWidth={1.8} />
+                            </div>
+                            <div className={styles.tileBody}>
+                              <span className={styles.tileLabel}>Bairro</span>
+                              <div className={`${styles.tileValue} ${!paciente?.bairro ? styles.tileValueEmpty : ""}`}>
+                                {isLoadingPaciente ? (
+                                  <Skeleton width="100px" height="14px" />
+                                ) : (
+                                  <span>{paciente?.bairro || "Não informado"}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className={`${styles.infoTile} ${styles.tileFullWidthAddress}`}>
+                            <div className={styles.tileIcon}>
+                              <HugeiconsIcon icon={Location01Icon} size={15} strokeWidth={1.8} />
+                            </div>
+                            <div className={styles.tileBody}>
+                              <span className={styles.tileLabel}>Logradouro / Endereço</span>
+                              <div className={`${styles.tileValue} ${!paciente?.endereco ? styles.tileValueEmpty : ""}`}>
+                                {isLoadingPaciente ? (
+                                  <Skeleton width="220px" height="14px" />
+                                ) : (
+                                  <span>{paciente?.endereco || "Não informado"}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Documentos e Convênio agrupados na coluna lateral */}
+                      <div className={styles.cadastralColumnGroup}>
+                        {/* Documentos */}
+                        <div className={styles.cadastralSection}>
+                          <div className={styles.sectionHeader}>
+                            <div className={styles.sectionHeaderIcon}>
+                              <HugeiconsIcon icon={UserIdVerificationIcon} size={14} strokeWidth={2} />
+                            </div>
+                            <h3 className={styles.sectionTitle}>Documentos</h3>
+                          </div>
+                          <div className={styles.cadastralGridDocs}>
+                            <div className={styles.infoTile}>
+                              <div className={styles.tileIcon}>
+                                <HugeiconsIcon icon={UserIdVerificationIcon} size={15} strokeWidth={1.8} />
+                              </div>
+                              <div className={styles.tileBody}>
+                                <span className={styles.tileLabel}>CPF</span>
+                                <div className={`${styles.tileValue} ${!paciente?.cpf ? styles.tileValueEmpty : ""}`}>
+                                  {isLoadingPaciente ? (
+                                    <Skeleton width="110px" height="14px" />
+                                  ) : (
                                     <>
-                                      {cpfCopiado ? (
-                                        <span className={styles.copiedTag}>
-                                          <HugeiconsIcon icon={Tick01Icon} size={11} strokeWidth={2.5} />
-                                          Copiado
-                                        </span>
-                                      ) : (
-                                        <button
-                                          type="button"
-                                          className={styles.copyBtn}
-                                          onClick={() => handleCopiarCpf(cpfFormatado)}
-                                          title="Copiar CPF"
-                                        >
-                                          <HugeiconsIcon icon={Copy01Icon} size={12} strokeWidth={2} />
-                                        </button>
+                                      <span>{cpfFormatado}</span>
+                                      {paciente?.cpf && (
+                                        <>
+                                          {cpfCopiado ? (
+                                            <span className={styles.copiedTag}>
+                                              <HugeiconsIcon icon={Tick01Icon} size={11} strokeWidth={2.5} />
+                                              Copiado
+                                            </span>
+                                          ) : (
+                                            <button
+                                              type="button"
+                                              className={styles.copyBtn}
+                                              onClick={() => handleCopiarCpf(cpfFormatado)}
+                                              title="Copiar CPF"
+                                            >
+                                              <HugeiconsIcon icon={Copy01Icon} size={12} strokeWidth={2} />
+                                            </button>
+                                          )}
+                                        </>
                                       )}
                                     </>
                                   )}
-                                </>
-                              )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className={styles.infoTile}>
+                              <div className={styles.tileIcon}>
+                                <HugeiconsIcon icon={IdentityCardIcon} size={15} strokeWidth={1.8} />
+                              </div>
+                              <div className={styles.tileBody}>
+                                <span className={styles.tileLabel}>Identidade (RG)</span>
+                                <div className={`${styles.tileValue} ${!paciente?.identidade ? styles.tileValueEmpty : ""}`}>
+                                  {isLoadingPaciente ? (
+                                    <Skeleton width="110px" height="14px" />
+                                  ) : (
+                                    <span>{rgExibicao}</span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
 
-                        <div className={styles.infoTile}>
-                          <div className={styles.tileIcon}>
-                            <HugeiconsIcon icon={IdentityCardIcon} size={15} strokeWidth={1.8} />
-                          </div>
-                          <div className={styles.tileBody}>
-                            <span className={styles.tileLabel}>Identidade (RG)</span>
-                            <div className={`${styles.tileValue} ${!paciente?.identidade ? styles.tileValueEmpty : ""}`}>
-                              {isLoadingPaciente ? (
-                                <Skeleton width="110px" height="14px" />
-                              ) : (
-                                <span>{rgExibicao}</span>
-                              )}
+                        {/* Convênio e Plano */}
+                        <div className={styles.cadastralSection}>
+                          <div className={styles.sectionHeader}>
+                            <div className={styles.sectionHeaderIcon}>
+                              <HugeiconsIcon icon={CreditCardIcon} size={14} strokeWidth={2} />
                             </div>
+                            <h3 className={styles.sectionTitle}>Convênio e Plano</h3>
                           </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Endereço */}
-                    <div className={styles.cadastralSection}>
-                      <div className={styles.sectionHeader}>
-                        <div className={styles.sectionHeaderIcon}>
-                          <HugeiconsIcon icon={Location01Icon} size={14} strokeWidth={2} />
-                        </div>
-                        <h3 className={styles.sectionTitle}>Endereço</h3>
-                      </div>
-                      <div className={styles.cadastralGrid}>
-                        <div className={styles.infoTile}>
-                          <div className={styles.tileIcon}>
-                            <HugeiconsIcon icon={Location01Icon} size={15} strokeWidth={1.8} />
-                          </div>
-                          <div className={styles.tileBody}>
-                            <span className={styles.tileLabel}>CEP</span>
-                            <div className={`${styles.tileValue} ${!paciente?.cep ? styles.tileValueEmpty : ""}`}>
-                              {isLoadingPaciente ? (
-                                <Skeleton width="90px" height="14px" />
-                              ) : (
-                                <span>{cepFormatado}</span>
-                              )}
+                          <div className={styles.cadastralGridConvenio}>
+                            <div className={styles.infoTile}>
+                              <div className={styles.tileIcon}>
+                                <HugeiconsIcon icon={CreditCardIcon} size={15} strokeWidth={1.8} />
+                              </div>
+                              <div className={styles.tileBody}>
+                                <span className={styles.tileLabel}>Convênio</span>
+                                <div className={styles.tileValue}>
+                                  {isLoadingPaciente ? (
+                                    <Skeleton width="100px" height="14px" />
+                                  ) : (
+                                    <span>{paciente?.convenio?.nome || "Particular"}</span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
 
-                        <div className={styles.infoTile}>
-                          <div className={styles.tileIcon}>
-                            <HugeiconsIcon icon={Location01Icon} size={15} strokeWidth={1.8} />
-                          </div>
-                          <div className={styles.tileBody}>
-                            <span className={styles.tileLabel}>Cidade / UF</span>
-                            <div className={`${styles.tileValue} ${!paciente?.municipio && !paciente?.uf ? styles.tileValueEmpty : ""}`}>
-                              {isLoadingPaciente ? (
-                                <Skeleton width="120px" height="14px" />
-                              ) : (
-                                <span>{cidadeUfExibicao}</span>
-                              )}
+                            <div className={styles.infoTile}>
+                              <div className={styles.tileIcon}>
+                                <HugeiconsIcon icon={CreditCardIcon} size={15} strokeWidth={1.8} />
+                              </div>
+                              <div className={styles.tileBody}>
+                                <span className={styles.tileLabel}>Nº da Carteira</span>
+                                <div className={`${styles.tileValue} ${!paciente?.numeroCarteira ? styles.tileValueEmpty : ""}`}>
+                                  {isLoadingPaciente ? (
+                                    <Skeleton width="110px" height="14px" />
+                                  ) : (
+                                    <span>{paciente?.numeroCarteira || "Não informado"}</span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
 
-                        <div className={styles.infoTile}>
-                          <div className={styles.tileIcon}>
-                            <HugeiconsIcon icon={Location01Icon} size={15} strokeWidth={1.8} />
-                          </div>
-                          <div className={styles.tileBody}>
-                            <span className={styles.tileLabel}>Bairro</span>
-                            <div className={`${styles.tileValue} ${!paciente?.bairro ? styles.tileValueEmpty : ""}`}>
-                              {isLoadingPaciente ? (
-                                <Skeleton width="100px" height="14px" />
-                              ) : (
-                                <span>{paciente?.bairro || "Não informado"}</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className={`${styles.infoTile} ${styles.tileFullWidth}`}>
-                          <div className={styles.tileIcon}>
-                            <HugeiconsIcon icon={Location01Icon} size={15} strokeWidth={1.8} />
-                          </div>
-                          <div className={styles.tileBody}>
-                            <span className={styles.tileLabel}>Logradouro / Endereço</span>
-                            <div className={`${styles.tileValue} ${!paciente?.endereco ? styles.tileValueEmpty : ""}`}>
-                              {isLoadingPaciente ? (
-                                <Skeleton width="220px" height="14px" />
-                              ) : (
-                                <span>{paciente?.endereco || "Não informado"}</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Convênio */}
-                    <div className={styles.cadastralSection}>
-                      <div className={styles.sectionHeader}>
-                        <div className={styles.sectionHeaderIcon}>
-                          <HugeiconsIcon icon={CreditCardIcon} size={14} strokeWidth={2} />
-                        </div>
-                        <h3 className={styles.sectionTitle}>Convênio e Plano</h3>
-                      </div>
-                      <div className={styles.cadastralGrid}>
-                        <div className={styles.infoTile}>
-                          <div className={styles.tileIcon}>
-                            <HugeiconsIcon icon={CreditCardIcon} size={15} strokeWidth={1.8} />
-                          </div>
-                          <div className={styles.tileBody}>
-                            <span className={styles.tileLabel}>Convênio</span>
-                            <div className={styles.tileValue}>
-                              {isLoadingPaciente ? (
-                                <Skeleton width="100px" height="14px" />
-                              ) : (
-                                <span>{paciente?.convenio?.nome || "Particular"}</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className={styles.infoTile}>
-                          <div className={styles.tileIcon}>
-                            <HugeiconsIcon icon={CreditCardIcon} size={15} strokeWidth={1.8} />
-                          </div>
-                          <div className={styles.tileBody}>
-                            <span className={styles.tileLabel}>Nº da Carteira</span>
-                            <div className={`${styles.tileValue} ${!paciente?.numeroCarteira ? styles.tileValueEmpty : ""}`}>
-                              {isLoadingPaciente ? (
-                                <Skeleton width="110px" height="14px" />
-                              ) : (
-                                <span>{paciente?.numeroCarteira || "Não informado"}</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className={styles.infoTile}>
-                          <div className={styles.tileIcon}>
-                            <HugeiconsIcon icon={Calendar01Icon} size={15} strokeWidth={1.8} />
-                          </div>
-                          <div className={styles.tileBody}>
-                            <span className={styles.tileLabel}>Validade da Carteira</span>
-                            <div className={`${styles.tileValue} ${!paciente?.validadeCarteira ? styles.tileValueEmpty : ""}`}>
-                              {isLoadingPaciente ? (
-                                <Skeleton width="100px" height="14px" />
-                              ) : (
-                                <span>{validadeCarteiraExibicao}</span>
-                              )}
+                            <div className={styles.infoTile}>
+                              <div className={styles.tileIcon}>
+                                <HugeiconsIcon icon={Calendar01Icon} size={15} strokeWidth={1.8} />
+                              </div>
+                              <div className={styles.tileBody}>
+                                <span className={styles.tileLabel}>Validade</span>
+                                <div className={`${styles.tileValue} ${!paciente?.validadeCarteira ? styles.tileValueEmpty : ""}`}>
+                                  {isLoadingPaciente ? (
+                                    <Skeleton width="100px" height="14px" />
+                                  ) : (
+                                    <span>{validadeCarteiraExibicao}</span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1168,7 +1175,27 @@ export function ProntuarioPage() {
             )}
             {/* Histórico de Consultas */}
             <div className={styles.rightCard}>
-              <h4 className={styles.rightTitle}>Histórico de Consultas</h4>
+              <div className={styles.rightHeader}>
+                <div className={styles.rightTitleWrapper}>
+                  <h4 className={styles.rightTitle}>Histórico de Consultas</h4>
+                  <div
+                    className={styles.helpTooltipContainer}
+                  >
+                    <HugeiconsIcon
+                      icon={HelpCircleIcon}
+                      size={14}
+                      strokeWidth={2}
+                      className={styles.helpIcon}
+                    />
+                    <span className={styles.tooltipText}>
+                      Exibe os 10 agendamentos mais recentes
+                    </span>
+                  </div>
+                </div>
+                {paciente?.agendamentos && paciente.agendamentos.length > 0 && (
+                  <span className={styles.countBadge}>{paciente.agendamentos.length}</span>
+                )}
+              </div>
               {paciente?.agendamentos?.length ? (
                 <ul className={styles.historicoList}>
                   {paciente.agendamentos.map((ag) => {
@@ -1197,7 +1224,11 @@ export function ProntuarioPage() {
                   })}
                 </ul>
               ) : (
-                <p className={styles.historicoEmpty}>Nenhuma consulta registrada.</p>
+                <div className={styles.historicoEmpty}>
+                  <HugeiconsIcon icon={Calendar01Icon} size={28} strokeWidth={1.5} />
+                  <p>Nenhuma consulta registrada</p>
+                  <span>Os agendamentos deste paciente aparecerão aqui.</span>
+                </div>
               )}
             </div>
           </div>
