@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getClinicaId, getUsuarioId } from "../../../shared/middlewares/auth.js";
+import { getClinicaId, getUsuarioId } from "@/shared/middlewares/auth";
 import * as service from "./planos-alimentares.service.js";
 
 export async function criar(req: Request, res: Response) {

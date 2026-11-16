@@ -1,53 +1,20 @@
 import { Request, Response } from 'express';
-import { prisma } from '../../../shared/providers/prisma.js';
-import { getClinicaId } from '../../../shared/middlewares/auth.js';
+import { getClinicaId } from '@/shared/middlewares/auth';
+import * as relatoriosService from './relatorios.service';
 
 export async function gerarRelatorio(req: Request, res: Response) {
   const clinicaId = getClinicaId(req);
   const { dataInicio, dataFim, status, convenioId } = req.query;
 
-  const inicio = dataInicio
-    ? new Date(dataInicio as string)
-    : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-  inicio.setHours(0, 0, 0, 0);
-
-  const fim = dataFim ? new Date(dataFim as string) : new Date();
-  fim.setHours(23, 59, 59, 999);
-
-  const where: any = {
-    clinicaId,
-    dataHora: { gte: inicio, lte: fim },
-  };
-
-  if (status) where.status = status as string;
-  if (convenioId) where.convenioId = convenioId as string;
-
-  const agendamentos = await prisma.agendamento.findMany({
-    where,
-    include: {
-      paciente: { select: { id: true, nome: true, telefone: true } },
-      convenio: { select: { id: true, nome: true } },
-    },
-    orderBy: { dataHora: 'asc' },
+  const data = await relatoriosService.gerarRelatorioAgendamentos(clinicaId, {
+    dataInicio: dataInicio as string | undefined,
+    dataFim: dataFim as string | undefined,
+    status: status as string | undefined,
+    convenioId: convenioId as string | undefined,
   });
-
-  const totalRealizados = agendamentos.filter(
-    (a) => a.status === 'REALIZADO',
-  ).length;
-
-  const totalCancelados = agendamentos.filter(
-    (a) => a.status === 'CANCELADO' || a.status === 'DESISTIU',
-  ).length;
 
   return res.json({
     success: true,
-    data: {
-      agendamentos,
-      resumo: {
-        total: agendamentos.length,
-        realizados: totalRealizados,
-        cancelados: totalCancelados,
-      },
-    },
+    data,
   });
 }

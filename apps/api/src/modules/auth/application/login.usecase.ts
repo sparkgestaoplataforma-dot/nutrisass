@@ -1,9 +1,9 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../../../shared/providers/prisma.js';
-import { redisSet } from '../../../shared/providers/redis.js';
-import { env } from '../../../config/env.js';
-import { AppError } from '../../../shared/middlewares/errorHandler.js';
+import { prisma } from "@/shared/providers/prisma";
+import { redisSet } from "@/shared/providers/redis";
+import { env } from "@/config/env";
+import { AppError } from "@/shared/middlewares/errorHandler";
 import type { LoginInput } from '@nutricao/shared';
 import type { TokenPayload, AuthTokens } from '@nutricao/shared';
 

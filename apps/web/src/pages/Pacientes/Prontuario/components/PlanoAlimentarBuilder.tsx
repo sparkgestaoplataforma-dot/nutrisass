@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   DndContext,
   closestCenter,
@@ -21,37 +22,40 @@ import {
   DragDropIcon,
   ArrowLeft01Icon,
   Alert01Icon,
+  Tick01Icon,
 } from "@hugeicons/core-free-icons";
+import { listarMedidas } from "@/services/prontuario";
+import { getPacientePorId } from "@/services/pacientes";
 import { AlimentoSearch } from "./AlimentoSearch";
 import type { AlimentoAPI, PlanoAlimentarAPI } from "@/services/planoAlimentar";
 import {
   type CreatePlanoAlimentarInput,
   createPlanoAlimentarSchema,
 } from "@nutricao/shared";
+import {
+  type AlimentoCalculavel,
+  type ProtocoloTMB,
+  FATORES_ATIVIDADE,
+  hidratarAlimentoSalvo,
+  criarAlimentoInicial,
+  recalcularAlimentoPlano,
+  formatarLabelMedidaCaseira,
+  calcularTotaisAlimentos,
+  calcularTotaisPlano,
+  calcularTMB,
+  calcularGET,
+  calcularDistribuicaoMacrosPorGKg,
+  calcularMetricasMacro,
+  calcularRecomendacaoAgua,
+  gerarRefeicoesPadrao,
+} from "@/utils/nutricaoCalculos";
 import styles from "./PlanoAlimentar.module.scss";
-
-// === Types ===
-interface AlimentoLocal {
-  _uid: string;
-  alimentoId: string | null;
-  medidaCaseiraId: string | null;
-  alimento: string;
-  quantidade: number;
-  unidade: string;
-  calorias: number | null;
-  proteinas: number | null;
-  carboidratos: number | null;
-  gorduras: number | null;
-  observacao: string | null;
-  _basePer100: { cal: number; prot: number; carb: number; gord: number };
-  _medidasCaseiras: { id: string; nome: string; quantidadeEmGramas: number }[];
-}
 
 interface OpcaoLocal {
   _uid: string;
   nome: string | null;
   ordem: number;
-  alimentos: AlimentoLocal[];
+  alimentos: AlimentoCalculavel[];
 }
 
 interface RefeicaoLocal {
@@ -76,14 +80,14 @@ function uid() {
   return `_${++uidCounter}_${Date.now()}`;
 }
 
-function calcMacros(base: AlimentoLocal["_basePer100"], qtdGramas: number) {
-  const f = qtdGramas / 100;
-  return {
-    calorias: Math.round(base.cal * f * 10) / 10,
-    proteinas: Math.round(base.prot * f * 10) / 10,
-    carboidratos: Math.round(base.carb * f * 10) / 10,
-    gorduras: Math.round(base.gord * f * 10) / 10,
-  };
+function calcularIdadeAnos(dataNascimento?: string | null): number {
+  if (!dataNascimento) return 30;
+  const birth = new Date(dataNascimento);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return Math.max(1, age);
 }
 
 // === Sortable Meal Wrapper ===
@@ -145,6 +149,107 @@ export function PlanoAlimentarBuilder({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [editingOpcao, setEditingOpcao] = useState<{ ruid: string; ouid: string } | null>(null);
 
+  // --- Dados do Paciente e Última Medida para a Calculadora TMB/GET/g-kg ---
+  const { data: paciente } = useQuery({
+    queryKey: ["paciente", pacienteId],
+    queryFn: () => getPacientePorId(pacienteId),
+    enabled: !!pacienteId,
+  });
+
+  const { data: medidas = [] } = useQuery({
+    queryKey: ["medidas", pacienteId],
+    queryFn: () => listarMedidas(pacienteId),
+    enabled: !!pacienteId,
+  });
+
+  const ultimaMedida = medidas[0] || null;
+
+  // Estados da Calculadora de Gasto Energético (TMB/GET) e Macros (g/kg)
+  const [calcAberta, setCalcAberta] = useState<boolean>(!initialData);
+  const [calcPeso, setCalcPeso] = useState<number>(70);
+  const [calcAltura, setCalcAltura] = useState<number>(170);
+  const [calcIdade, setCalcIdade] = useState<number>(30);
+  const [calcSexo, setCalcSexo] = useState<"MASCULINO" | "FEMININO">("FEMININO");
+  const [calcMassaMagra, setCalcMassaMagra] = useState<string>("");
+  const [calcProtocolo, setCalcProtocolo] = useState<ProtocoloTMB>("MIFFLIN_ST_JEOR");
+  const [calcKcalPorKg, setCalcKcalPorKg] = useState<number>(25);
+  const [calcFatorAtiv, setCalcFatorAtiv] = useState<number>(1.375);
+  const [calcAjusteKcal, setCalcAjusteKcal] = useState<number>(0);
+  const [calcProtGKg, setCalcProtGKg] = useState<number>(1.8);
+  const [calcGordGKg, setCalcGordGKg] = useState<number>(0.9);
+  const [calcMlAguaKg, setCalcMlAguaKg] = useState<number>(35);
+
+  // Sincroniza dados antropométricos do paciente quando carregados
+  useEffect(() => {
+    if (ultimaMedida?.peso) setCalcPeso(ultimaMedida.peso);
+    if (ultimaMedida?.altura) setCalcAltura(ultimaMedida.altura);
+  }, [ultimaMedida]);
+
+  useEffect(() => {
+    if (paciente?.dataNascimento) {
+      setCalcIdade(calcularIdadeAnos(paciente.dataNascimento));
+    }
+    if (paciente?.sexo === "MASCULINO" || paciente?.sexo === "FEMININO") {
+      setCalcSexo(paciente.sexo);
+    }
+  }, [paciente]);
+
+  // Cálculo em tempo real na calculadora
+  const resultadoCalc = useMemo(() => {
+    const tmb = calcularTMB({
+      peso: calcPeso,
+      alturaCm: calcAltura,
+      idade: calcIdade,
+      sexo: calcSexo,
+      protocolo: calcProtocolo,
+      massaMagraKg: calcMassaMagra ? parseFloat(calcMassaMagra) : null,
+      kcalPorKg: calcKcalPorKg,
+    });
+    const { get, metaCalorias: metaSugerida } =
+      calcProtocolo === "BOLSO"
+        ? { get: Math.round(tmb), metaCalorias: Math.max(0, Math.round(tmb + calcAjusteKcal)) }
+        : calcularGET(tmb, calcFatorAtiv, calcAjusteKcal);
+
+    const macros = calcularDistribuicaoMacrosPorGKg({
+      pesoKg: calcPeso,
+      metaCalorias: metaSugerida,
+      proteinaGKg: calcProtGKg,
+      gorduraGKg: calcGordGKg,
+    });
+
+    const aguaSugerida = calcularRecomendacaoAgua(calcPeso, calcMlAguaKg);
+
+    return {
+      tmb: Math.round(tmb),
+      get,
+      metaSugerida,
+      macros,
+      aguaSugerida,
+    };
+  }, [
+    calcPeso,
+    calcAltura,
+    calcIdade,
+    calcSexo,
+    calcProtocolo,
+    calcMassaMagra,
+    calcKcalPorKg,
+    calcFatorAtiv,
+    calcAjusteKcal,
+    calcProtGKg,
+    calcGordGKg,
+    calcMlAguaKg,
+  ]);
+
+  function aplicarCalculoNasMetas() {
+    setMetaCalorias(resultadoCalc.metaSugerida.toString());
+    setMetaProteinas(resultadoCalc.macros.proteinasG.toString());
+    setMetaCarboidratos(resultadoCalc.macros.carboidratosG.toString());
+    setMetaGorduras(resultadoCalc.macros.gordurasG.toString());
+    setAguaMl(resultadoCalc.aguaSugerida.toString());
+  }
+
+  // Inicializa refeições usando hidratarAlimentoSalvo (corrige Bug #1A de edição!)
   const [refeicoes, setRefeicoes] = useState<RefeicaoLocal[]>(() => {
     if (!initialData?.refeicoes?.length) return [];
     return initialData.refeicoes.map((r) => ({
@@ -157,22 +262,7 @@ export function PlanoAlimentarBuilder({
         _uid: uid(),
         nome: o.nome,
         ordem: o.ordem,
-        alimentos: o.alimentos.map((a) => ({
-          _uid: uid(),
-          alimentoId: a.alimentoId,
-          medidaCaseiraId: a.medidaCaseiraId,
-          alimento: a.alimento,
-          quantidade: a.quantidade,
-          unidade: a.unidade,
-          calorias: a.calorias,
-          proteinas: a.proteinas,
-          carboidratos: a.carboidratos,
-          gorduras: a.gorduras,
-          observacao: a.observacao,
-          _basePer100: { cal: 0, prot: 0, carb: 0, gord: 0 },
-          // Usa as medidas caseiras que já vêm da API via alimentoRel
-          _medidasCaseiras: a.alimentoRel?.medidasCaseiras ?? [],
-        })),
+        alimentos: o.alimentos.map((a) => hidratarAlimentoSalvo(a, uid())),
       })),
     }));
   });
@@ -193,6 +283,21 @@ export function PlanoAlimentarBuilder({
         _activeOpcao: 0,
         opcoes: [{ _uid: uid(), nome: null, ordem: 0, alimentos: [] }],
       },
+    ]);
+  }, []);
+
+  const preencherRefeicoesPadrao = useCallback(() => {
+    const padrao = gerarRefeicoesPadrao();
+    setRefeicoes((prev) => [
+      ...prev,
+      ...padrao.map((p, idx) => ({
+        _uid: uid(),
+        nome: p.nome,
+        horario: p.horario,
+        ordem: prev.length + idx,
+        _activeOpcao: 0,
+        opcoes: [{ _uid: uid(), nome: null, ordem: 0, alimentos: [] }],
+      })),
     ]);
   }, []);
 
@@ -257,30 +362,8 @@ export function PlanoAlimentarBuilder({
   }, []);
 
   const addAlimento = useCallback(
-    (ruid: string, ouid: string, api: AlimentoAPI) => {
-      const defaultMeasure = api.medidasCaseiras?.find(
-        (m) => m.nome.toLowerCase() === "ml"
-      );
-      const newAl: AlimentoLocal = {
-        _uid: uid(),
-        alimentoId: api.id,
-        medidaCaseiraId: defaultMeasure ? defaultMeasure.id : null,
-        alimento: api.nome,
-        quantidade: 100,
-        unidade: defaultMeasure ? defaultMeasure.nome : "g",
-        calorias: api.calorias,
-        proteinas: api.proteinas,
-        carboidratos: api.carboidratos,
-        gorduras: api.gorduras,
-        observacao: null,
-        _basePer100: {
-          cal: api.calorias || 0,
-          prot: api.proteinas || 0,
-          carb: api.carboidratos || 0,
-          gord: api.gorduras || 0,
-        },
-        _medidasCaseiras: api.medidasCaseiras || [],
-      };
+    (ruid: string, ouid: string, apiAlimento: AlimentoAPI) => {
+      const newAl = criarAlimentoInicial(apiAlimento, uid());
       setRefeicoes((prev) =>
         prev.map((r) => {
           if (r._uid !== ruid) return r;
@@ -308,9 +391,9 @@ export function PlanoAlimentarBuilder({
             opcoes: r.opcoes.map((o) =>
               o._uid === ouid
                 ? {
-                    ...o,
-                    alimentos: o.alimentos.filter((a) => a._uid !== auid),
-                  }
+                  ...o,
+                  alimentos: o.alimentos.filter((a) => a._uid !== auid),
+                }
                 : o,
             ),
           };
@@ -320,6 +403,7 @@ export function PlanoAlimentarBuilder({
     [],
   );
 
+  // Usa recalcularAlimentoPlano testado via TDD (corrige Bugs #1B e #1C)
   const updateAlimento = useCallback(
     (ruid: string, ouid: string, auid: string, field: string, value: any) => {
       setRefeicoes((prev) =>
@@ -331,33 +415,9 @@ export function PlanoAlimentarBuilder({
               if (o._uid !== ouid) return o;
               return {
                 ...o,
-                alimentos: o.alimentos.map((a) => {
-                  if (a._uid !== auid) return a;
-                  const updated = { ...a, [field]: value };
-                  if (field === "quantidade" || field === "medidaCaseiraId") {
-                    let qtdG = updated.quantidade;
-                    if (field === "medidaCaseiraId" && value) {
-                      const mc = a._medidasCaseiras.find((m) => m.id === value);
-                      if (mc) {
-                        qtdG = mc.quantidadeEmGramas * updated.quantidade;
-                        updated.unidade = mc.nome;
-                      }
-                    } else if (
-                      field === "quantidade" &&
-                      !updated.medidaCaseiraId
-                    ) {
-                      qtdG = value;
-                    }
-                    if (a._basePer100.cal > 0 || a._basePer100.prot > 0) {
-                      const m = calcMacros(a._basePer100, qtdG);
-                      updated.calorias = m.calorias;
-                      updated.proteinas = m.proteinas;
-                      updated.carboidratos = m.carboidratos;
-                      updated.gorduras = m.gorduras;
-                    }
-                  }
-                  return updated;
-                }),
+                alimentos: o.alimentos.map((a) =>
+                  a._uid === auid ? recalcularAlimentoPlano(a, field, value) : a,
+                ),
               };
             }),
           };
@@ -381,38 +441,32 @@ export function PlanoAlimentarBuilder({
     });
   }, []);
 
-  // Totals
-  const totaisDiarios = useMemo(() => {
-    let cal = 0,
-      prot = 0,
-      carb = 0,
-      gord = 0;
-    for (const r of refeicoes) {
-      const opc = r.opcoes[0];
-      if (!opc) continue;
-      for (const a of opc.alimentos) {
-        cal += a.calorias || 0;
-        prot += a.proteinas || 0;
-        carb += a.carboidratos || 0;
-        gord += a.gorduras || 0;
-      }
-    }
-    return { cal, prot, carb, gord };
-  }, [refeicoes]);
+  // Totals (unificados com calcularTotaisPlano)
+  const totaisDiarios = useMemo(
+    () => calcularTotaisPlano(refeicoes, "principal"),
+    [refeicoes],
+  );
 
-  function getOpcaoTotais(als: AlimentoLocal[]) {
-    let cal = 0,
-      prot = 0,
-      carb = 0,
-      gord = 0;
-    for (const a of als) {
-      cal += a.calorias || 0;
-      prot += a.proteinas || 0;
-      carb += a.carboidratos || 0;
-      gord += a.gorduras || 0;
-    }
-    return { cal, prot, carb, gord };
-  }
+  // Métricas g/kg e % em tempo real para as metas preenchidas
+  const metaCalNum = parseFloat(metaCalorias) || 0;
+  const infoMetaProt = calcularMetricasMacro(
+    parseFloat(metaProteinas) || 0,
+    "proteina",
+    calcPeso,
+    metaCalNum,
+  );
+  const infoMetaCarb = calcularMetricasMacro(
+    parseFloat(metaCarboidratos) || 0,
+    "carboidrato",
+    calcPeso,
+    metaCalNum,
+  );
+  const infoMetaGord = calcularMetricasMacro(
+    parseFloat(metaGorduras) || 0,
+    "gordura",
+    calcPeso,
+    metaCalNum,
+  );
 
   function metaPct(cur: number, meta: string) {
     const m = parseFloat(meta);
@@ -513,7 +567,13 @@ export function PlanoAlimentarBuilder({
             <select
               className={styles.fieldSelect}
               value={objetivo}
-              onChange={(e) => setObjetivo(e.target.value)}
+              onChange={(e) => {
+                const novoObj = e.target.value;
+                setObjetivo(novoObj);
+                if (novoObj === "EMAGRECIMENTO") setCalcAjusteKcal(-400);
+                else if (novoObj === "HIPERTROFIA") setCalcAjusteKcal(350);
+                else if (novoObj === "MANUTENCAO" || novoObj === "REEDUCACAO_ALIMENTAR") setCalcAjusteKcal(0);
+              }}
             >
               <option value="">Selecione...</option>
               <option value="EMAGRECIMENTO">Emagrecimento</option>
@@ -526,17 +586,241 @@ export function PlanoAlimentarBuilder({
         </div>
         <div className={styles.builderRowFull}>
           <div className={styles.fieldGroup}>
-            <label className={styles.fieldLabel}>Observações</label>
+            <label className={styles.fieldLabel}>Observações e Orientações Gerais</label>
             <textarea
               className={styles.fieldTextarea}
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
-              placeholder="Observações gerais do plano..."
+              placeholder="Observações gerais do plano, orientações de preparo, chás, suplementos..."
             />
           </div>
         </div>
+
+        {/* Seção de Metas + Calculadora de Gasto Energético (TMB/GET) e Macros (g/kg) */}
         <div className={styles.metasBuilderSection}>
-          <p className={styles.metasBuilderTitle}>Metas Nutricionais Diárias</p>
+          <div className={styles.calcToggleRow}>
+            <p className={styles.metasBuilderTitle} style={{ marginBottom: 0 }}>
+              Metas Nutricionais Diárias
+            </p>
+            <button
+              type="button"
+              className={styles.calcToggleBtn}
+              onClick={() => setCalcAberta((v) => !v)}
+            >
+              {calcAberta
+                ? "Ocultar Calculadora de Gasto Energético (TMB/GET)"
+                : "⚡ Calcular Gasto Energético (TMB/GET) e Macros (g/kg)"}
+            </button>
+          </div>
+
+          {calcAberta && (
+            <div className={styles.calcPanel}>
+              <div className={styles.calcPanelHeader}>
+                <span className={styles.calcPanelTitle}>
+                  Calculadora de Gasto Energético (TMB / GET) e Distribuição por g/kg
+                </span>
+                <span className={styles.calcPanelBadge}>
+                  {ultimaMedida?.peso
+                    ? `Dados puxados da última avaliação (${new Date(ultimaMedida.data).toLocaleDateString("pt-BR")})`
+                    : "Preencha o peso e altura do paciente"}
+                </span>
+              </div>
+
+              {/* Linha 1: Dados antropométricos e protocolo */}
+              <div className={styles.calcGrid}>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Peso (kg)</label>
+                  <input
+                    className={styles.fieldInput}
+                    type="number"
+                    step="0.1"
+                    value={calcPeso}
+                    onChange={(e) => setCalcPeso(parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Altura (cm)</label>
+                  <input
+                    className={styles.fieldInput}
+                    type="number"
+                    step="0.5"
+                    value={calcAltura}
+                    onChange={(e) => setCalcAltura(parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Idade (anos)</label>
+                  <input
+                    className={styles.fieldInput}
+                    type="number"
+                    value={calcIdade}
+                    onChange={(e) => setCalcIdade(parseInt(e.target.value) || 0)}
+                  />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Sexo</label>
+                  <select
+                    className={styles.fieldSelect}
+                    value={calcSexo}
+                    onChange={(e) => setCalcSexo(e.target.value as "MASCULINO" | "FEMININO")}
+                  >
+                    <option value="FEMININO">Feminino</option>
+                    <option value="MASCULINO">Masculino</option>
+                  </select>
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Fórmula (Protocolo)</label>
+                  <select
+                    className={styles.fieldSelect}
+                    value={calcProtocolo}
+                    onChange={(e) => setCalcProtocolo(e.target.value as ProtocoloTMB)}
+                  >
+                    <option value="MIFFLIN_ST_JEOR">Mifflin-St Jeor (Recomendada)</option>
+                    <option value="HARRIS_BENEDICT">Harris-Benedict (1919)</option>
+                    <option value="FAO_OMS">FAO / OMS</option>
+                    <option value="CUNNINGHAM">Cunningham (Esportiva / Massa Magra)</option>
+                    <option value="TINSLEY_PESO">Tinsley (2018 - Hipertrofia)</option>
+                    <option value="BOLSO">Fórmula de Bolso (kcal/kg)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Linha 2: Fator atividade, Ajuste calórico e g/kg de Macros */}
+              <div className={styles.calcGrid}>
+                {calcProtocolo === "CUNNINGHAM" && (
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>Massa Magra (kg)</label>
+                    <input
+                      className={styles.fieldInput}
+                      type="number"
+                      step="0.1"
+                      placeholder="Auto (~78%)"
+                      value={calcMassaMagra}
+                      onChange={(e) => setCalcMassaMagra(e.target.value)}
+                    />
+                  </div>
+                )}
+
+                {calcProtocolo === "BOLSO" ? (
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>Meta kcal/kg de peso</label>
+                    <input
+                      className={styles.fieldInput}
+                      type="number"
+                      step="1"
+                      value={calcKcalPorKg}
+                      onChange={(e) => setCalcKcalPorKg(parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                ) : (
+                  <div className={styles.fieldGroup} style={{ gridColumn: "span 2" }}>
+                    <label className={styles.fieldLabel}>Nível de Atividade Física (NAF)</label>
+                    <select
+                      className={styles.fieldSelect}
+                      value={calcFatorAtiv}
+                      onChange={(e) => setCalcFatorAtiv(parseFloat(e.target.value))}
+                    >
+                      {FATORES_ATIVIDADE.map((fa) => (
+                        <option key={fa.valor} value={fa.valor}>
+                          {fa.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Ajuste Objetivo (kcal)</label>
+                  <input
+                    className={styles.fieldInput}
+                    type="number"
+                    step="50"
+                    value={calcAjusteKcal}
+                    onChange={(e) => setCalcAjusteKcal(parseInt(e.target.value) || 0)}
+                    title="Ex: -500 para emagrecimento, +300 para hipertrofia"
+                  />
+                </div>
+
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Proteína (g/kg)</label>
+                  <input
+                    className={styles.fieldInput}
+                    type="number"
+                    step="0.1"
+                    min="0.5"
+                    max="4.0"
+                    value={calcProtGKg}
+                    onChange={(e) => setCalcProtGKg(parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Gordura (g/kg)</label>
+                  <input
+                    className={styles.fieldInput}
+                    type="number"
+                    step="0.1"
+                    min="0.3"
+                    max="2.5"
+                    value={calcGordGKg}
+                    onChange={(e) => setCalcGordGKg(parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+
+              {/* Barra de Resultados Calculados + Botão Aplicar */}
+              <div className={styles.calcResultBar}>
+                <div className={styles.calcResultMetrics}>
+                  <div className={styles.calcMetricBox}>
+                    <span>TMB (Basal)</span>
+                    <strong>{resultadoCalc.tmb} kcal</strong>
+                  </div>
+                  <div className={styles.calcMetricBox}>
+                    <span>GET (Manutenção)</span>
+                    <strong>{resultadoCalc.get} kcal</strong>
+                  </div>
+                  <div className={styles.calcMetricBox}>
+                    <span>VET Planejado</span>
+                    <strong style={{ color: "#059669" }}>
+                      {resultadoCalc.metaSugerida} kcal
+                    </strong>
+                  </div>
+                  <div className={styles.calcMetricBox}>
+                    <span>Proteínas ({calcProtGKg}g/kg)</span>
+                    <strong>
+                      {resultadoCalc.macros.proteinasG}g ({resultadoCalc.macros.proteinaPct}%)
+                    </strong>
+                  </div>
+                  <div className={styles.calcMetricBox}>
+                    <span>Carboidratos ({resultadoCalc.macros.carboidratoGKg}g/kg)</span>
+                    <strong>
+                      {resultadoCalc.macros.carboidratosG}g ({resultadoCalc.macros.carboidratoPct}%)
+                    </strong>
+                  </div>
+                  <div className={styles.calcMetricBox}>
+                    <span>Gorduras ({calcGordGKg}g/kg)</span>
+                    <strong>
+                      {resultadoCalc.macros.gordurasG}g ({resultadoCalc.macros.gorduraPct}%)
+                    </strong>
+                  </div>
+                  <div className={styles.calcMetricBox}>
+                    <span>Água ({calcMlAguaKg}ml/kg)</span>
+                    <strong>{resultadoCalc.aguaSugerida} ml</strong>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className={styles.saveBtn}
+                  onClick={aplicarCalculoNasMetas}
+                >
+                  <HugeiconsIcon icon={Tick01Icon} size={15} strokeWidth={2.2} />
+                  Aplicar às Metas do Plano
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className={styles.metasBuilderGrid}>
             <div className={styles.fieldGroup}>
               <label className={styles.fieldLabel}>Calorias (kcal)</label>
@@ -547,6 +831,11 @@ export function PlanoAlimentarBuilder({
                 onChange={(e) => setMetaCalorias(e.target.value)}
                 placeholder="2000"
               />
+              {calcPeso > 0 && metaCalNum > 0 && (
+                <span className={styles.metaSubHint}>
+                  {(metaCalNum / calcPeso).toFixed(1)} kcal/kg
+                </span>
+              )}
             </div>
             <div className={styles.fieldGroup}>
               <label className={styles.fieldLabel}>Proteínas (g)</label>
@@ -557,6 +846,12 @@ export function PlanoAlimentarBuilder({
                 onChange={(e) => setMetaProteinas(e.target.value)}
                 placeholder="150"
               />
+              {infoMetaProt.gPorKg != null && (
+                <span className={styles.metaSubHint}>
+                  {infoMetaProt.gPorKg} g/kg
+                  {infoMetaProt.percentual != null ? ` • ${infoMetaProt.percentual}%` : ""}
+                </span>
+              )}
             </div>
             <div className={styles.fieldGroup}>
               <label className={styles.fieldLabel}>Carboidratos (g)</label>
@@ -567,6 +862,12 @@ export function PlanoAlimentarBuilder({
                 onChange={(e) => setMetaCarboidratos(e.target.value)}
                 placeholder="250"
               />
+              {infoMetaCarb.gPorKg != null && (
+                <span className={styles.metaSubHint}>
+                  {infoMetaCarb.gPorKg} g/kg
+                  {infoMetaCarb.percentual != null ? ` • ${infoMetaCarb.percentual}%` : ""}
+                </span>
+              )}
             </div>
             <div className={styles.fieldGroup}>
               <label className={styles.fieldLabel}>Gorduras (g)</label>
@@ -577,6 +878,12 @@ export function PlanoAlimentarBuilder({
                 onChange={(e) => setMetaGorduras(e.target.value)}
                 placeholder="65"
               />
+              {infoMetaGord.gPorKg != null && (
+                <span className={styles.metaSubHint}>
+                  {infoMetaGord.gPorKg} g/kg
+                  {infoMetaGord.percentual != null ? ` • ${infoMetaGord.percentual}%` : ""}
+                </span>
+              )}
             </div>
             <div className={styles.fieldGroup}>
               <label className={styles.fieldLabel}>Água (ml)</label>
@@ -587,6 +894,11 @@ export function PlanoAlimentarBuilder({
                 onChange={(e) => setAguaMl(e.target.value)}
                 placeholder="2500"
               />
+              {calcPeso > 0 && parseInt(aguaMl) > 0 && (
+                <span className={styles.metaSubHint}>
+                  {Math.round(parseInt(aguaMl) / calcPeso)} ml/kg
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -595,7 +907,7 @@ export function PlanoAlimentarBuilder({
       {/* Progress Bars */}
       {hasMetas && (
         <div className={styles.builderMetasProgress}>
-          <p className={styles.builderMetasProgressTitle}>Progresso Atual</p>
+          <p className={styles.builderMetasProgressTitle}>Progresso Atual (Opção Principal)</p>
           <div className={styles.builderMetasProgressGrid}>
             {[
               {
@@ -657,8 +969,8 @@ export function PlanoAlimentarBuilder({
               const activeOpcIdx = ref._activeOpcao;
               const opcaoAtiva = ref.opcoes[activeOpcIdx];
               const opcTotais = opcaoAtiva
-                ? getOpcaoTotais(opcaoAtiva.alimentos)
-                : { cal: 0, prot: 0, carb: 0, gord: 0 };
+                ? calcularTotaisAlimentos(opcaoAtiva.alimentos)
+                : { cal: 0, prot: 0, carb: 0, gord: 0, fibra: 0 };
 
               return (
                 <SortableRefeicao
@@ -765,7 +1077,7 @@ export function PlanoAlimentarBuilder({
                             className={styles.addOpcaoBtn}
                             onClick={() => addOpcao(ref._uid)}
                             disabled={ref.opcoes.length >= 10}
-                            title={ref.opcoes.length >= 10 ? "O limite máximo é de 10 opções" : "Adicionar nova opção"}
+                            title={ref.opcoes.length >= 10 ? "O limite máximo é de 10 opções" : "Adicionar nova opção de substituição"}
                           >
                             + Opção
                           </button>
@@ -806,6 +1118,9 @@ export function PlanoAlimentarBuilder({
                                   <span className={styles.alimentoRowHeaderCell}>
                                     Gord
                                   </span>
+                                  <span className={styles.alimentoRowHeaderCell}>
+                                    Fibra
+                                  </span>
                                   <span />
                                 </div>
                               )}
@@ -823,6 +1138,7 @@ export function PlanoAlimentarBuilder({
                                     className={styles.alimentoMiniInput}
                                     type="number"
                                     min={0}
+                                    step="any"
                                     value={al.quantidade.toString()}
                                     onFocus={(e) => e.target.select()}
                                     onChange={(e) => {
@@ -852,10 +1168,10 @@ export function PlanoAlimentarBuilder({
                                       )
                                     }
                                   >
-                                    <option value="">g</option>
+                                    <option value="">g (gramas)</option>
                                     {al._medidasCaseiras.map((mc) => (
                                       <option key={mc.id} value={mc.id}>
-                                        {mc.nome}
+                                        {formatarLabelMedidaCaseira(mc)}
                                       </option>
                                     ))}
                                   </select>
@@ -870,6 +1186,9 @@ export function PlanoAlimentarBuilder({
                                   </span>
                                   <span className={styles.macroCell}>
                                     {al.gorduras?.toFixed(1) || "0"}
+                                  </span>
+                                  <span className={styles.macroCell}>
+                                    {al.fibra != null ? al.fibra.toFixed(1) : "0"}
                                   </span>
                                   <button
                                     className={styles.removeAlimentoBtn}
@@ -926,6 +1245,14 @@ export function PlanoAlimentarBuilder({
                                     {opcTotais.gord.toFixed(1)}g
                                   </span>
                                 </div>
+                                <div className={styles.refeicaoTotalItem}>
+                                  <span className={styles.refeicaoTotalLabel}>
+                                    Fibras:
+                                  </span>
+                                  <span className={styles.refeicaoTotalValue}>
+                                    {opcTotais.fibra.toFixed(1)}g
+                                  </span>
+                                </div>
                               </div>
                             )}
                           </>
@@ -939,10 +1266,22 @@ export function PlanoAlimentarBuilder({
           </SortableContext>
         </DndContext>
 
-        <button className={styles.addRefeicaoBtn} onClick={addRefeicao}>
-          <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} />
-          Adicionar Refeição
-        </button>
+        <div className={styles.refeicoesQuickBar}>
+          <button className={styles.addRefeicaoBtn} onClick={addRefeicao} style={{ flex: 2 }}>
+            <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} />
+            Adicionar Refeição
+          </button>
+          {refeicoes.length === 0 && (
+            <button
+              type="button"
+              className={styles.addRefeicaoBtn}
+              onClick={preencherRefeicoesPadrao}
+              style={{ flex: 1, borderColor: "#10b981", color: "#047857" }}
+            >
+              ⚡ Criar 5 Refeições Padrão (Café ao Jantar)
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Footer */}
@@ -959,6 +1298,7 @@ export function PlanoAlimentarBuilder({
               value: `${totaisDiarios.carb.toFixed(1)}g`,
             },
             { label: "Gorduras", value: `${totaisDiarios.gord.toFixed(1)}g` },
+            { label: "Fibras", value: `${totaisDiarios.fibra.toFixed(1)}g` },
           ].map((t) => (
             <div key={t.label} className={styles.footerTotalItem}>
               <div className={styles.footerTotalValue}>{t.value}</div>

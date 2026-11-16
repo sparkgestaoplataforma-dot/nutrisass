@@ -1,33 +1,29 @@
 import { Request, Response } from "express";
-import { getIO } from "../../../shared/providers/socket.js";
-import { getClinicaId } from "../../../shared/middlewares/auth.js";
-import { getUsuarioId } from "../../../shared/middlewares/auth.js";
-import { AppError } from "../../../shared/middlewares/errorHandler.js";
-
-import * as service from "./agenda.service.js";
-import { redisSet, redisLPush } from "@/shared/providers/redis.js";
-import { enviarNotificacaoIndividual } from "@/modules/notificacoes/infra/notificacoes.controller.js";
-import { prisma } from "../../../shared/providers/prisma.js";
+import { getIO } from "@/shared/providers/socket";
+import { getClinicaId, getUsuarioId } from "@/shared/middlewares/auth";
+import { AppError } from "@/shared/middlewares/errorHandler";
+import * as service from "./agenda.service";
+import { enviarNotificacaoIndividual } from "@/modules/notificacoes/infra/notificacoes.controller";
 
 function getMensagemIntuitiva(status: string, nomePaciente: string, dataFormatada: string): string {
   switch (status?.toUpperCase()) {
-    case 'PRESENTE':
+    case "PRESENTE":
       return `O cliente ${nomePaciente} se encontra presente e pronto para ser atendido.`;
-    case 'CANCELADO':
+    case "CANCELADO":
       return `O agendamento do dia ${dataFormatada} foi cancelado. Paciente: ${nomePaciente}.`;
-    case 'CONFIRMOU':
+    case "CONFIRMOU":
       return `O paciente ${nomePaciente} confirmou presença para o dia ${dataFormatada}.`;
-    case 'REALIZADO':
+    case "REALIZADO":
       return `O atendimento do paciente ${nomePaciente} foi finalizado com sucesso.`;
-    case 'NAO_COMPARECEU':
+    case "NAO_COMPARECEU":
       return `O paciente ${nomePaciente} não compareceu ao agendamento do dia ${dataFormatada}.`;
-    case 'DESISTIU':
+    case "DESISTIU":
       return `O paciente ${nomePaciente} desistiu do agendamento do dia ${dataFormatada}.`;
-    case 'REMARCOU':
+    case "REMARCOU":
       return `O paciente ${nomePaciente} remarcou o agendamento do dia ${dataFormatada}.`;
-    case 'ENCAIXE':
+    case "ENCAIXE":
       return `O paciente ${nomePaciente} foi encaixado na agenda do dia ${dataFormatada}.`;
-    case 'AGENDADO':
+    case "AGENDADO":
     default:
       return `O status do agendamento do paciente ${nomePaciente} (${dataFormatada}) foi alterado para ${status}.`;
   }
@@ -41,11 +37,13 @@ export async function listar(req: Request, res: Response) {
 
   const dataStr = (data as string) || new Date().toISOString().split("T")[0];
 
-  const isAutonomo = req.user!.tipoClinica === 'AUTONOMO';
+  const isAutonomo = req.user!.tipoClinica === "AUTONOMO";
   const targetNutricionistaId = isAutonomo
     ? usuarioId
-    : (usuarioPerfil === "SECRETARIA" || usuarioPerfil === "ADMIN")
-      ? (nutricionistaId ? (nutricionistaId as string) : undefined)
+    : usuarioPerfil === "SECRETARIA" || usuarioPerfil === "ADMIN"
+      ? nutricionistaId
+        ? (nutricionistaId as string)
+        : undefined
       : usuarioId;
 
   const agendamentos = await service.pegarAgendamentosDia(
@@ -60,7 +58,6 @@ export async function listar(req: Request, res: Response) {
 
 export async function criar(req: Request, res: Response) {
   const clinicaId = getClinicaId(req);
-
 
   if (req.body.criadoPorUsuarioId !== req.user!.userId) {
     throw new AppError("O emissor do agendamento deve ser o usuário logado", 403);
@@ -79,7 +76,7 @@ export async function criar(req: Request, res: Response) {
   );
   const dataFormatada = new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
-    timeStyle: "short"
+    timeStyle: "short",
   }).format(new Date(agendamento.dataHora));
 
   const notificacaoId = crypto.randomUUID();
@@ -90,36 +87,37 @@ export async function criar(req: Request, res: Response) {
     mensagem: `Novo agendamento marcado para o dia ${dataFormatada} com o paciente ${agendamento.paciente.nome}.`,
     agendamentoId: agendamento.id,
     pacienteId: agendamento.pacienteId,
-    createdAt: new Date().toISOString()
-  }
+    createdAt: new Date().toISOString(),
+  };
 
-  await enviarNotificacaoIndividual(notificacaoId, req.user!.userId, agendamento.nutricionistaId, notificacaoData);
+  await enviarNotificacaoIndividual(
+    notificacaoId,
+    req.user!.userId,
+    agendamento.nutricionistaId,
+    notificacaoData,
+  );
   return res.status(201).json({ success: true, data: agendamento });
 }
 
 export async function editar(req: Request<{ id: string }>, res: Response) {
   const { id } = req.params;
   const clinicaId = getClinicaId(req);
-  
-  const agendamentoOriginal = await prisma.agendamento.findFirst({
-    where: { id, clinicaId },
-  });
-  if (!agendamentoOriginal) {
-    throw new AppError("Agendamento não encontrado", 404);
-  }
 
+  const agendamentoOriginal = await service.buscarAgendamentoPorId(id, clinicaId);
   const agendamento = await service.editarAgendamento(id, req.body, clinicaId);
 
   const dataFormatada = new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
-    timeStyle: "short"
+    timeStyle: "short",
   }).format(new Date(agendamento.dataHora));
 
   let titulo = "Agendamento atualizado";
   let mensagem = `Os detalhes do agendamento do paciente ${agendamento.paciente.nome} para o dia ${dataFormatada} foram atualizados.`;
 
   const statusMudou = req.body.status && agendamentoOriginal.status !== agendamento.status;
-  const dataMudou = req.body.dataHora && agendamentoOriginal.dataHora.getTime() !== agendamento.dataHora.getTime();
+  const dataMudou =
+    req.body.dataHora &&
+    agendamentoOriginal.dataHora.getTime() !== agendamento.dataHora.getTime();
 
   if (statusMudou && dataMudou) {
     mensagem = `O agendamento foi reagendado para ${dataFormatada} e o status alterado para ${agendamento.status}. Paciente: ${agendamento.paciente.nome}.`;
@@ -139,27 +137,29 @@ export async function editar(req: Request<{ id: string }>, res: Response) {
     mensagem,
     agendamentoId: agendamento.id,
     pacienteId: agendamento.pacienteId,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   };
 
-  await enviarNotificacaoIndividual(notificacaoId, req.user!.userId, agendamento.nutricionistaId, notificacaoData);
+  await enviarNotificacaoIndividual(
+    notificacaoId,
+    req.user!.userId,
+    agendamento.nutricionistaId,
+    notificacaoData,
+  );
 
   getIO().emit("agenda:atualizado", agendamento);
 
   return res.json({ success: true, data: agendamento });
 }
 
-export async function alterarStatus(
-  req: Request<{ id: string }>,
-  res: Response,
-) {
+export async function alterarStatus(req: Request<{ id: string }>, res: Response) {
   const { id } = req.params;
   const clinicaId = getClinicaId(req);
   const agendamento = await service.alterarStatusAgendamento(id, req.body, clinicaId);
 
   const dataFormatada = new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
-    timeStyle: "short"
+    timeStyle: "short",
   }).format(new Date(agendamento.dataHora));
   const notificacaoId = crypto.randomUUID();
   const notificacaoData = {
@@ -169,10 +169,15 @@ export async function alterarStatus(
     mensagem: getMensagemIntuitiva(agendamento.status, agendamento.paciente.nome, dataFormatada),
     agendamentoId: agendamento.id,
     pacienteId: agendamento.pacienteId,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   };
 
-  await enviarNotificacaoIndividual(notificacaoId, req.user!.userId, agendamento.nutricionistaId, notificacaoData);
+  await enviarNotificacaoIndividual(
+    notificacaoId,
+    req.user!.userId,
+    agendamento.nutricionistaId,
+    notificacaoData,
+  );
 
   getIO().emit("agenda:status", agendamento);
 
@@ -186,7 +191,7 @@ export async function excluir(req: Request<{ id: string }>, res: Response) {
 
   const dataFormatada = new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
-    timeStyle: "short"
+    timeStyle: "short",
   }).format(new Date(agendamento.dataHora));
   const notificacaoId = crypto.randomUUID();
   const notificacaoData = {
@@ -196,10 +201,15 @@ export async function excluir(req: Request<{ id: string }>, res: Response) {
     mensagem: `O agendamento do dia ${dataFormatada} foi cancelado/excluído. Paciente: ${agendamento.paciente.nome}.`,
     agendamentoId: agendamento.id,
     pacienteId: agendamento.pacienteId,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   };
 
-  await enviarNotificacaoIndividual(notificacaoId, req.user!.userId, agendamento.nutricionistaId, notificacaoData);
+  await enviarNotificacaoIndividual(
+    notificacaoId,
+    req.user!.userId,
+    agendamento.nutricionistaId,
+    notificacaoData,
+  );
 
   getIO().emit("agenda:excluido", { id });
 
@@ -211,37 +221,10 @@ export async function guiaTiss(req: Request<{ id: string }>, res: Response) {
   const clinicaId = getClinicaId(req);
   const { id } = req.params;
 
-  const agendamento = await prisma.agendamento.findFirst({
-    where: { id, clinicaId },
-    include: {
-      paciente: {
-        include: { convenio: true },
-      },
-      convenio: true,
-      nutricionista: { select: { id: true, nome: true, perfil: true } },
-      criadoPor: { select: { id: true, nome: true, perfil: true } },
-      clinica: {
-        select: {
-          id: true,
-          nome: true,
-          cnpj: true,
-          telefone: true,
-          email: true,
-          endereco: true,
-          logomarca: true,
-        },
-      },
-    },
-  });
-
-  if (!agendamento) throw new AppError('Agendamento não encontrado', 404);
+  const data = await service.obterDadosGuiaTiss(id, clinicaId);
 
   return res.json({
     success: true,
-    data: {
-      ...agendamento,
-      usuario: agendamento.nutricionista || agendamento.criadoPor,
-    },
+    data,
   });
 }
-

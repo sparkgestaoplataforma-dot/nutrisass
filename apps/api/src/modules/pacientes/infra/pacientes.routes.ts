@@ -5,10 +5,10 @@ import {
   createPacienteQuestionarioAvaliacaoSchema,
 } from "@nutricao/shared";
 
-import { validate } from "../../../shared/middlewares/validate.js";
-import { authMiddleware } from "../../../shared/middlewares/auth.js";
-import { clinicalGuard } from "../../../shared/middlewares/clinicalGuard.js";
-import { publicRateLimiter } from "../../../shared/middlewares/rateLimiter.js";
+import { validate } from "@/shared/middlewares/validate";
+import { authMiddleware } from "@/shared/middlewares/auth";
+import { clinicalGuard } from "@/shared/middlewares/clinicalGuard";
+import { publicRateLimiter } from "@/shared/middlewares/rateLimiter";
 import * as controller from "./pacientes.controller.js";
 
 const router = Router();

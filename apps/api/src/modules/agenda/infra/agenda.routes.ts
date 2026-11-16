@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { createAgendamentoSchema, updateAgendamentoSchema, updateStatusSchema } from '@nutricao/shared';
-import { validate } from '../../../shared/middlewares/validate.js';
-import { authMiddleware } from '../../../shared/middlewares/auth.js';
+import { validate } from "@/shared/middlewares/validate";
+import { authMiddleware } from "@/shared/middlewares/auth";
 import * as controller from './agenda.controller.js';
 
 const router = Router();

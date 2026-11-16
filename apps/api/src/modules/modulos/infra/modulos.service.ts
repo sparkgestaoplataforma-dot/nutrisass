@@ -3,8 +3,8 @@ import {
   UpdateModuloPerguntaInput,
   UpdateQuestionarioModuloInput,
 } from "@nutricao/shared";
-import { AppError } from "../../../shared/middlewares/errorHandler.js";
-import { prisma } from "../../../shared/providers/prisma.js";
+import { AppError } from "@/shared/middlewares/errorHandler";
+import { prisma } from "@/shared/providers/prisma";
 import { resolverQuestionarioParaMutacaoEstrutural } from "../../questionarios/infra/questionarios.service.js";
 
 function clampOrdem(ordem: number, max: number) {

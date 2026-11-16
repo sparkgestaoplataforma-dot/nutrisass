@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authMiddleware } from '../../../shared/middlewares/auth.js';
+import { authMiddleware } from "@/shared/middlewares/auth";
 import { getNotificacoesUsuario, limparNotificacoes, marcarNotificacaoComoLida, excluirNotificacaoUsuario, marcarTodasComoLidas } from "./notificacoes.controller.js";
 
 const notificacaoRoutes = Router();

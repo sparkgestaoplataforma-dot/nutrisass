@@ -45,7 +45,7 @@ describe("usuarios.service", () => {
   });
 
   describe("pegarTodosNutricionistas", () => {
-    it("deve retornar apenas usuários com perfil NUTRICIONISTA", async () => {
+    it("deve retornar usuários com perfil NUTRICIONISTA ou ADMIN da clínica", async () => {
       prismaMock.usuario.findMany.mockResolvedValue([
         { id: "nutri-1", nome: "Maria", perfil: "NUTRICIONISTA" },
       ] as any);
@@ -55,7 +55,7 @@ describe("usuarios.service", () => {
       expect(prismaMock.usuario.findMany).toHaveBeenCalledWith({
         where: {
           clinicaId: mockClinicaId,
-          perfil: "NUTRICIONISTA",
+          perfil: { in: ["NUTRICIONISTA", "ADMIN"] },
         },
         select: {
           id: true,

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authMiddleware } from '../../../shared/middlewares/auth.js';
+import { authMiddleware } from "@/shared/middlewares/auth";
 import { getDashboard } from './dashboard.controller.js';
 
 const dashboardRoutes = Router();

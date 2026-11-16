@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken';
-import { redisGet, redisSet } from '../../../shared/providers/redis.js';
-import { env } from '../../../config/env.js';
-import { AppError } from '../../../shared/middlewares/errorHandler.js';
-import { prisma } from '../../../shared/providers/prisma.js';
+import { redisGet, redisSet } from "@/shared/providers/redis";
+import { env } from "@/config/env";
+import { AppError } from "@/shared/middlewares/errorHandler";
+import { prisma } from "@/shared/providers/prisma";
 import type { TokenPayload, AuthTokens } from '@nutricao/shared';
 
 export async function refreshUseCase(refreshToken: string): Promise<AuthTokens> {

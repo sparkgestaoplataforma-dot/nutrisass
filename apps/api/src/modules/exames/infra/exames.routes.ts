@@ -5,10 +5,10 @@ import {
   registrarResultadoSchema,
   lancarExameExternoSchema,
 } from '@nutricao/shared';
-import { validate } from '../../../shared/middlewares/validate.js';
-import { authMiddleware } from '../../../shared/middlewares/auth.js';
-import { roleGuard } from '../../../shared/middlewares/auth.js';
-import { clinicalGuard } from '../../../shared/middlewares/clinicalGuard.js';
+import { validate } from "@/shared/middlewares/validate";
+import { authMiddleware } from "@/shared/middlewares/auth";
+import { roleGuard } from "@/shared/middlewares/auth";
+import { clinicalGuard } from "@/shared/middlewares/clinicalGuard";
 import * as controller from './exames.controller.js';
 
 const router = Router();

@@ -185,6 +185,18 @@ const clinicalEndpoints: ClinicalEndpoint[] = [
     dbCalls: () => [db.evolucaoClinica.findFirst, db.evolucaoClinica.update],
   },
   {
+    name: "DELETE /prontuario/evolucoes/:id",
+    method: "DELETE",
+    path: `/api/prontuario/evolucoes/${RECURSO_ID}`,
+    expectedStatus: 200,
+    arrange: () => {
+      mockOwned(db.evolucaoClinica.findFirst, { id: RECURSO_ID });
+      mockValue(db.evolucaoClinica.delete, {});
+    },
+    effect: () => db.evolucaoClinica.delete,
+    dbCalls: () => [db.evolucaoClinica.findFirst, db.evolucaoClinica.delete],
+  },
+  {
     name: "GET /prontuario/:pacienteId/medidas",
     method: "GET",
     path: `/api/prontuario/${PACIENTE_ID}/medidas`,
@@ -208,6 +220,19 @@ const clinicalEndpoints: ClinicalEndpoint[] = [
     },
     effect: () => db.medida.create,
     dbCalls: () => [db.paciente.findFirst, db.medida.create],
+  },
+  {
+    name: "PUT /prontuario/medidas/:id",
+    method: "PUT",
+    path: `/api/prontuario/medidas/${RECURSO_ID}`,
+    body: { peso: 71.5 },
+    expectedStatus: 200,
+    arrange: () => {
+      mockOwned(db.medida.findFirst, { id: RECURSO_ID });
+      mockValue(db.medida.update, { id: RECURSO_ID });
+    },
+    effect: () => db.medida.update,
+    dbCalls: () => [db.medida.findFirst, db.medida.update],
   },
   {
     name: "DELETE /prontuario/medidas/:id",

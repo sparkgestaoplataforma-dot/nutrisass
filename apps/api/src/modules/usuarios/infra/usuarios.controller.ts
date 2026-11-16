@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getClinicaId } from "../../../shared/middlewares/auth.js";
+import { getClinicaId } from "@/shared/middlewares/auth";
 import * as service from "./usuarios.service.js";
 
 export async function listar(req: Request, res: Response) {
