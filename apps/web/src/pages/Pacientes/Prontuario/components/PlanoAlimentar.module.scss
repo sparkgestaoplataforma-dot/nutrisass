@@ -767,8 +767,8 @@
 
 .alimentoRow {
   display: grid;
-  grid-template-columns: 1fr 80px 140px 70px 70px 70px 70px 32px;
-  min-width: 680px;
+  grid-template-columns: 1fr 76px 155px 62px 62px 62px 62px 58px 32px;
+  min-width: 720px;
   gap: $space-2;
   align-items: center;
   padding: $space-2 0;
@@ -1122,3 +1122,120 @@
 .modalSubmitBtn {
   @include btn;
 }
+
+// ==========================================
+// Calculadora de Gasto Energético (TMB/GET) e Macros (g/kg)
+// ==========================================
+
+.calcToggleRow {
+  @include flex-between;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin-bottom: $space-3;
+}
+
+.calcToggleBtn {
+  @include btn-ghost($primary);
+  font-size: $font-size-xs;
+  padding: $space-1 $space-3;
+  background: $primary-50;
+  border-color: rgba($primary, 0.3);
+  color: $primary-dark;
+  font-weight: $font-weight-semibold;
+
+  &:hover {
+    background: $primary-light;
+    border-color: $primary;
+  }
+}
+
+.calcPanel {
+  background: linear-gradient(135deg, #f8fafc, #f0fdf4);
+  border: 1px solid rgba($primary, 0.25);
+  border-radius: $radius-md;
+  padding: $space-4;
+  margin-bottom: $space-4;
+}
+
+.calcPanelHeader {
+  @include flex-between;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin-bottom: $space-3;
+  padding-bottom: $space-2;
+  border-bottom: 1px solid rgba($primary, 0.15);
+}
+
+.calcPanelTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $primary-dark;
+}
+
+.calcPanelBadge {
+  font-size: $font-size-2xs;
+  color: $gray-600;
+  background: $white;
+  padding: 2px 8px;
+  border-radius: $radius-full;
+  border: 1px solid $gray-200;
+}
+
+.calcGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: $space-3;
+  margin-bottom: $space-3;
+}
+
+.calcResultBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  background: $white;
+  border: 1px solid rgba($primary, 0.2);
+  border-radius: $radius-md;
+  padding: $space-3 $space-4;
+  margin-top: $space-2;
+}
+
+.calcResultMetrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-4;
+}
+
+.calcMetricBox {
+  display: flex;
+  flex-direction: column;
+
+  span {
+    font-size: $font-size-2xs;
+    color: $gray-500;
+    text-transform: uppercase;
+  }
+
+  strong {
+    font-size: $font-size-sm;
+    color: $gray-900;
+    font-weight: $font-weight-bold;
+  }
+}
+
+.metaSubHint {
+  font-size: 11px;
+  color: $primary-dark;
+  text-align: center;
+  font-weight: $font-weight-medium;
+  margin-top: 2px;
+}
+
+.refeicoesQuickBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin-top: $space-3;
+}
+

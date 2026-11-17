@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prisma } from "../../../shared/providers/prisma.js";
+import { prisma } from "@/shared/providers/prisma";
 
 export async function pegarDadosDashboard(
   clinicaId: string,

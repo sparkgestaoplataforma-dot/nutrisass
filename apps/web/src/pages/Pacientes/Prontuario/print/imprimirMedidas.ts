@@ -1,4 +1,11 @@
 import { escapeHtml, printDocument, renderTimbrado, type ClinicaTimbrado } from '@/utils/print';
+import {
+  calcularIMC,
+  classificarIMC,
+  calcularFaixaPesoIdeal,
+  calcularRCQ,
+  calcularRCE,
+} from '@/utils/nutricaoCalculos';
 
 export interface MedidaRegistro {
   id: string;
@@ -31,21 +38,6 @@ const MAX_COLUNAS = 6;
 function fmt(n: number | null | undefined, casas = 1) {
   if (n === null || n === undefined || Number.isNaN(n)) return '-';
   return n.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
-}
-
-function calcIMC(peso?: number | null, alturaCm?: number | null) {
-  if (!peso || !alturaCm) return null;
-  const m = alturaCm / 100;
-  return peso / (m * m);
-}
-
-function classificarIMC(imc: number) {
-  if (imc < 18.5) return 'Abaixo do peso';
-  if (imc < 25) return 'Peso adequado';
-  if (imc < 30) return 'Sobrepeso';
-  if (imc < 35) return 'Obesidade grau I';
-  if (imc < 40) return 'Obesidade grau II';
-  return 'Obesidade grau III';
 }
 
 function idade(dataNascimento?: string | null) {
@@ -95,7 +87,7 @@ export function imprimirMedidas(
     return `<tr><th>${escapeHtml(campo.label)} <small>(${campo.unidade})</small></th>${valores}${variacao}</tr>`;
   }).join('');
 
-  const imcs = registros.map((r) => calcIMC(r.peso, r.altura));
+  const imcs = registros.map((r) => calcularIMC(r.peso, r.altura));
   const linhaImc = imcs.some((v) => v !== null)
     ? `<tr class="imc"><th>IMC <small>(kg/m²)</small></th>${imcs.map((v) => `<td>${fmt(v)}</td>`).join('')}${
         mostrarVariacao
@@ -112,6 +104,12 @@ export function imprimirMedidas(
 
   const imcAtual = imcs[imcs.length - 1];
   const anos = idade(paciente.dataNascimento);
+  const imcClassificacao = imcAtual !== null ? classificarIMC(imcAtual, anos) : null;
+  const imcReferencia = anos !== null && anos >= 60 ? 'Lipschitz para idosos' : 'OMS para adultos';
+  const faixaPeso = calcularFaixaPesoIdeal(ultima.altura, anos);
+  const pesoAlvoMedio = faixaPeso ? (faixaPeso.min + faixaPeso.max) / 2 : null;
+  const rcq = calcularRCQ(ultima.cintura, ultima.quadril, paciente.sexo as any);
+  const rce = calcularRCE(ultima.cintura, ultima.altura);
   const sexo = paciente.sexo === 'MASCULINO' ? 'Masculino' : paciente.sexo === 'FEMININO' ? 'Feminino' : null;
 
   const body = `
@@ -139,12 +137,29 @@ export function imprimirMedidas(
       </tbody>
     </table>
 
-    ${
-      imcAtual !== null
-        ? `<div class="resumo">IMC atual: <strong>${fmt(imcAtual)}</strong> — ${classificarIMC(imcAtual)}
-           <small>(classificação OMS para adultos)</small></div>`
-        : ''
-    }
+    <div class="resumo">
+      ${
+        imcAtual !== null && imcClassificacao
+          ? `<div>IMC atual: <strong>${fmt(imcAtual)} kg/m²</strong> — ${escapeHtml(imcClassificacao)}
+             <small>(critério ${escapeHtml(imcReferencia)})</small></div>`
+          : ''
+      }
+      ${
+        faixaPeso && pesoAlvoMedio !== null
+          ? `<div>Faixa de Peso Ideal Estimada: <strong>${fmt(faixaPeso.min)} a ${fmt(faixaPeso.max)} kg</strong> <small>(alvo médio: ${fmt(pesoAlvoMedio)} kg)</small></div>`
+          : ''
+      }
+      ${
+        rcq
+          ? `<div>Relação Cintura-Quadril (RCQ): <strong>${fmt(rcq.valor, 2)}</strong> — Risco cardiovascular: <strong>${rcq.risco}</strong></div>`
+          : ''
+      }
+      ${
+        rce
+          ? `<div>Relação Cintura-Estatura (RCE): <strong>${fmt(rce.valor, 2)}</strong> — Risco cardiometabólico: <strong>${escapeHtml(rce.risco)}</strong></div>`
+          : ''
+      }
+    </div>
 
     ${medidas.length > MAX_COLUNAS ? `<p class="nota">Exibindo as ${MAX_COLUNAS} avaliações mais recentes de ${medidas.length}.</p>` : ''}
 
@@ -173,7 +188,7 @@ export function imprimirMedidas(
     .var { font-weight: 600; }
     .var.neg { color: #059669; }
     .var.pos { color: #b45309; }
-    .resumo { margin-top: 14px; font-size: 13px; }
+    .resumo { margin-top: 14px; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
     .resumo small { color: #6b7280; margin-left: 4px; }
     .nota { margin-top: 8px; font-size: 10px; color: #6b7280; }
     footer { margin-top: 64px; display: flex; justify-content: space-between; align-items: flex-end; }

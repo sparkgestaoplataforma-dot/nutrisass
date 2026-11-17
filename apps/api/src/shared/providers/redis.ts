@@ -3,25 +3,27 @@ import { env } from '../../config/env.js';
 
 let redis: Redis | null = null;
 
-try {
-  redis = new Redis(env.REDIS_URL, {
-    maxRetriesPerRequest: 3,
-    retryStrategy(times) {
-      if (times > 3) return null;
-      return Math.min(times * 200, 1000);
-    },
-  });
+if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+  try {
+    redis = new Redis(env.REDIS_URL, {
+      maxRetriesPerRequest: 3,
+      retryStrategy(times) {
+        if (times > 3) return null;
+        return Math.min(times * 200, 1000);
+      },
+    });
 
-  redis.on('error', (err) => {
-    console.error('[Redis] Erro de conexão:', err.message);
-  });
+    redis.on('error', (err) => {
+      console.error('[Redis] Erro de conexão:', err.message);
+    });
 
-  redis.on('connect', () => {
-    console.log('[Redis] Conectado com sucesso');
-  });
-} catch (err) {
-  console.error('[Redis] Falha ao inicializar:', err);
-  redis = null;
+    redis.on('connect', () => {
+      console.log('[Redis] Conectado com sucesso');
+    });
+  } catch (err) {
+    console.error('[Redis] Falha ao inicializar:', err);
+    redis = null;
+  }
 }
 
 export async function redisGet(key: string): Promise<string | null> {

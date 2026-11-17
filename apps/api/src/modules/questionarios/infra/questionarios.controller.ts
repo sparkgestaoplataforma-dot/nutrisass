@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import * as service from "./questionarios.service.js";
-import { getClinicaId } from "../../../shared/middlewares/auth.js";
-import { AppError } from "../../../shared/middlewares/errorHandler.js";
+import { getClinicaId } from "@/shared/middlewares/auth";
+import { AppError } from "@/shared/middlewares/errorHandler";
 
 import {
   CreateQuestionarioInput,

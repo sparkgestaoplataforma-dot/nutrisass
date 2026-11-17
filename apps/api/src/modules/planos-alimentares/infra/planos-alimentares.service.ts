@@ -1,5 +1,5 @@
-import { prisma } from "../../../shared/providers/prisma.js";
-import { AppError } from "../../../shared/middlewares/errorHandler.js";
+import { prisma } from "@/shared/providers/prisma";
+import { AppError } from "@/shared/middlewares/errorHandler";
 import { CreatePlanoAlimentarInput, UpdatePlanoAlimentarInput } from "@nutricao/shared";
 
 export async function criarPlanoAlimentar(

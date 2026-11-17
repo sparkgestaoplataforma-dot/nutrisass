@@ -9,8 +9,15 @@ import {
   Shield01Icon,
   PillIcon,
   ClipboardIcon,
+  PencilEdit01Icon,
+  Delete02Icon,
 } from '@hugeicons/core-free-icons';
-import { api } from '@/services/api';
+import {
+  listarEvolucoes,
+  criarEvolucao,
+  editarEvolucao,
+  excluirEvolucao,
+} from '@/services/prontuario';
 import type { CreateEvolucaoInput } from '@nutricao/shared';
 import styles from '../ProntuarioPage.module.scss';
 
@@ -53,41 +60,76 @@ const secoes = [
 
 export function EstadoClinicoTimeline({ pacienteId }: Props) {
   const [formAberto, setFormAberto] = useState(false);
+  const [editandoId, setEditandoId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: evolucoes = [] } = useQuery({
     queryKey: ['evolucoes', pacienteId],
-    queryFn: async () => {
-      const { data } = await api.get(`/prontuario/${pacienteId}/evolucoes`);
-      return data.data;
-    },
+    queryFn: () => listarEvolucoes(pacienteId),
   });
 
   const { register, handleSubmit, reset } = useForm<CreateEvolucaoInput>();
 
-  const mutation = useMutation({
+  const salvarMutation = useMutation({
     mutationFn: async (data: CreateEvolucaoInput) => {
-      return api.post(`/prontuario/${pacienteId}/evolucoes`, {
-        ...data,
-        pacienteId,
-      });
+      if (editandoId) {
+        return editarEvolucao(editandoId, data);
+      }
+      return criarEvolucao(pacienteId, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['evolucoes', pacienteId] });
       setFormAberto(false);
+      setEditandoId(null);
       reset();
     },
   });
 
-  // Consolidar evoluções por seção
+  const excluirMutation = useMutation({
+    mutationFn: async (id: string) => excluirEvolucao(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['evolucoes', pacienteId] });
+    },
+  });
+
+  function iniciarNovaEvolucao() {
+    setEditandoId(null);
+    reset({
+      estadoClinico: '',
+      aparelhoDigestivo: '',
+      antecedentesMorbidos: '',
+      medicamentos: '',
+      outros: '',
+    });
+    setFormAberto(true);
+  }
+
+  function iniciarEdicao(ev: any) {
+    setEditandoId(ev.id);
+    reset({
+      estadoClinico: ev.estadoClinico || '',
+      aparelhoDigestivo: ev.aparelhoDigestivo || '',
+      antecedentesMorbidos: ev.antecedentesMorbidos || '',
+      medicamentos: ev.medicamentos || '',
+      outros: ev.outros || '',
+    });
+    setFormAberto(true);
+  }
+
+  // Agrupar evoluções por seção preservando data e referência ao registro original
   const secaoData = secoes.map((secao) => {
-    const conteudos = evolucoes
-      .filter((ev: any) => ev[secao.key])
-      .map((ev: any) => ev[secao.key] as string);
+    const registros = evolucoes
+      .filter((ev: any) => ev[secao.key] && String(ev[secao.key]).trim())
+      .map((ev: any) => ({
+        id: ev.id as string,
+        texto: ev[secao.key] as string,
+        dataFormatada: new Date(ev.criadoEm || ev.data || Date.now()).toLocaleDateString('pt-BR'),
+        evolucao: ev,
+      }));
     return {
       ...secao,
-      conteudo: conteudos.join('\n'),
-      hasContent: conteudos.length > 0,
+      registros,
+      hasContent: registros.length > 0,
     };
   });
 
@@ -95,7 +137,13 @@ export function EstadoClinicoTimeline({ pacienteId }: Props) {
     <div>
       <button
         className={styles.novaEvolucaoBtn}
-        onClick={() => setFormAberto(!formAberto)}
+        onClick={() => {
+          if (formAberto && !editandoId) {
+            setFormAberto(false);
+          } else {
+            iniciarNovaEvolucao();
+          }
+        }}
       >
         <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} />
         Nova Evolução
@@ -104,9 +152,12 @@ export function EstadoClinicoTimeline({ pacienteId }: Props) {
       {formAberto && (
         <form
           className={styles.evolucaoForm}
-          onSubmit={handleSubmit((data) => mutation.mutate(data))}
+          onSubmit={handleSubmit((data) => salvarMutation.mutate(data))}
           style={{ marginBottom: '1.75rem' }}
         >
+          <h4 style={{ marginBottom: '0.75rem', fontSize: '0.875rem', fontWeight: 700 }}>
+            {editandoId ? 'Editar Evolução Clínica' : 'Nova Evolução Clínica'}
+          </h4>
           <div className={styles.formGrid}>
             <div className={styles.field}>
               <label>Sintomas / Estado Clínico</label>
@@ -135,6 +186,7 @@ export function EstadoClinicoTimeline({ pacienteId }: Props) {
               className={styles.cancelBtn}
               onClick={() => {
                 setFormAberto(false);
+                setEditandoId(null);
                 reset();
               }}
             >
@@ -143,9 +195,13 @@ export function EstadoClinicoTimeline({ pacienteId }: Props) {
             <button
               type="submit"
               className={styles.submitBtn}
-              disabled={mutation.isPending}
+              disabled={salvarMutation.isPending}
             >
-              {mutation.isPending ? 'Salvando...' : 'Salvar Evolução'}
+              {salvarMutation.isPending
+                ? 'Salvando...'
+                : editandoId
+                  ? 'Salvar Alterações'
+                  : 'Salvar Evolução'}
             </button>
           </div>
         </form>
@@ -166,12 +222,40 @@ export function EstadoClinicoTimeline({ pacienteId }: Props) {
               </div>
               <h4 className={styles.timelineLabel}>{secao.label}</h4>
               <div
-                className={`${styles.timelineContent} ${
-                  !secao.hasContent ? styles.timelineContentEmpty : ''
-                }`}
+                className={`${styles.timelineContent} ${!secao.hasContent ? styles.timelineContentEmpty : ''
+                  }`}
               >
                 {secao.hasContent ? (
-                  <p>{secao.conteudo}</p>
+                  secao.registros.map((reg: any) => (
+                    <div key={`${secao.key}-${reg.id}`} className={styles.timelineEntry}>
+                      <div className={styles.timelineEntryHeader}>
+                        <span className={styles.timelineEntryDate}>{reg.dataFormatada}</span>
+                        <div className={styles.timelineEntryActions}>
+                          <button
+                            type="button"
+                            className={styles.medidaEditBtn}
+                            title="Editar esta evolução"
+                            onClick={() => iniciarEdicao(reg.evolucao)}
+                          >
+                            <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={2} />
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.medidaActionBtn}
+                            title="Excluir esta evolução"
+                            onClick={() => {
+                              if (confirm('Excluir este registro de evolução clínica?')) {
+                                excluirMutation.mutate(reg.id);
+                              }
+                            }}
+                          >
+                            <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={2} />
+                          </button>
+                        </div>
+                      </div>
+                      <p>{reg.texto}</p>
+                    </div>
+                  ))
                 ) : (
                   <p>Nenhum registro</p>
                 )}

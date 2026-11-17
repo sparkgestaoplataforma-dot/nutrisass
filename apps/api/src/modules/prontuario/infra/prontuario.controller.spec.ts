@@ -1,5 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { listarEvolucoes, criarEvolucao, editarEvolucao, listarMedidas, criarMedida, excluirMedida } from "./prontuario.controller";
+import {
+  listarEvolucoes,
+  criarEvolucao,
+  editarEvolucao,
+  excluirEvolucao,
+  listarMedidas,
+  criarMedida,
+  editarMedida,
+  excluirMedida,
+} from "./prontuario.controller";
 import { prismaMock } from "@/shared/providers/__mocks__/prisma";
 import { AppError } from "@/shared/middlewares/errorHandler";
 
@@ -63,6 +72,25 @@ describe("prontuario.controller", () => {
       await expect(editarEvolucao(mockReq, mockRes)).rejects.toBeInstanceOf(AppError);
       expect(prismaMock.evolucaoClinica.update).not.toHaveBeenCalled();
     });
+
+    it("deve excluir evolução", async () => {
+      prismaMock.evolucaoClinica.findFirst.mockResolvedValue({ id: "item-1" } as any);
+      prismaMock.evolucaoClinica.delete.mockResolvedValue({} as any);
+      await excluirEvolucao(mockReq, mockRes);
+      expect(prismaMock.evolucaoClinica.findFirst).toHaveBeenCalledWith({
+        where: { id: "item-1", paciente: { clinicaId: "clinica-1" } },
+      });
+      expect(prismaMock.evolucaoClinica.delete).toHaveBeenCalledWith({
+        where: { id: "item-1" },
+      });
+      expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    });
+
+    it("não deve excluir evolução de outra clínica", async () => {
+      prismaMock.evolucaoClinica.findFirst.mockResolvedValue(null);
+      await expect(excluirEvolucao(mockReq, mockRes)).rejects.toBeInstanceOf(AppError);
+      expect(prismaMock.evolucaoClinica.delete).not.toHaveBeenCalled();
+    });
   });
 
   describe("Medidas", () => {
@@ -92,6 +120,31 @@ describe("prontuario.controller", () => {
       prismaMock.paciente.findFirst.mockResolvedValue(null);
       await expect(criarMedida(mockReq, mockRes)).rejects.toMatchObject({ statusCode: 404 });
       expect(prismaMock.medida.create).not.toHaveBeenCalled();
+    });
+
+    it("deve editar medida existente da mesma clínica", async () => {
+      mockReq.body = { peso: 74.5, cintura: 82, data: "2026-05-15" };
+      prismaMock.medida.findFirst.mockResolvedValue({ id: "item-1", pacienteId: "paciente-1" } as any);
+      prismaMock.medida.update.mockResolvedValue({ id: "item-1", peso: 74.5, cintura: 82 } as any);
+      await editarMedida(mockReq, mockRes);
+      expect(prismaMock.medida.findFirst).toHaveBeenCalledWith({
+        where: { id: "item-1", paciente: { clinicaId: "clinica-1" } },
+      });
+      expect(prismaMock.medida.update).toHaveBeenCalledWith({
+        where: { id: "item-1" },
+        data: expect.objectContaining({
+          peso: 74.5,
+          cintura: 82,
+          data: new Date("2026-05-15"),
+        }),
+      });
+      expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    });
+
+    it("não deve editar medida de outra clínica", async () => {
+      prismaMock.medida.findFirst.mockResolvedValue(null);
+      await expect(editarMedida(mockReq, mockRes)).rejects.toBeInstanceOf(AppError);
+      expect(prismaMock.medida.update).not.toHaveBeenCalled();
     });
 
     it("deve excluir medida", async () => {

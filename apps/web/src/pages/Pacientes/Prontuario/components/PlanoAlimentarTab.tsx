@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { PlusSignIcon, Restaurant01Icon } from "@hugeicons/core-free-icons";
+import { PlusSignIcon, Restaurant01Icon, Copy01Icon } from "@hugeicons/core-free-icons";
 import { listarPlanos, buscarPlano, criarPlano, atualizarPlano, deletarPlano, type PlanoAlimentarAPI } from "@/services/planoAlimentar";
 import type { CreatePlanoAlimentarInput } from "@nutricao/shared";
+import { calcularTotaisPlano, duplicarPlanoParaInput } from "@/utils/nutricaoCalculos";
 import { PlanoAlimentarView } from "./PlanoAlimentarView";
 import { PlanoAlimentarBuilder } from "./PlanoAlimentarBuilder";
 import { Skeleton } from "@/components/Loading/Skeleton";
@@ -54,6 +55,23 @@ export function PlanoAlimentarTab({ pacienteId, isNutricionista = false }: Props
     },
   });
 
+  const duplicarMutation = useMutation({
+    mutationFn: (plano: PlanoAlimentarAPI) => {
+      const payload = duplicarPlanoParaInput(plano);
+      return criarPlano(payload);
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["planos-alimentares", pacienteId] });
+      const novoId = res?.data?.id;
+      if (novoId) {
+        setSelectedId(novoId);
+        setMode("edit");
+      } else {
+        setMode("list");
+      }
+    },
+  });
+
   const atualizarMutation = useMutation({
     mutationFn: (data: CreatePlanoAlimentarInput) => atualizarPlano(selectedId!, data),
     onSuccess: () => {
@@ -78,13 +96,7 @@ export function PlanoAlimentarTab({ pacienteId, isNutricionista = false }: Props
   }
 
   function getTotalCalorias(plano: PlanoAlimentarAPI) {
-    let cal = 0;
-    for (const r of plano.refeicoes) {
-      const opc = r.opcoes[0];
-      if (!opc) continue;
-      for (const a of opc.alimentos) cal += a.calorias || 0;
-    }
-    return Math.round(cal);
+    return Math.round(calcularTotaisPlano(plano.refeicoes, "principal").cal);
   }
 
   // === VIEW MODE ===
@@ -94,6 +106,8 @@ export function PlanoAlimentarTab({ pacienteId, isNutricionista = false }: Props
         plano={planoDetalhe}
         onBack={() => { setSelectedId(null); setMode("list"); }}
         onEdit={() => setMode("edit")}
+        onDuplicate={() => duplicarMutation.mutate(planoDetalhe)}
+        isDuplicating={duplicarMutation.isPending}
         onDelete={() => deletarMutation.mutate()}
         isDeleting={deletarMutation.isPending}
         isNutricionista={isNutricionista}
@@ -165,9 +179,27 @@ export function PlanoAlimentarTab({ pacienteId, isNutricionista = false }: Props
             <div key={p.id} className={styles.planoCard} onClick={() => openView(p.id)}>
               <div className={styles.planoCardHeader}>
                 <span className={styles.planoCardTitle}>{p.titulo}</span>
-                <span className={styles.planoCardDate}>
-                  {new Date(p.criadoEm).toLocaleDateString("pt-BR")}
-                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                  {isNutricionista && (
+                    <button
+                      type="button"
+                      className={styles.pdfBtn}
+                      style={{ padding: "4px 10px", fontSize: "12px" }}
+                      title="Duplicar este plano para ajustar no retorno"
+                      disabled={duplicarMutation.isPending}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        duplicarMutation.mutate(p);
+                      }}
+                    >
+                      <HugeiconsIcon icon={Copy01Icon} size={13} strokeWidth={2} />
+                      <span>Duplicar</span>
+                    </button>
+                  )}
+                  <span className={styles.planoCardDate}>
+                    {new Date(p.criadoEm).toLocaleDateString("pt-BR")}
+                  </span>
+                </div>
               </div>
               <div className={styles.planoCardBadges}>
                 {p.objetivo && (

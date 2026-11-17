@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { onboardingSchema, updateClinicaSchema, alterarTipoSchema } from '@nutricao/shared';
-import { validate } from '../../../shared/middlewares/validate.js';
-import { authMiddleware, roleGuard } from '../../../shared/middlewares/auth.js';
+import { validate } from "@/shared/middlewares/validate";
+import { authMiddleware, roleGuard } from "@/shared/middlewares/auth";
 import * as controller from './clinica.controller.js';
 
 const clinicaRoutes = Router();

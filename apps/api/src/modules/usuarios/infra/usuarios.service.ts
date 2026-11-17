@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
-import { prisma } from "../../../shared/providers/prisma.js";
-import { AppError } from "../../../shared/middlewares/errorHandler.js";
+import { prisma } from "@/shared/providers/prisma";
+import { AppError } from "@/shared/middlewares/errorHandler";
 
 export async function pegarUsuarios(clinicaId: string) {
   const usuarios = await prisma.usuario.findMany({

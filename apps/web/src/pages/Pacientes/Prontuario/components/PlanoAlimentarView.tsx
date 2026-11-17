@@ -6,8 +6,10 @@ import {
   Delete02Icon,
   FileDownloadIcon,
   WavingHand02Icon,
+  Copy01Icon,
 } from "@hugeicons/core-free-icons";
 import type { PlanoAlimentarAPI } from "@/services/planoAlimentar";
+import { calcularTotaisAlimentos, calcularTotaisPlano } from "@/utils/nutricaoCalculos";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal/DeleteConfirmModal";
 import styles from "./PlanoAlimentar.module.scss";
 
@@ -15,6 +17,8 @@ interface Props {
   plano: PlanoAlimentarAPI;
   onBack: () => void;
   onEdit: () => void;
+  onDuplicate?: () => void;
+  isDuplicating?: boolean;
   onDelete: () => void;
   isDeleting?: boolean;
   isNutricionista?: boolean;
@@ -28,38 +32,25 @@ const OBJETIVO_LABELS: Record<string, string> = {
   OUTRO: "Outro",
 };
 
-export function PlanoAlimentarView({ plano, onBack, onEdit, onDelete, isDeleting, isNutricionista = false }: Props) {
+export function PlanoAlimentarView({
+  plano,
+  onBack,
+  onEdit,
+  onDuplicate,
+  isDuplicating,
+  onDelete,
+  isDeleting,
+  isNutricionista = false,
+}: Props) {
   // Track active option tab per refeição
   const [activeOpcoes, setActiveOpcoes] = useState<Record<string, number>>({});
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  // Calcula totais do dia inteiro
-  const totaisDiarios = useMemo(() => {
-    let cal = 0, prot = 0, carb = 0, gord = 0;
-    for (const ref of plano.refeicoes) {
-      // Soma a primeira opção de cada refeição para o total diário
-      const opcao = ref.opcoes[0];
-      if (!opcao) continue;
-      for (const al of opcao.alimentos) {
-        cal += al.calorias || 0;
-        prot += al.proteinas || 0;
-        carb += al.carboidratos || 0;
-        gord += al.gorduras || 0;
-      }
-    }
-    return { cal, prot, carb, gord };
-  }, [plano]);
-
-  function getOpcaoTotais(opcaoAlimentos: PlanoAlimentarAPI["refeicoes"][0]["opcoes"][0]["alimentos"]) {
-    let cal = 0, prot = 0, carb = 0, gord = 0;
-    for (const al of opcaoAlimentos) {
-      cal += al.calorias || 0;
-      prot += al.proteinas || 0;
-      carb += al.carboidratos || 0;
-      gord += al.gorduras || 0;
-    }
-    return { cal, prot, carb, gord };
-  }
+  // Calcula totais do dia inteiro de forma unificada (Opção Principal)
+  const totaisDiarios = useMemo(
+    () => calcularTotaisPlano(plano.refeicoes, "principal"),
+    [plano],
+  );
 
   function metaPercent(current: number, meta: number | null) {
     if (!meta || meta <= 0) return 0;
@@ -91,6 +82,17 @@ export function PlanoAlimentarView({ plano, onBack, onEdit, onDelete, isDeleting
             <button className={styles.editBtn} onClick={onEdit}>
               <HugeiconsIcon icon={PencilEdit01Icon} size={14} strokeWidth={2} />
               <span>Editar</span>
+            </button>
+          )}
+          {isNutricionista && onDuplicate && (
+            <button
+              className={styles.pdfBtn}
+              onClick={onDuplicate}
+              disabled={isDuplicating}
+              title="Criar uma cópia deste plano para ajustar no retorno"
+            >
+              <HugeiconsIcon icon={Copy01Icon} size={14} strokeWidth={2} />
+              <span>{isDuplicating ? "Duplicando..." : "Duplicar"}</span>
             </button>
           )}
           {isNutricionista && (
@@ -198,7 +200,7 @@ export function PlanoAlimentarView({ plano, onBack, onEdit, onDelete, isDeleting
       {plano.refeicoes.map((ref) => {
         const activeIdx = activeOpcoes[ref.id] || 0;
         const opcaoAtiva = ref.opcoes[activeIdx] || ref.opcoes[0];
-        const totais = opcaoAtiva ? getOpcaoTotais(opcaoAtiva.alimentos) : { cal: 0, prot: 0, carb: 0, gord: 0 };
+        const totais = opcaoAtiva ? calcularTotaisAlimentos(opcaoAtiva.alimentos) : { cal: 0, prot: 0, carb: 0, gord: 0, fibra: 0 };
 
         return (
           <div key={ref.id} className={styles.refeicaoViewCard}>
@@ -275,7 +277,7 @@ export function PlanoAlimentarView({ plano, onBack, onEdit, onDelete, isDeleting
       {/* Total Diário */}
       <div className={styles.totalDiarioCard}>
         <p className={styles.totalDiarioTitle}>Total Diário (Opção Principal)</p>
-        <div className={styles.totalDiarioGrid}>
+        <div className={styles.totalDiarioGrid} style={{ gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))" }}>
           <div className={styles.totalDiarioItem}>
             <div className={styles.totalDiarioValue}>{Math.round(totaisDiarios.cal)}</div>
             <div className={styles.totalDiarioLabel}>Calorias (kcal)</div>
@@ -291,6 +293,10 @@ export function PlanoAlimentarView({ plano, onBack, onEdit, onDelete, isDeleting
           <div className={styles.totalDiarioItem}>
             <div className={styles.totalDiarioValue}>{totaisDiarios.gord.toFixed(1)}</div>
             <div className={styles.totalDiarioLabel}>Gorduras (g)</div>
+          </div>
+          <div className={styles.totalDiarioItem}>
+            <div className={styles.totalDiarioValue}>{totaisDiarios.fibra.toFixed(1)}</div>
+            <div className={styles.totalDiarioLabel}>Fibras (g)</div>
           </div>
         </div>
         {plano.recomendacaoAguaMl && (

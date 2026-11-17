@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { validate } from "../../../shared/middlewares/validate.js";
-import { authMiddleware, roleGuard } from "../../../shared/middlewares/auth.js";
-import { publicRateLimiter } from "../../../shared/middlewares/rateLimiter.js";
+import { validate } from "@/shared/middlewares/validate";
+import { authMiddleware, roleGuard } from "@/shared/middlewares/auth";
+import { publicRateLimiter } from "@/shared/middlewares/rateLimiter";
 import * as controller from "./questionarios.controller.js";
 import {
   createQuestionarioSchema,

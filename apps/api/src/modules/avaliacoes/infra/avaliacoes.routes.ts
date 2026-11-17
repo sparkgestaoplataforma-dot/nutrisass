@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { authMiddleware } from "../../../shared/middlewares/auth.js";
-import { clinicalGuard } from "../../../shared/middlewares/clinicalGuard.js";
+import { authMiddleware } from "@/shared/middlewares/auth";
+import { clinicalGuard } from "@/shared/middlewares/clinicalGuard";
 import * as controller from "./avaliacoes.controller.js";
 
 const router = Router();
