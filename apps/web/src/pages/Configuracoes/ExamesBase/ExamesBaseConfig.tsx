@@ -10,7 +10,12 @@ import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
 } from '@hugeicons/core-free-icons';
-import { api } from '@/services/api';
+import {
+  listarExamesBasePaginado,
+  criarExameBase,
+  editarExameBase,
+  excluirExameBase,
+} from '@/services/exames';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { CreateExameBaseInput } from '@nutricao/shared';
 import styles from '../ConfigPage.module.scss';
@@ -43,15 +48,12 @@ export function ExamesBaseConfig() {
 
   const { data: responseData, isLoading, isFetching } = useQuery({
     queryKey: ['exames-base-config', buscaDebounced, page],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: '10',
-        ...(buscaDebounced.trim() ? { search: buscaDebounced.trim() } : {}),
-      });
-      const { data } = await api.get(`/exames/base?${params}`);
-      return data;
-    },
+    queryFn: () =>
+      listarExamesBasePaginado({
+        page,
+        limit: 10,
+        search: buscaDebounced,
+      }),
   });
 
   const isSearching = isDebouncing || isLoading || isFetching;
@@ -69,8 +71,8 @@ export function ExamesBaseConfig() {
         valorMinimo: data.valorMinimo ? Number(data.valorMinimo) : undefined,
         valorMaximo: data.valorMaximo ? Number(data.valorMaximo) : undefined,
       };
-      if (editandoId) return api.put(`/exames/base/${editandoId}`, payload);
-      return api.post('/exames/base', payload);
+      if (editandoId) return editarExameBase(editandoId, payload);
+      return criarExameBase(payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exames-base-config'] });
@@ -81,7 +83,7 @@ export function ExamesBaseConfig() {
   });
 
   const excluirMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/exames/base/${id}`),
+    mutationFn: (id: string) => excluirExameBase(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exames-base-config'] });
       queryClient.invalidateQueries({ queryKey: ['exames-base'] });

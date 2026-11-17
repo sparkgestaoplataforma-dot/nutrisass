@@ -8,8 +8,7 @@ import {
   Delete02Icon,
   CheckListIcon,
 } from "@hugeicons/core-free-icons";
-import { listarPacientes } from "@/services/pacientes";
-import { api } from "@/services/api";
+import { listarPacientes, excluirPaciente } from "@/services/pacientes";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuthStore } from "@/stores/authStore";
 import { QuestionarioSelectorModal } from "@/components/QuestionarioSelectorModal/QuestionarioSelectorModal";
@@ -50,7 +49,7 @@ export function PacientesPage() {
   const isSearching = isDebouncing || isLoading || isFetching;
 
   const excluirMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/pacientes/${id}`),
+    mutationFn: (id: string) => excluirPaciente(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pacientes"] });
       setIsExcluirModalOpen(false);

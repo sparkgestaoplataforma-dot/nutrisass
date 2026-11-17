@@ -12,10 +12,9 @@ import {
   CheckmarkCircle02Icon,
 } from '@hugeicons/core-free-icons';
 import { createAgendamentoSchema, type CreateAgendamentoInput, type TokenPayload } from '@nutricao/shared';
-import { listarPacientes } from '@/services/pacientes';
+import { listarPacientes, criarPaciente } from '@/services/pacientes';
 import { listarApenasNutricionistas } from '@/services/usuario';
 import { listarConvenios } from '@/services/convenios';
-import { api } from '@/services/api';
 import type { AgendamentoResponse } from '@/services/agenda';
 import { formatarParaInputDateTime } from '@/utils/date';
 import { formatarTelefone, limparTelefone, obterMascaraTelefone } from '@/utils/phone';
@@ -193,8 +192,7 @@ export function AgendamentoModal({
     try {
       setSalvandoPaciente(true);
       setErroNovoPaciente(null);
-      const { data } = await api.post('/pacientes', payload);
-      const criado = data.data as { id: string; nome: string };
+      const criado = (await criarPaciente(payload)) as { id: string; nome: string };
 
       // Deixa o paciente recém-criado selecionado; se o agendamento falhar, não duplica o cadastro
       queryClient.setQueryData(['pacientes-select', ''], (prev: any) =>
@@ -555,7 +553,7 @@ export function AgendamentoModal({
                   <option value="" >Selecione um nutricionista</option>
                   {nutricionistasData?.map((profissional) => (
                     <option key={profissional.id} value={profissional.id}>
-                          {profissional.nome}
+                      {profissional.nome}
                     </option>
                   ))}
                 </select>

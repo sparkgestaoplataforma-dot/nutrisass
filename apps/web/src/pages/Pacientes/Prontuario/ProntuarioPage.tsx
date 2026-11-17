@@ -37,7 +37,6 @@ import {
 import { Skeleton } from "@/components/Loading/Skeleton";
 import { SkeletonObservacao } from "@/components/Loading/skeletons/SkeletonObservacao";
 import { EmptyState } from "@/components/Loading/EmptyState";
-import { api } from "@/services/api";
 import { getPacientePorId, type Paciente } from "@/services/pacientes";
 import { useAuthStore } from "@/stores/authStore";
 import { useClinicalAccess } from "@/hooks/useClinicalAccess";

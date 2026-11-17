@@ -9,7 +9,7 @@ import {
   createPacienteSchema,
   type CreatePacienteInput,
 } from "@nutricao/shared";
-import { api } from "@/services/api";
+import { getPacientePorId, criarPaciente, editarPaciente } from "@/services/pacientes";
 import { listarConvenios } from "@/services/convenios";
 import { buscarEnderecoPorCep } from "@/services/cep";
 import styles from "./PacienteFormPage.module.scss";
@@ -29,10 +29,7 @@ export function PacienteFormPage() {
 
   const { data: pacienteData } = useQuery({
     queryKey: ["paciente", id],
-    queryFn: async () => {
-      const { data } = await api.get(`/pacientes/${id}`);
-      return data.data;
-    },
+    queryFn: () => getPacientePorId(id!),
     enabled: isEditing,
   });
 
@@ -147,9 +144,9 @@ export function PacienteFormPage() {
   const mutation = useMutation({
     mutationFn: async (data: CreatePacienteInput) => {
       if (isEditing) {
-        return api.put(`/pacientes/${id}`, data);
+        return editarPaciente(id!, data);
       }
-      return api.post("/pacientes", data);
+      return criarPaciente(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pacientes"] });

@@ -11,7 +11,12 @@ import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
 } from '@hugeicons/core-free-icons';
-import { api } from '@/services/api';
+import {
+  listarAlimentosPaginado,
+  criarAlimento,
+  editarAlimento,
+  excluirAlimento,
+} from '@/services/alimentos';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Skeleton } from '@/components/Loading/Skeleton';
 import styles from './AlimentosPage.module.scss';
@@ -57,16 +62,18 @@ export function AlimentosPage() {
   const [page, setPage] = useState(1);
   const [formAberto, setFormAberto] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
-  
+
   const queryClient = useQueryClient();
 
   const { data, isLoading, isFetching } = useQuery<AlimentosResponse>({
     queryKey: ['alimentos-page', tab, page, buscaDebounced],
-    queryFn: async () => {
-      const tipo = tab === 'taco' ? 'taco' : 'custom';
-      const { data } = await api.get(`/alimentos?tipo=${tipo}&page=${page}&limit=20&q=${buscaDebounced}`);
-      return data;
-    },
+    queryFn: () =>
+      listarAlimentosPaginado({
+        tipo: tab === 'taco' ? 'taco' : 'custom',
+        page,
+        limit: 20,
+        q: buscaDebounced,
+      }),
   });
 
   const isSearching = isDebouncing || isLoading || isFetching;
@@ -92,8 +99,8 @@ export function AlimentosPage() {
           quantidadeEmGramas: Number(m.quantidadeEmGramas),
         })) || [],
       };
-      if (editandoId) return api.put(`/alimentos/${editandoId}`, payload);
-      return api.post('/alimentos', payload);
+      if (editandoId) return editarAlimento(editandoId, payload);
+      return criarAlimento(payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alimentos-page'] });
@@ -102,7 +109,7 @@ export function AlimentosPage() {
   });
 
   const excluirMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/alimentos/${id}`),
+    mutationFn: (id: string) => excluirAlimento(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alimentos-page'] });
     },
@@ -244,9 +251,9 @@ export function AlimentosPage() {
                   <label>Adicionar medida rápida:</label>
                   <div className={styles.quickMeasuresGrid}>
                     {UNIDADES_SUGERIDAS.map(unidade => (
-                      <button 
+                      <button
                         key={unidade}
-                        type="button" 
+                        type="button"
                         onClick={() => appendMedida({ nome: unidade, quantidadeEmGramas: '' })}
                         className={styles.quickMeasureBtn}
                       >
@@ -261,31 +268,31 @@ export function AlimentosPage() {
                 {medidasFields.length > 0 && (
                   <div className={styles.medidasConfiguredList}>
                     <label>Medidas configuradas:</label>
-                    
+
                     <div className={styles.medidasListWrapper}>
                       {medidasFields.map((field, index) => (
                         <div key={field.id} className={styles.medidaRow}>
                           <div className={styles.medidaInputs}>
                             <div className={`${styles.field} ${styles.medidaInputNome}`}>
                               <label>Nome da Medida</label>
-                              <input 
+                              <input
                                 list="unidades-sugeridas"
-                                {...register(`medidasCaseiras.${index}.nome` as const, { required: true })} 
-                                placeholder="Ex: colher de sopa, unidade..." 
+                                {...register(`medidasCaseiras.${index}.nome` as const, { required: true })}
+                                placeholder="Ex: colher de sopa, unidade..."
                               />
                             </div>
                             <div className={`${styles.field} ${styles.medidaInputEquiv}`}>
                               <label>Equiv. (g ou ml)</label>
-                              <input 
-                                type="number" step="0.01" min="0" 
-                                {...register(`medidasCaseiras.${index}.quantidadeEmGramas` as const, { required: true })} 
-                                placeholder="Ex: 15" 
+                              <input
+                                type="number" step="0.01" min="0"
+                                {...register(`medidasCaseiras.${index}.quantidadeEmGramas` as const, { required: true })}
+                                placeholder="Ex: 15"
                               />
                             </div>
                           </div>
-                          <button 
-                            type="button" 
-                            onClick={() => removeMedida(index)} 
+                          <button
+                            type="button"
+                            onClick={() => removeMedida(index)}
                             className={styles.medidaRemoveBtn}
                             title="Remover medida"
                           >
@@ -296,12 +303,12 @@ export function AlimentosPage() {
                     </div>
                   </div>
                 )}
-                
+
                 {/* Add custom blank measure button */}
                 <div className={`${styles.addCustomMeasureContainer} ${medidasFields.length > 0 ? styles.hasItems : ''}`}>
-                  <button 
-                    type="button" 
-                    onClick={() => appendMedida({ nome: '', quantidadeEmGramas: '' })} 
+                  <button
+                    type="button"
+                    onClick={() => appendMedida({ nome: '', quantidadeEmGramas: '' })}
                     className={styles.addCustomMeasureBtn}
                   >
                     <HugeiconsIcon icon={PlusSignIcon} size={14} strokeWidth={2} />
@@ -309,7 +316,7 @@ export function AlimentosPage() {
                   </button>
                 </div>
               </div>
-              
+
               <datalist id="unidades-sugeridas">
                 {UNIDADES_SUGERIDAS.map((u) => (
                   <option key={u} value={u} />
@@ -442,7 +449,7 @@ export function AlimentosPage() {
               </tbody>
             </table>
           </div>
-          
+
           {/* Pagination Footer */}
           <div className={styles.footer}>
             <span className={styles.pageInfo}>
@@ -450,16 +457,16 @@ export function AlimentosPage() {
             </span>
             {data && data.totalPages > 1 && (
               <div className={styles.pagination}>
-                <button 
-                  className={styles.pageBtn} 
+                <button
+                  className={styles.pageBtn}
                   disabled={page === 1}
                   onClick={() => setPage(p => p - 1)}
                 >
                   <HugeiconsIcon icon={ArrowLeft01Icon} size={16} />
                 </button>
                 <span className={styles.pageInfo}>Página {page} de {data.totalPages}</span>
-                <button 
-                  className={styles.pageBtn} 
+                <button
+                  className={styles.pageBtn}
                   disabled={page === data.totalPages}
                   onClick={() => setPage(p => p + 1)}
                 >

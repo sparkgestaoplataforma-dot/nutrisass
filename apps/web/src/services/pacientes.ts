@@ -95,3 +95,19 @@ export async function buscarNomePacientePublico(id: string) {
 
   return data.data?.nome ?? "";
 }
+
+export async function criarPaciente(payload: Record<string, any>) {
+  const { data } = await api.post("/pacientes", payload);
+  return data.data as Paciente;
+}
+
+export async function editarPaciente(id: string, payload: Record<string, any>) {
+  const { data } = await api.put(`/pacientes/${id}`, payload);
+  return data.data as Paciente;
+}
+
+export async function excluirPaciente(id: string) {
+  const { data } = await api.delete(`/pacientes/${id}`);
+  return data;
+}
+

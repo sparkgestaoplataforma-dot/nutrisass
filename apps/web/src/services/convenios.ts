@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { ApiResponse } from '@nutricao/shared';
+import type { ApiResponse, CreateConvenioInput } from '@nutricao/shared';
 
 export interface ConvenioItem {
   id: string;
@@ -20,4 +20,39 @@ export async function listarConvenios(params?: ListarConveniosParams) {
     params: { limit: 100, ...params },
   });
   return res.data!;
+}
+
+export async function listarConveniosPaginado(params: {
+  page: number;
+  limit?: number;
+  search?: string;
+}) {
+  const { page, limit = 10, search } = params;
+  const query = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+    ...(search && search.trim() ? { search: search.trim() } : {}),
+  });
+  const { data } = await api.get(`/convenios?${query}`);
+  return data;
+}
+
+export async function criarConvenio(
+  payload: CreateConvenioInput & { logomarca?: string | null },
+) {
+  const { data } = await api.post('/convenios', payload);
+  return data.data;
+}
+
+export async function editarConvenio(
+  id: string,
+  payload: Partial<CreateConvenioInput> & { logomarca?: string | null },
+) {
+  const { data } = await api.put(`/convenios/${id}`, payload);
+  return data.data;
+}
+
+export async function excluirConvenio(id: string) {
+  const { data } = await api.delete(`/convenios/${id}`);
+  return data;
 }

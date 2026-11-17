@@ -7,10 +7,9 @@ import {
   CheckListIcon,
   Invoice01Icon,
 } from "@hugeicons/core-free-icons";
-import { api } from "@/services/api";
 import { imprimirGuiaTiss, type GuiaTissData } from "../print/imprimirGuiaTiss";
 import { StatusBadge } from "./StatusBadge";
-import type { AgendamentoResponse } from "@/services/agenda";
+import { obterGuiaTiss, type AgendamentoResponse } from "@/services/agenda";
 import { QuestionarioSelectorModal } from "@/components/QuestionarioSelectorModal/QuestionarioSelectorModal";
 import { useIsAutonomo } from "@/hooks/useIsAutonomo";
 import styles from "./TabelaAgenda.module.scss";
@@ -44,10 +43,8 @@ export function TabelaAgenda({
   async function handleGerarGuiaTiss(ag: AgendamentoResponse) {
     try {
       setGerandoTissId(ag.id);
-      const { data } = await api.get<{ success: boolean; data: GuiaTissData }>(
-        `/agendamentos/${ag.id}/guia-tiss`,
-      );
-      imprimirGuiaTiss(data.data);
+      const guia = await obterGuiaTiss<GuiaTissData>(ag.id);
+      imprimirGuiaTiss(guia);
     } catch (err) {
       console.error("Erro ao gerar Guia TISS:", err);
       alert("Não foi possível gerar a Guia TISS para este agendamento.");

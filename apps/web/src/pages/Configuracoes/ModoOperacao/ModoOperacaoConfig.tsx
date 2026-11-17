@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { api } from '@/services/api';
 import { useAuthStore } from '@/stores/authStore';
-import { getMe } from '@/services/clinica';
+import { getMe, alterarTipoClinica } from '@/services/clinica';
 import { useIsAutonomo } from '@/hooks/useIsAutonomo';
 import styles from './ModoOperacaoConfig.module.scss';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -14,9 +13,9 @@ export function ModoOperacaoConfig() {
   const [errorMsg, setErrorMsg] = useState('');
 
   const mutation = useMutation({
-    mutationFn: (tipo: 'AUTONOMO' | 'CLINICA') => api.put('/clinica/tipo', { tipo }),
+    mutationFn: (tipo: 'AUTONOMO' | 'CLINICA') => alterarTipoClinica(tipo),
     onSuccess: async (res) => {
-      setTokens(res.data.data.tokens.accessToken, res.data.data.tokens.refreshToken);
+      setTokens(res.tokens.accessToken, res.tokens.refreshToken);
       const user = await getMe();
       setUser(user);
       window.location.reload();
@@ -55,7 +54,7 @@ export function ModoOperacaoConfig() {
           </div>
           <p>Ideal para nutricionistas que trabalham sozinhos. Filtros simplificados e agenda direta.</p>
           {!isAutonomo && (
-            <button 
+            <button
               className={styles.actionBtn}
               onClick={() => handleMigrar('AUTONOMO')}
               disabled={mutation.isPending}
@@ -73,7 +72,7 @@ export function ModoOperacaoConfig() {
           </div>
           <p>Ideal para clínicas com múltiplos profissionais, secretárias e gestão avançada.</p>
           {isAutonomo && (
-            <button 
+            <button
               className={styles.actionBtn}
               onClick={() => handleMigrar('CLINICA')}
               disabled={mutation.isPending}

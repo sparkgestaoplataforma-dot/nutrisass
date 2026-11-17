@@ -8,6 +8,9 @@ on:
       - "feat/**"
       - "fix/**"
       - "refactor/**"
+      - "hotfix/**"
+      - "test/**"
+      - "chore/**"
   pull_request:
     branches:
       - main
@@ -32,6 +35,21 @@ jobs:
       PORT: "3333"
 
     steps:
+      - name: Enforce GitFlow Branch Policy (PRs to main only from develop or hotfix/*)
+        if: github.event_name == 'pull_request'
+        run: |
+          BASE_BRANCH="${{ github.base_ref }}"
+          HEAD_BRANCH="${{ github.head_ref }}"
+          echo "Validando GitFlow: ${HEAD_BRANCH} -> ${BASE_BRANCH}"
+
+          if [ "$BASE_BRANCH" = "main" ]; then
+            if [ "$HEAD_BRANCH" != "develop" ] && [[ ! "$HEAD_BRANCH" =~ ^hotfix/ ]]; then
+              echo "::error::Violação de GitFlow: Pull Requests para a branch 'main' só são permitidos a partir da branch 'develop' ou de uma branch 'hotfix/*'. Altere a branch base deste PR para 'develop'."
+              exit 1
+            fi
+          fi
+          echo "GitFlow válido!"
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -58,4 +76,3 @@ jobs:
 
       - name: Build Production Bundles
         run: npm run build
-
