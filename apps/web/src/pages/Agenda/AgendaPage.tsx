@@ -8,7 +8,7 @@ import {
   CancelCircleIcon,
 } from '@hugeicons/core-free-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/services/api';
+import { listarApenasNutricionistas } from '@/services/usuario';
 import {
   useAgendaDia,
   useCriarAgendamento,
@@ -31,7 +31,7 @@ function formatDate(date: Date) {
   return date.toLocaleDateString('sv-SE');
 }
 export function AgendaPage() {
-  const {user} = useAuthStore();
+  const { user } = useAuthStore();
   const isAutonomo = useIsAutonomo();
 
   const [dataSelecionada, setDataSelecionada] = useState(formatDate(new Date()));
@@ -55,14 +55,11 @@ export function AgendaPage() {
   const [conflictModalOpen, setConflictModalOpen] = useState(false);
   const [conflictTitle, setConflictTitle] = useState("");
   const [conflictDescription, setConflictDescription] = useState("");
-  const [onConfirmConflict, setOnConfirmConflict] = useState<() => void>(() => {});
+  const [onConfirmConflict, setOnConfirmConflict] = useState<() => void>(() => { });
 
   const { data: nutricionistas = [] } = useQuery({
     queryKey: ['nutricionistas-list', user?.clinicaId],
-    queryFn: async () => {
-      const { data } = await api.get(`/usuarios/nutricionistas/clinicaId/${user?.clinicaId}`);
-      return data.data;
-    },
+    queryFn: () => listarApenasNutricionistas(user!.clinicaId),
     enabled: !!user?.clinicaId,
   });
 
@@ -100,11 +97,11 @@ export function AgendaPage() {
       }
       const errorMessage = error.response?.data?.message || error.message || "";
       if (errorMessage.includes("Já existe um agendamento ativo")) {
-        const targetNutriId = isEdit 
-          ? (variables.nutricionistaId || agendamentoEditando?.nutricionistaId) 
+        const targetNutriId = isEdit
+          ? (variables.nutricionistaId || agendamentoEditando?.nutricionistaId)
           : variables.nutricionistaId;
         const nutricionistaNome = nutricionistas.find((n: any) => n.id === targetNutriId)?.nome || "o nutricionista";
-        
+
         let horaFormatada = "";
         try {
           const date = new Date(variables.dataHora);
@@ -242,10 +239,10 @@ export function AgendaPage() {
           >
             Hoje
           </button>
-          
+
           {!isAutonomo && (
             <div className={styles.nutriFilter}>
-              <select 
+              <select
                 id="nutricionista-filter"
                 className={styles.nutriSelect}
                 value={nutricionistaId}

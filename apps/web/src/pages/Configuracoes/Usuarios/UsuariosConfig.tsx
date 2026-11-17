@@ -3,7 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { PlusSignIcon, PencilEdit01Icon, Delete02Icon } from '@hugeicons/core-free-icons';
-import { api } from '@/services/api';
+import {
+  listarUsuarios,
+  criarUsuario,
+  editarUsuario,
+  excluirUsuario,
+} from '@/services/usuario';
 import type { CreateUsuarioInput } from '@nutricao/shared';
 import styles from '../ConfigPage.module.scss';
 
@@ -20,18 +25,15 @@ export function UsuariosConfig() {
 
   const { data: usuarios = [] } = useQuery({
     queryKey: ['usuarios-config'],
-    queryFn: async () => {
-      const { data } = await api.get('/usuarios');
-      return data.data;
-    },
+    queryFn: () => listarUsuarios(),
   });
 
   const { register, handleSubmit, reset } = useForm<CreateUsuarioInput>();
 
   const mutation = useMutation({
     mutationFn: async (data: CreateUsuarioInput) => {
-      if (editandoId) return api.put(`/usuarios/${editandoId}`, data);
-      return api.post('/usuarios', data);
+      if (editandoId) return editarUsuario(editandoId, data);
+      return criarUsuario(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['usuarios-config'] });
@@ -40,7 +42,7 @@ export function UsuariosConfig() {
   });
 
   const excluirMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/usuarios/${id}`),
+    mutationFn: (id: string) => excluirUsuario(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['usuarios-config'] });
     },

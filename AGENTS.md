@@ -75,12 +75,14 @@ Todo desenvolvimento de feature ou correção de bug segue o ciclo **Red → Gre
 
 ---
 
-## 5. Convenções de Git, Branches e Commits
-- **Branches**:
-  - `main`: Branch de produção protegida (apenas via PR com CI verde).
-  - `feat/<modulo>-<descricao>`: Novas funcionalidades.
-  - `fix/<modulo>-<descricao>`: Correções de bugs.
-  - `refactor/<modulo>-<descricao>`: Refatorações arquiteturais sem mudança de comportamento externo.
+## 5. Convenções de Git, Branches (GitFlow) e Commits
+- **Branches (GitFlow)**:
+  - `main`: Branch de produção protegida (só aceita PRs vindos de `develop` ou `hotfix/*`, validado pelo CI).
+  - `develop`: Branch de integração contínua. Toda nova branch de desenvolvimento deve sair da `develop` e fazer merge na `develop`.
+  - `feat/<modulo>-<descricao>`: Novas funcionalidades (PR para `develop`).
+  - `fix/<modulo>-<descricao>`: Correções de bugs (PR para `develop`).
+  - `refactor/<modulo>-<descricao>`: Refatorações arquiteturais sem mudança de comportamento externo (PR para `develop`).
+  - `hotfix/<descricao>`: Correções emergenciais em produção (única que pode abrir PR direto para `main` além da `develop`).
 - **Conventional Commits**:
   - Formato: `<tipo>(<escopo>): <descrição curta no imperativo>`
   - Exemplos: `feat(plano-alimentar): adiciona calculadora de GET por g/kg`, `refactor(prontuario): extrai prontuario.service do controller`.

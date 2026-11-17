@@ -10,7 +10,12 @@ import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
 } from '@hugeicons/core-free-icons';
-import { api } from '@/services/api';
+import {
+  listarConveniosPaginado,
+  criarConvenio,
+  editarConvenio,
+  excluirConvenio,
+} from '@/services/convenios';
 import { useAuthStore } from '@/stores/authStore';
 import { useIsAutonomo } from '@/hooks/useIsAutonomo';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -48,15 +53,12 @@ export function ConveniosConfig() {
 
   const { data: responseData, isLoading, isFetching } = useQuery({
     queryKey: ['convenios-config', buscaDebounced, page],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: '10',
-        ...(buscaDebounced.trim() ? { search: buscaDebounced.trim() } : {}),
-      });
-      const { data } = await api.get(`/convenios?${params}`);
-      return data;
-    },
+    queryFn: () =>
+      listarConveniosPaginado({
+        page,
+        limit: 10,
+        search: buscaDebounced,
+      }),
   });
 
   const isSearching = isDebouncing || isLoading || isFetching;
@@ -70,8 +72,8 @@ export function ConveniosConfig() {
   const mutation = useMutation({
     mutationFn: async (input: CreateConvenioInput) => {
       const data = { ...input, logomarca };
-      if (editandoId) return api.put(`/convenios/${editandoId}`, data);
-      return api.post('/convenios', data);
+      if (editandoId) return editarConvenio(editandoId, data);
+      return criarConvenio(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['convenios-config'] });
@@ -81,7 +83,7 @@ export function ConveniosConfig() {
   });
 
   const excluirMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/convenios/${id}`),
+    mutationFn: (id: string) => excluirConvenio(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['convenios-config'] });
     },

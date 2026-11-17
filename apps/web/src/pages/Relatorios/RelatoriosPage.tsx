@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { PrinterIcon, Search01Icon } from '@hugeicons/core-free-icons';
-import { api } from '@/services/api';
+import { gerarRelatorio } from '@/services/relatorios';
 import { StatusAgendamento } from '@nutricao/shared';
 import styles from './RelatoriosPage.module.scss';
 
@@ -29,12 +29,12 @@ export function RelatoriosPage() {
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['relatorio', dataInicio, dataFim, status],
-    queryFn: async () => {
-      const params: any = { dataInicio, dataFim };
-      if (status) params.status = status;
-      const { data } = await api.get('/relatorios', { params });
-      return data.data;
-    },
+    queryFn: () =>
+      gerarRelatorio({
+        dataInicio,
+        dataFim,
+        status: status || undefined,
+      }),
   });
 
   const agendamentos = data?.agendamentos || [];

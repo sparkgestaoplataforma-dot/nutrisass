@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Cancel01Icon, PlusSignIcon, Delete02Icon } from "@hugeicons/core-free-icons";
-import { api } from "@/services/api";
+import { criarAlimento } from "@/services/alimentos";
 import type { AlimentoAPI } from "@/services/planoAlimentar";
 import styles from "./PlanoAlimentar.module.scss";
 
@@ -79,8 +79,7 @@ export function CreateAlimentoModal({ isOpen, onClose, initialName, onSuccess }:
         fibra: formData.fibra ? Number(formData.fibra) : undefined,
         medidasCaseiras: medidasCaseiras.length > 0 ? medidasCaseiras : undefined,
       };
-      const response = await api.post("/alimentos", payload);
-      return response.data;
+      return criarAlimento(payload);
     },
     onSuccess: (data) => {
       onSuccess(data.data as AlimentoAPI);

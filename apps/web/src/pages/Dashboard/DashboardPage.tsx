@@ -13,7 +13,7 @@ import {
   ClockIcon,
 } from "@hugeicons/core-free-icons";
 import { useAuthStore } from "@/stores/authStore";
-import { api } from "@/services/api";
+import { listarApenasNutricionistas } from "@/services/usuario";
 import { alterarStatus } from "@/services/agenda";
 import type { UpdateStatusInput } from "@nutricao/shared";
 import { pegarDadosDashboard } from "@/services/dashboard";
@@ -78,12 +78,7 @@ export function DashboardPage() {
 
   const { data: nutricionistas = [] } = useQuery({
     queryKey: ["nutricionistas-list", user?.clinicaId],
-    queryFn: async () => {
-      const { data } = await api.get(
-        `/usuarios/nutricionistas/clinicaId/${user?.clinicaId}`,
-      );
-      return data.data;
-    },
+    queryFn: () => listarApenasNutricionistas(user!.clinicaId),
     enabled: !!user?.clinicaId && (user?.perfil === "SECRETARIA" || user?.perfil === "ADMIN"),
   });
 
@@ -293,7 +288,7 @@ export function DashboardPage() {
                                 <span className={`${styles.statusDot} ${styles[`dot_${statusColors[ag.status] || "blue"}`]}`} />
                                 {statusLabels[ag.status] || ag.status}
                                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ marginLeft: 2 }}>
-                                  <path d="M2.5 4L5 6.5L7.5 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                                  <path d="M2.5 4L5 6.5L7.5 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                               </button>
                               {openStatusId === ag.id && (
