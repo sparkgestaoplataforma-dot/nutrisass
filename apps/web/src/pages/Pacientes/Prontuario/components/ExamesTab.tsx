@@ -1,8 +1,27 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { PlusSignIcon, Delete02Icon, TaskDone01Icon, Search01Icon, FileImportIcon } from '@hugeicons/core-free-icons';
-import { api } from '@/services/api';
+import {
+  PlusSignIcon,
+  Delete02Icon,
+  TaskDone01Icon,
+  Search01Icon,
+  FileImportIcon,
+  PencilEdit01Icon,
+  PrinterIcon,
+} from '@hugeicons/core-free-icons';
+import {
+  listarExamesBase,
+  listarSolicitacoesPaciente,
+  solicitarExamePaciente,
+  lancarExameExternoPaciente,
+  registrarResultadoExame,
+  excluirSolicitacaoExame,
+} from '@/services/exames';
+import { getPacientePorId } from '@/services/pacientes';
+import { getClinica } from '@/services/clinica';
+import { escapeHtml, printDocument, renderTimbrado } from '@/utils/print';
+import { avaliarResultadoExame } from '@/utils/nutricaoCalculos';
 import styles from '../ProntuarioPage.module.scss';
 
 interface ExamesTabProps {
@@ -22,6 +41,7 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
   const [selecionados, setSelecionados] = useState<string[]>([]);
   const [resultadoForm, setResultadoForm] = useState<{
     itemId: string;
+    exameNome?: string;
     resultado: string;
     dataResultado: string;
   } | null>(null);
@@ -34,26 +54,28 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
 
   const { data: solicitacoes = [] } = useQuery({
     queryKey: ['exames-solicitacoes', pacienteId],
-    queryFn: async () => {
-      const { data } = await api.get(`/exames/paciente/${pacienteId}`);
-      return data.data;
-    },
+    queryFn: () => listarSolicitacoesPaciente(pacienteId),
+  });
+
+  const { data: paciente } = useQuery({
+    queryKey: ['paciente', pacienteId],
+    queryFn: () => getPacientePorId(pacienteId),
+  });
+
+  const { data: clinica } = useQuery({
+    queryKey: ['clinica'],
+    queryFn: getClinica,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: examesBase = [] } = useQuery<any[]>({
     queryKey: ['exames-base', 'base'],
-    queryFn: async () => {
-      const { data } = await api.get('/exames/base?tipo=base');
-      return data.data;
-    },
+    queryFn: () => listarExamesBase('base'),
   });
 
   const { data: meusExames = [] } = useQuery<any[]>({
     queryKey: ['exames-base', 'custom'],
-    queryFn: async () => {
-      const { data } = await api.get('/exames/base?tipo=custom');
-      return data.data;
-    },
+    queryFn: () => listarExamesBase('custom'),
   });
 
   const listaAtual = tabExame === 'base' ? examesBase : meusExames;
@@ -64,17 +86,12 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
     return listaAtual.filter(
       (ex: any) =>
         normalizeText(ex.nome).includes(termo) ||
-        normalizeText(ex.codigo).includes(termo)
+        normalizeText(ex.codigo).includes(termo),
     );
   }, [listaAtual, busca]);
 
   const solicitarMutation = useMutation({
-    mutationFn: async () => {
-      return api.post(`/exames/paciente/${pacienteId}`, {
-        pacienteId,
-        exameBaseIds: selecionados,
-      });
-    },
+    mutationFn: () => solicitarExamePaciente(pacienteId, selecionados),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exames-solicitacoes', pacienteId] });
       setSolicitando(false);
@@ -84,9 +101,12 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
   });
 
   const resultadoMutation = useMutation({
-    mutationFn: async (data: { itemId: string; dataResultado: string; resultado: string }) => {
-      return api.post('/exames/resultado', data);
-    },
+    mutationFn: (data: { itemId: string; dataResultado: string; resultado: string }) =>
+      registrarResultadoExame({
+        itemId: data.itemId,
+        dataResultado: data.dataResultado,
+        resultado: data.resultado,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exames-solicitacoes', pacienteId] });
       setResultadoForm(null);
@@ -94,7 +114,7 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
   });
 
   const excluirMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/exames/${id}`),
+    mutationFn: (id: string) => excluirSolicitacaoExame(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exames-solicitacoes', pacienteId] });
     },
@@ -133,8 +153,8 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
   }
 
   const externoMutation = useMutation({
-    mutationFn: async () =>
-      api.post(`/exames/paciente/${pacienteId}/externo`, {
+    mutationFn: () =>
+      lancarExameExternoPaciente(pacienteId, {
         dataResultado: externoData,
         itens: externoIds.map((id) => ({ exameBaseId: id, resultado: externoItens[id].trim() })),
       }),
@@ -155,9 +175,75 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
   }
 
   function formatRef(ex: any) {
+    if (!ex) return '';
     if (ex.valorMinimo == null && ex.valorMaximo == null) return ex.unidade || '';
     const faixa = `${ex.valorMinimo ?? '…'} – ${ex.valorMaximo ?? '…'}`;
     return `Ref.: ${faixa}${ex.unidade ? ` ${ex.unidade}` : ''}`;
+  }
+
+  function renderStatusBadge(item: any) {
+    if (!item.resultado || !item.exameBase) return null;
+    const status = avaliarResultadoExame(
+      item.resultado,
+      item.exameBase.valorMinimo,
+      item.exameBase.valorMaximo,
+    );
+    if (status === 'NORMAL') {
+      return <span className={styles.exameStatusNormal}>Normal</span>;
+    }
+    if (status === 'ABAIXO') {
+      return <span className={styles.exameStatusAbaixo}>Abaixo da ref.</span>;
+    }
+    if (status === 'ACIMA') {
+      return <span className={styles.exameStatusAcima}>Acima da ref.</span>;
+    }
+    return null;
+  }
+
+  function imprimirSolicitacao(sol: any) {
+    const dataStr = new Date(sol.dataSolicitada).toLocaleDateString('pt-BR');
+    const listaHtml = sol.itens
+      .map(
+        (item: any) =>
+          `<li><strong>${escapeHtml(item.exameBase.nome)}</strong> ${item.exameBase.codigo ? `<small>(${escapeHtml(item.exameBase.codigo)})</small>` : ''
+          }</li>`,
+      )
+      .join('');
+
+    const body = `
+      ${renderTimbrado(clinica)}
+      <h1>Solicitação de Exames Laboratoriais</h1>
+      <div class="paciente">
+        <div><span>Paciente</span><strong>${escapeHtml(paciente?.nome || 'Paciente')}</strong></div>
+        <div><span>Data da Solicitação</span><strong>${dataStr}</strong></div>
+      </div>
+      <p class="intro">Solicito a realização dos seguintes exames laboratoriais para avaliação nutricional:</p>
+      <ul class="exames-list">${listaHtml}</ul>
+      <footer>
+        <div class="assinatura">
+          <div class="linha"></div>
+          <span>Nutricionista responsável</span>
+        </div>
+        <div class="emissao">Emitido em ${new Date().toLocaleDateString('pt-BR')}</div>
+      </footer>
+    `;
+
+    const css = `
+      h1 { font-size: 16px; font-weight: 700; margin-bottom: 12px; color: #111827; }
+      .paciente { display: flex; gap: 28px; padding: 10px 12px; background: #f0fdf4; border: 1px solid #d1fae5; border-radius: 6px; margin-bottom: 18px; }
+      .paciente div { display: flex; flex-direction: column; }
+      .paciente span { font-size: 10px; text-transform: uppercase; color: #6b7280; }
+      .paciente strong { font-size: 13px; }
+      .intro { font-size: 13px; color: #374151; margin-bottom: 12px; }
+      .exames-list { padding-left: 20px; font-size: 13px; line-height: 1.9; color: #111827; }
+      .exames-list small { color: #6b7280; }
+      footer { margin-top: 72px; display: flex; justify-content: space-between; align-items: flex-end; }
+      .assinatura { text-align: center; }
+      .assinatura .linha { width: 260px; border-top: 1px solid #374151; margin-bottom: 4px; }
+      .assinatura span, .emissao { font-size: 11px; color: #4b5563; }
+    `;
+
+    printDocument({ title: `Solicitação de Exames - ${paciente?.nome || 'Paciente'}`, body, css });
   }
 
   return (
@@ -428,7 +514,7 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
       {resultadoForm && (
         <div className={styles.evolucaoForm}>
           <h4 style={{ marginBottom: '0.75rem', fontSize: '0.875rem', fontWeight: 600 }}>
-            Registrar Resultado
+            {resultadoForm.exameNome ? `Resultado — ${resultadoForm.exameNome}` : 'Registrar Resultado'}
           </h4>
           <div className={styles.formGrid}>
             <div className={styles.field}>
@@ -475,14 +561,26 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
                 {new Date(sol.dataSolicitada).toLocaleDateString('pt-BR', isExterno(sol) ? { timeZone: 'UTC' } : undefined)}
                 {isExterno(sol) && <span className={styles.externoBadge}>Externo</span>}
               </h3>
-              <button
-                className={styles.medidaActionBtn}
-                onClick={() => {
-                  if (confirm('Excluir esta solicitação?')) excluirMutation.mutate(sol.id);
-                }}
-              >
-                <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={2} />
-              </button>
+              <div className={styles.medidaActionsCell}>
+                <button
+                  type="button"
+                  className={styles.medidaEditBtn}
+                  title="Imprimir pedido de exames em papel timbrado"
+                  onClick={() => imprimirSolicitacao(sol)}
+                >
+                  <HugeiconsIcon icon={PrinterIcon} size={16} strokeWidth={2} />
+                </button>
+                <button
+                  type="button"
+                  className={styles.medidaActionBtn}
+                  title="Excluir solicitação"
+                  onClick={() => {
+                    if (confirm('Excluir esta solicitação?')) excluirMutation.mutate(sol.id);
+                  }}
+                >
+                  <HugeiconsIcon icon={Delete02Icon} size={16} strokeWidth={2} />
+                </button>
+              </div>
             </div>
             <div className={styles.medidasTable}>
               <table>
@@ -490,6 +588,7 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
                   <tr>
                     <th>Código</th>
                     <th>Exame</th>
+                    <th>Referência</th>
                     <th>Resultado</th>
                     <th>Data Resultado</th>
                     <th></th>
@@ -500,29 +599,45 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
                     <tr key={item.id}>
                       <td>{item.exameBase.codigo}</td>
                       <td>{item.exameBase.nome}</td>
-                      <td>{item.resultado || '-'}</td>
+                      <td>
+                        <span className={styles.externoRef}>{formatRef(item.exameBase) || '-'}</span>
+                      </td>
+                      <td>
+                        <div className={styles.exameResultadoCell}>
+                          <strong>{item.resultado || '-'}</strong>
+                          {item.resultado && item.exameBase?.unidade && (
+                            <span className={styles.externoRef}>{item.exameBase.unidade}</span>
+                          )}
+                          {renderStatusBadge(item)}
+                        </div>
+                      </td>
                       <td>
                         {item.dataResultado
-                          ? new Date(item.dataResultado).toLocaleDateString('pt-BR')
+                          ? new Date(item.dataResultado).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
                           : '-'}
                       </td>
                       <td>
-                        {!item.resultado && (
-                          <button
-                            className={styles.medidaActionBtn}
-                            style={{ color: '#10b981' }}
-                            title="Registrar resultado"
-                            onClick={() =>
-                              setResultadoForm({
-                                itemId: item.id,
-                                resultado: '',
-                                dataResultado: new Date().toISOString().split('T')[0],
-                              })
-                            }
-                          >
-                            <HugeiconsIcon icon={TaskDone01Icon} size={16} strokeWidth={2} />
-                          </button>
-                        )}
+                        <button
+                          className={item.resultado ? styles.medidaEditBtn : styles.medidaActionBtn}
+                          style={!item.resultado ? { color: '#10b981' } : undefined}
+                          title={item.resultado ? 'Editar resultado' : 'Registrar resultado'}
+                          onClick={() =>
+                            setResultadoForm({
+                              itemId: item.id,
+                              exameNome: item.exameBase.nome,
+                              resultado: item.resultado || '',
+                              dataResultado: item.dataResultado
+                                ? new Date(item.dataResultado).toISOString().split('T')[0]
+                                : new Date().toISOString().split('T')[0],
+                            })
+                          }
+                        >
+                          <HugeiconsIcon
+                            icon={item.resultado ? PencilEdit01Icon : TaskDone01Icon}
+                            size={16}
+                            strokeWidth={2}
+                          />
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -541,35 +656,46 @@ export function ExamesTab({ pacienteId }: ExamesTabProps) {
                   <div className={styles.cardBodyGrid} style={{ gap: '0.5rem' }}>
                     <div className={styles.cardInfoGridItem}>
                       <span className={styles.cardInfoLabel}>Resultado</span>
-                      <span className={styles.cardInfoValue}>{item.resultado || '-'}</span>
+                      <div className={styles.exameResultadoCell}>
+                        <span className={styles.cardInfoValue}>{item.resultado || '-'}</span>
+                        {renderStatusBadge(item)}
+                      </div>
+                      {formatRef(item.exameBase) && (
+                        <span className={styles.externoRef}>{formatRef(item.exameBase)}</span>
+                      )}
                     </div>
                     <div className={styles.cardInfoGridItem}>
                       <span className={styles.cardInfoLabel}>Data Resultado</span>
                       <span className={styles.cardInfoValue}>
                         {item.dataResultado
-                          ? new Date(item.dataResultado).toLocaleDateString('pt-BR')
+                          ? new Date(item.dataResultado).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
                           : '-'}
                       </span>
                     </div>
                   </div>
-                  {!item.resultado && (
-                    <div className={styles.cardActions} style={{ padding: '0', marginTop: '0.25rem', paddingTop: '0.5rem', border: 'none' }}>
-                      <button
-                        className={styles.actionBtn}
-                        style={{ color: '#10b981', display: 'flex', gap: '0.25rem', alignItems: 'center', fontSize: '0.75rem', fontWeight: 600, width: '100%' }}
-                        onClick={() =>
-                          setResultadoForm({
-                            itemId: item.id,
-                            resultado: '',
-                            dataResultado: new Date().toISOString().split('T')[0],
-                          })
-                        }
-                      >
-                        <HugeiconsIcon icon={TaskDone01Icon} size={14} strokeWidth={2} />
-                        Registrar Resultado
-                      </button>
-                    </div>
-                  )}
+                  <div className={styles.cardActions} style={{ padding: '0', marginTop: '0.25rem', paddingTop: '0.5rem', border: 'none' }}>
+                    <button
+                      className={styles.actionBtn}
+                      style={{ color: '#10b981', display: 'flex', gap: '0.25rem', alignItems: 'center', fontSize: '0.75rem', fontWeight: 600, width: '100%' }}
+                      onClick={() =>
+                        setResultadoForm({
+                          itemId: item.id,
+                          exameNome: item.exameBase.nome,
+                          resultado: item.resultado || '',
+                          dataResultado: item.dataResultado
+                            ? new Date(item.dataResultado).toISOString().split('T')[0]
+                            : new Date().toISOString().split('T')[0],
+                        })
+                      }
+                    >
+                      <HugeiconsIcon
+                        icon={item.resultado ? PencilEdit01Icon : TaskDone01Icon}
+                        size={14}
+                        strokeWidth={2}
+                      />
+                      {item.resultado ? 'Editar Resultado' : 'Registrar Resultado'}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

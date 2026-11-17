@@ -44,3 +44,12 @@ export async function atualizarClinica(input: UpdateClinicaInput): Promise<Clini
   const { data } = await api.put<ApiResponse<Clinica>>('/clinica', input);
   return data.data!;
 }
+
+export async function alterarTipoClinica(tipo: 'AUTONOMO' | 'CLINICA') {
+  const { data } = await api.put('/clinica/tipo', { tipo });
+  return data.data as {
+    tipo: 'AUTONOMO' | 'CLINICA';
+    perfil: string;
+    tokens: AuthTokens;
+  };
+}

@@ -1,12 +1,11 @@
 import { z } from "zod";
-import { prisma } from "../../../shared/providers/prisma.js";
-import { AppError } from "../../../shared/middlewares/errorHandler.js";
+import { prisma } from "@/shared/providers/prisma";
+import { AppError } from "@/shared/middlewares/errorHandler";
 import type {
   CreateAgendamentoInput,
   UpdateAgendamentoInput,
   UpdateStatusInput,
 } from "@nutricao/shared";
-
 
 function parseLocalDate(date: string) {
   const [year, month, day] = date.split("-").map(Number);
@@ -17,7 +16,7 @@ async function verificarConflitoHorario(
   nutricionistaId: string,
   dataHora: Date,
   encaixe: boolean,
-  excluirAgendamentoId?: string
+  excluirAgendamentoId?: string,
 ) {
   if (encaixe) {
     return;
@@ -38,7 +37,7 @@ async function verificarConflitoHorario(
   if (conflito) {
     throw new AppError(
       "Já existe um agendamento ativo para este nutricionista neste horário. Caso deseje marcar no mesmo horário, utilize a opção de Encaixe.",
-      400
+      400,
     );
   }
 }
@@ -47,7 +46,7 @@ export async function pegarAgendamentosDia(
   data: string,
   clinicaId: string,
   usuarioId?: string,
-  usuarioPerfil?: string,
+  _usuarioPerfil?: string,
 ) {
   const schema = z.object({
     clinicaId: z.string().uuid("ID da clínica inválido"),
@@ -89,9 +88,19 @@ export async function pegarAgendamentosDia(
   return agendamentos;
 }
 
+export async function buscarAgendamentoPorId(id: string, clinicaId: string) {
+  const agendamento = await prisma.agendamento.findFirst({
+    where: { id, clinicaId },
+  });
+  if (!agendamento) {
+    throw new AppError("Agendamento não encontrado", 404);
+  }
+  return agendamento;
+}
+
 export async function criarAgendamento(
   input: CreateAgendamentoInput,
-  usuarioId: string,
+  _usuarioId: string,
   clinicaId: string,
 ) {
   const [paciente, nutricionista] = await Promise.all([
@@ -107,7 +116,7 @@ export async function criarAgendamento(
   await verificarConflitoHorario(
     nutricionista.id,
     dataHora,
-    input.encaixe || false
+    input.encaixe || false,
   );
 
   const agendamento = await prisma.agendamento.create({
@@ -128,8 +137,6 @@ export async function criarAgendamento(
       convenio: { select: { id: true, nome: true } },
     },
   });
-
-
 
   return agendamento;
 }
@@ -205,7 +212,7 @@ export async function alterarStatusAgendamento(
       existente.nutricionistaId,
       existente.dataHora,
       existente.encaixe,
-      id
+      id,
     );
   }
 
@@ -230,9 +237,41 @@ export async function excluirAgendamento(id: string, clinicaId: string) {
     throw new AppError("Agendamento não encontrado", 404);
   }
 
-  const deleted = await prisma.agendamento.delete({ 
+  const deleted = await prisma.agendamento.delete({
     where: { id },
-    include: { paciente: { select: { nome: true } } }
+    include: { paciente: { select: { nome: true } } },
   });
   return deleted;
+}
+
+export async function obterDadosGuiaTiss(id: string, clinicaId: string) {
+  const agendamento = await prisma.agendamento.findFirst({
+    where: { id, clinicaId },
+    include: {
+      paciente: {
+        include: { convenio: true },
+      },
+      convenio: true,
+      nutricionista: { select: { id: true, nome: true, perfil: true } },
+      criadoPor: { select: { id: true, nome: true, perfil: true } },
+      clinica: {
+        select: {
+          id: true,
+          nome: true,
+          cnpj: true,
+          telefone: true,
+          email: true,
+          endereco: true,
+          logomarca: true,
+        },
+      },
+    },
+  });
+
+  if (!agendamento) throw new AppError("Agendamento não encontrado", 404);
+
+  return {
+    ...agendamento,
+    usuario: agendamento.nutricionista || agendamento.criadoPor,
+  };
 }

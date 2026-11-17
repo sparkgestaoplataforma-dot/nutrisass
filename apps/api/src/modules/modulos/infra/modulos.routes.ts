@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { validate } from "../../../shared/middlewares/validate.js";
-import { authMiddleware, roleGuard } from "../../../shared/middlewares/auth.js";
+import { validate } from "@/shared/middlewares/validate";
+import { authMiddleware, roleGuard } from "@/shared/middlewares/auth";
 import {
   createModuloPerguntaSchema,
   updateModuloPerguntaSchema,

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { PlusSignIcon } from '@hugeicons/core-free-icons';
-import { api } from '@/services/api';
+import { listarEvolucoes, criarEvolucao } from '@/services/prontuario';
 import type { CreateEvolucaoInput } from '@nutricao/shared';
 import styles from '../ProntuarioPage.module.scss';
 
@@ -17,21 +17,13 @@ export function EvolucaoTab({ pacienteId }: EvolucaoTabProps) {
 
   const { data: evolucoes = [] } = useQuery({
     queryKey: ['evolucoes', pacienteId],
-    queryFn: async () => {
-      const { data } = await api.get(`/prontuario/${pacienteId}/evolucoes`);
-      return data.data;
-    },
+    queryFn: () => listarEvolucoes(pacienteId),
   });
 
   const { register, handleSubmit, reset } = useForm<CreateEvolucaoInput>();
 
   const mutation = useMutation({
-    mutationFn: async (data: CreateEvolucaoInput) => {
-      return api.post(`/prontuario/${pacienteId}/evolucoes`, {
-        ...data,
-        pacienteId,
-      });
-    },
+    mutationFn: (data: CreateEvolucaoInput) => criarEvolucao(pacienteId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['evolucoes', pacienteId] });
       setFormAberto(false);

@@ -91,3 +91,11 @@ export async function alterarStatus(id: string, input: UpdateStatusInput) {
 export async function excluirAgendamento(id: string) {
   await api.delete(`/agendamentos/${id}`);
 }
+
+export async function obterGuiaTiss<T = any>(id: string): Promise<T> {
+  const { data } = await api.get<{ success: boolean; data: T }>(
+    `/agendamentos/${id}/guia-tiss`,
+  );
+  return data.data;
+}
+

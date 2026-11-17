@@ -1,4 +1,4 @@
-import { redisDel, redisSet } from '../../../shared/providers/redis.js';
+import { redisDel, redisSet } from "@/shared/providers/redis";
 
 export async function logoutUseCase(userId: string, accessToken: string) {
   await redisDel(`refresh:${userId}`);

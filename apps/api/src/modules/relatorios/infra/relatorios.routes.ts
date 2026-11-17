@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authMiddleware } from '../../../shared/middlewares/auth.js';
+import { authMiddleware } from "@/shared/middlewares/auth";
 import * as controller from './relatorios.controller.js';
 
 const router = Router();

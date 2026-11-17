@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import {
   getClinicaId,
   getUsuarioId,
-} from "../../../shared/middlewares/auth.js";
+} from "@/shared/middlewares/auth";
 import * as service from "./dashboard.service.js";
 
 export async function getDashboard(req: Request, res: Response) {

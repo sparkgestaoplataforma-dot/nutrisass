@@ -9,7 +9,12 @@ import {
   Delete02Icon,
   Search01Icon,
 } from '@hugeicons/core-free-icons';
-import { api } from '@/services/api';
+import {
+  listarExamesBase,
+  criarExameBase,
+  editarExameBase,
+  excluirExameBase,
+} from '@/services/exames';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { CreateExameBaseInput } from '@nutricao/shared';
 import styles from './ExamesPage.module.scss';
@@ -42,18 +47,12 @@ export function ExamesPage() {
 
   const { data: examesBase = [], isLoading: loadingBase, isFetching: fetchingBase } = useQuery<ExameBase[]>({
     queryKey: ['exames-page', 'base'],
-    queryFn: async () => {
-      const { data } = await api.get('/exames/base?tipo=base');
-      return data.data;
-    },
+    queryFn: () => listarExamesBase('base'),
   });
 
   const { data: meusExames = [], isLoading: loadingMeus, isFetching: fetchingMeus } = useQuery<ExameBase[]>({
     queryKey: ['exames-page', 'custom'],
-    queryFn: async () => {
-      const { data } = await api.get('/exames/base?tipo=custom');
-      return data.data;
-    },
+    queryFn: () => listarExamesBase('custom'),
   });
 
   const { register, handleSubmit, reset } = useForm<CreateExameBaseInput>();
@@ -65,8 +64,8 @@ export function ExamesPage() {
         valorMinimo: data.valorMinimo ? Number(data.valorMinimo) : undefined,
         valorMaximo: data.valorMaximo ? Number(data.valorMaximo) : undefined,
       };
-      if (editandoId) return api.put(`/exames/base/${editandoId}`, payload);
-      return api.post('/exames/base', payload);
+      if (editandoId) return editarExameBase(editandoId, payload);
+      return criarExameBase(payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exames-page'] });
@@ -76,7 +75,7 @@ export function ExamesPage() {
   });
 
   const excluirMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/exames/base/${id}`),
+    mutationFn: (id: string) => excluirExameBase(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exames-page'] });
       queryClient.invalidateQueries({ queryKey: ['exames-base'] });

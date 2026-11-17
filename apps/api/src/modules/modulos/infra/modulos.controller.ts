@@ -5,7 +5,7 @@ import {
   UpdateQuestionarioModuloInput,
 } from "@nutricao/shared";
 import * as service from "./modulos.service.js";
-import { getClinicaId } from "../../../shared/middlewares/auth.js";
+import { getClinicaId } from "@/shared/middlewares/auth";
 
 export async function criarPergunta(
   req: Request<{ moduloId: string }>,

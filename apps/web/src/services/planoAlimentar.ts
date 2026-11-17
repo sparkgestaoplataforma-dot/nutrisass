@@ -37,8 +37,14 @@ export interface PlanoAlimentoAPI {
   proteinas: number | null;
   carboidratos: number | null;
   gorduras: number | null;
+  fibra?: number | null;
   observacao: string | null;
   alimentoRel?: {
+    calorias?: number | null;
+    proteinas?: number | null;
+    carboidratos?: number | null;
+    gorduras?: number | null;
+    fibra?: number | null;
     medidasCaseiras: MedidaCaseira[];
   } | null;
 }
