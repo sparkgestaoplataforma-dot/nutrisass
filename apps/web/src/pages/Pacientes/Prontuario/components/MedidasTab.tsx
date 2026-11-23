@@ -1,6 +1,16 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
+import {
+  ResponsiveContainer,
+  LineChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  Line,
+} from 'recharts';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { PlusSignIcon, Delete02Icon, PrinterIcon, PencilEdit01Icon } from '@hugeicons/core-free-icons';
 import {
@@ -27,12 +37,14 @@ import {
   calcularProgressoAvaliacao,
   validarValoresMedida,
   traduzirErrosApiMedida,
+  prepararSerieEvolucaoAntropometrica,
 } from '@/utils/nutricaoCalculos';
 import { imprimirMedidas } from '../print/imprimirMedidas';
 import styles from '../ProntuarioPage.module.scss';
 
 type FormTab = 'circunferencias' | 'dobras' | 'bioimpedancia';
 type PollockModo = 'POLLOCK_3' | 'POLLOCK_7';
+type ChartView = 'pesoImc' | 'composicao' | 'circunferencias';
 
 function calcularIdadeAnos(dataNascimento?: string | null): number | null {
   if (!dataNascimento) return null;
@@ -118,6 +130,7 @@ export function MedidasTab({ pacienteId }: MedidasTabProps) {
   const [errosCampos, setErrosCampos] = useState<Record<string, string>>({});
   const [erroGeral, setErroGeral] = useState<string | null>(null);
   const [confirmandoIncompleto, setConfirmandoIncompleto] = useState(false);
+  const [abaGrafico, setAbaGrafico] = useState<ChartView>('pesoImc');
   const queryClient = useQueryClient();
 
   const { data: medidas = [] } = useQuery<MedidaAPI[]>({
@@ -451,6 +464,11 @@ export function MedidasTab({ pacienteId }: MedidasTabProps) {
     [medidas],
   );
 
+  const serieEvolucao = useMemo(
+    () => prepararSerieEvolucaoAntropometrica(medidas),
+    [medidas],
+  );
+
   const resumoAntropometrico = useMemo(() => {
     if (medidasOrdenadas.length === 0) return null;
     const ultima = medidasOrdenadas[medidasOrdenadas.length - 1];
@@ -679,6 +697,205 @@ export function MedidasTab({ pacienteId }: MedidasTabProps) {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Gráfico Comparativo de Evolução Antropométrica */}
+      {serieEvolucao.pontos.length >= 2 && (
+        <div className={styles.evolucaoChartCard}>
+          <div className={styles.evolucaoChartHeader}>
+            <div className={styles.evolucaoChartTitleBox}>
+              <h4>Evolução Antropométrica ({serieEvolucao.pontos.length} avaliações)</h4>
+              <div className={styles.evolucaoChartDeltas}>
+                {serieEvolucao.variacoes.peso !== null && (
+                  <span
+                    className={
+                      serieEvolucao.variacoes.peso <= 0
+                        ? styles.antropoBadgeOk
+                        : styles.antropoBadgeWarn
+                    }
+                  >
+                    Peso: {serieEvolucao.variacoes.peso > 0 ? '+' : ''}
+                    {serieEvolucao.variacoes.peso} kg
+                  </span>
+                )}
+                {serieEvolucao.variacoes.percentualGordura !== null && (
+                  <span
+                    className={
+                      serieEvolucao.variacoes.percentualGordura <= 0
+                        ? styles.antropoBadgeOk
+                        : styles.antropoBadgeWarn
+                    }
+                  >
+                    % Gordura: {serieEvolucao.variacoes.percentualGordura > 0 ? '+' : ''}
+                    {serieEvolucao.variacoes.percentualGordura}%
+                  </span>
+                )}
+                {serieEvolucao.variacoes.massaMagraKg !== null && (
+                  <span
+                    className={
+                      serieEvolucao.variacoes.massaMagraKg >= 0
+                        ? styles.antropoBadgeOk
+                        : styles.antropoBadgeWarn
+                    }
+                  >
+                    Massa Magra: {serieEvolucao.variacoes.massaMagraKg > 0 ? '+' : ''}
+                    {serieEvolucao.variacoes.massaMagraKg} kg
+                  </span>
+                )}
+                {serieEvolucao.variacoes.cintura !== null && (
+                  <span
+                    className={
+                      serieEvolucao.variacoes.cintura <= 0
+                        ? styles.antropoBadgeOk
+                        : styles.antropoBadgeWarn
+                    }
+                  >
+                    Cintura: {serieEvolucao.variacoes.cintura > 0 ? '+' : ''}
+                    {serieEvolucao.variacoes.cintura} cm
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className={styles.protocolPills} style={{ marginBottom: 0 }}>
+              <button
+                type="button"
+                className={`${styles.protocolPill} ${
+                  abaGrafico === 'pesoImc' ? styles.protocolPillActive : ''
+                }`}
+                onClick={() => setAbaGrafico('pesoImc')}
+              >
+                Peso e IMC
+              </button>
+              <button
+                type="button"
+                className={`${styles.protocolPill} ${
+                  abaGrafico === 'composicao' ? styles.protocolPillActive : ''
+                }`}
+                onClick={() => setAbaGrafico('composicao')}
+              >
+                % Gordura e Massa Magra
+              </button>
+              <button
+                type="button"
+                className={`${styles.protocolPill} ${
+                  abaGrafico === 'circunferencias' ? styles.protocolPillActive : ''
+                }`}
+                onClick={() => setAbaGrafico('circunferencias')}
+              >
+                Cintura / Abdômen / Quadril
+              </button>
+            </div>
+          </div>
+
+          <div className={styles.evolucaoChartWrapper}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={serieEvolucao.pontos}
+                margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" opacity={0.35} />
+                <XAxis dataKey="dataLabel" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} domain={['auto', 'auto']} />
+                <Tooltip
+                  contentStyle={{
+                    background: '#111827',
+                    borderRadius: 8,
+                    border: '1px solid #374151',
+                    color: '#fff',
+                    fontSize: 12,
+                  }}
+                  labelStyle={{ color: '#fff', fontWeight: 700 }}
+                />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                {abaGrafico === 'pesoImc' && (
+                  <>
+                    <Line
+                      type="monotone"
+                      dataKey="peso"
+                      name="Peso (kg)"
+                      stroke="#10b981"
+                      strokeWidth={2.5}
+                      dot={{ r: 4 }}
+                      connectNulls
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="imc"
+                      name="IMC (kg/m²)"
+                      stroke="#3b82f6"
+                      strokeWidth={2.5}
+                      dot={{ r: 4 }}
+                      connectNulls
+                    />
+                  </>
+                )}
+                {abaGrafico === 'composicao' && (
+                  <>
+                    <Line
+                      type="monotone"
+                      dataKey="percentualGordura"
+                      name="% Gordura"
+                      stroke="#f59e0b"
+                      strokeWidth={2.5}
+                      dot={{ r: 4 }}
+                      connectNulls
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="massaMagraKg"
+                      name="Massa Magra (kg)"
+                      stroke="#10b981"
+                      strokeWidth={2.5}
+                      dot={{ r: 4 }}
+                      connectNulls
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="massaGordaKg"
+                      name="Massa Gorda (kg)"
+                      stroke="#ef4444"
+                      strokeWidth={2}
+                      dot={{ r: 3.5 }}
+                      connectNulls
+                    />
+                  </>
+                )}
+                {abaGrafico === 'circunferencias' && (
+                  <>
+                    <Line
+                      type="monotone"
+                      dataKey="cintura"
+                      name="Cintura (cm)"
+                      stroke="#10b981"
+                      strokeWidth={2.5}
+                      dot={{ r: 4 }}
+                      connectNulls
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="abdomen"
+                      name="Abdômen (cm)"
+                      stroke="#f59e0b"
+                      strokeWidth={2.5}
+                      dot={{ r: 4 }}
+                      connectNulls
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="quadril"
+                      name="Quadril (cm)"
+                      stroke="#6366f1"
+                      strokeWidth={2.5}
+                      dot={{ r: 4 }}
+                      connectNulls
+                    />
+                  </>
+                )}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
 

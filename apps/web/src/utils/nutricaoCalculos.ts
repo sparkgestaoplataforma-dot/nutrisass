@@ -1149,7 +1149,7 @@ export function avaliarResultadoExame(
 // ============================================================================
 
 export function duplicarPlanoParaInput(plano: {
-  pacienteId: string;
+  pacienteId?: string | null;
   titulo: string;
   objetivo?: any;
   metaCalorias?: number | null;
@@ -1181,7 +1181,7 @@ export function duplicarPlanoParaInput(plano: {
   }>;
 }): CreatePlanoAlimentarInput {
   return {
-    pacienteId: plano.pacienteId,
+    pacienteId: plano.pacienteId ?? null,
     titulo: `${plano.titulo} (Cópia)`,
     objetivo: plano.objetivo || null,
     metaCalorias: plano.metaCalorias ?? null,
@@ -1226,4 +1226,247 @@ export function gerarRefeicoesPadrao(): Array<{
     { nome: 'Lanche da Tarde', horario: '16:00', ordem: 3 },
     { nome: 'Jantar', horario: '19:30', ordem: 4 },
   ];
+}
+
+export function converterPlanoParaModeloInput(
+  plano: {
+    pacienteId?: string | null;
+    titulo: string;
+    objetivo?: any;
+    metaCalorias?: number | null;
+    metaProteinas?: number | null;
+    metaCarboidratos?: number | null;
+    metaGorduras?: number | null;
+    recomendacaoAguaMl?: number | null;
+    observacoes?: string | null;
+    refeicoes: Array<any>;
+  },
+  tituloModelo?: string,
+): CreatePlanoAlimentarInput {
+  const base = duplicarPlanoParaInput({
+    ...plano,
+    pacienteId: plano.pacienteId || '00000000-0000-0000-0000-000000000000',
+  });
+  return {
+    ...base,
+    pacienteId: null,
+    isTemplate: true,
+    titulo: tituloModelo?.trim() || plano.titulo,
+  };
+}
+
+// ============================================================================
+// SUBSTITUIÇÃO INTELIGENTE DE ALIMENTOS POR EQUIVALÊNCIA NUTRICIONAL
+// ============================================================================
+
+export type CriterioEquivalencia = 'CALORIAS' | 'CARBOIDRATOS' | 'PROTEINAS' | 'GORDURAS';
+
+export function detectarCriterioEquivalenciaDominante(alimento: {
+  calorias?: number | null;
+  proteinas?: number | null;
+  carboidratos?: number | null;
+  gorduras?: number | null;
+}): CriterioEquivalencia {
+  const prot = alimento.proteinas ?? 0;
+  const carb = alimento.carboidratos ?? 0;
+  const gord = alimento.gorduras ?? 0;
+
+  const kcalProt = prot * 4;
+  const kcalCarb = carb * 4;
+  const kcalGord = gord * 9;
+  const totalMacroKcal = kcalProt + kcalCarb + kcalGord;
+
+  if (totalMacroKcal <= 0) return 'CALORIAS';
+
+  if (kcalCarb >= kcalProt && kcalCarb >= kcalGord && carb >= 4 && kcalCarb / totalMacroKcal >= 0.4) {
+    return 'CARBOIDRATOS';
+  }
+  if (kcalProt >= kcalCarb && kcalProt >= kcalGord && prot >= 4 && kcalProt / totalMacroKcal >= 0.4) {
+    return 'PROTEINAS';
+  }
+  if (kcalGord >= kcalCarb && kcalGord >= kcalProt && gord >= 4 && kcalGord / totalMacroKcal >= 0.4) {
+    return 'GORDURAS';
+  }
+
+  return 'CALORIAS';
+}
+
+export interface ResultadoSubstituicaoEquivalente {
+  alimentoCalculado: AlimentoCalculavel;
+  gramasEquivalentes: number;
+  criterioUsado: CriterioEquivalencia;
+  diferencaKcal: number;
+  sugestaoMedidaCaseira: {
+    id: string;
+    nome: string;
+    quantidadeUnidades: number;
+    quantidadeEmGramas: number;
+  } | null;
+}
+
+export function calcularSubstituicaoEquivalente(
+  origem: {
+    calorias?: number | null;
+    proteinas?: number | null;
+    carboidratos?: number | null;
+    gorduras?: number | null;
+  },
+  substitutoApi: {
+    id: string;
+    nome: string;
+    calorias?: number | null;
+    proteinas?: number | null;
+    carboidratos?: number | null;
+    gorduras?: number | null;
+    fibra?: number | null;
+    medidasCaseiras?: MedidaCaseiraSimples[] | null;
+  },
+  criterio: CriterioEquivalencia,
+  uidStr: string,
+): ResultadoSubstituicaoEquivalente | null {
+  const obterPar = (crit: CriterioEquivalencia): { alvo: number; base100: number } => {
+    if (crit === 'CARBOIDRATOS') {
+      return { alvo: origem.carboidratos ?? 0, base100: substitutoApi.carboidratos ?? 0 };
+    }
+    if (crit === 'PROTEINAS') {
+      return { alvo: origem.proteinas ?? 0, base100: substitutoApi.proteinas ?? 0 };
+    }
+    if (crit === 'GORDURAS') {
+      return { alvo: origem.gorduras ?? 0, base100: substitutoApi.gorduras ?? 0 };
+    }
+    return { alvo: origem.calorias ?? 0, base100: substitutoApi.calorias ?? 0 };
+  };
+
+  let criterioUsado: CriterioEquivalencia = criterio;
+  let { alvo, base100 } = obterPar(criterio);
+
+  if (alvo <= 0 || base100 <= 0) {
+    const fallbackCal = obterPar('CALORIAS');
+    if (fallbackCal.alvo > 0 && fallbackCal.base100 > 0) {
+      criterioUsado = 'CALORIAS';
+      alvo = fallbackCal.alvo;
+      base100 = fallbackCal.base100;
+    } else {
+      return null;
+    }
+  }
+
+  const gramasRaw = (alvo / base100) * 100;
+  const gramasEquivalentes = round1(Math.max(5, Math.min(1500, gramasRaw)));
+
+  const inicial = criarAlimentoInicial(substitutoApi, uidStr);
+  const emGramas: AlimentoCalculavel = {
+    ...inicial,
+    medidaCaseiraId: null,
+    unidade: 'g',
+    quantidade: 100,
+  };
+  const alimentoCalculado = recalcularAlimentoPlano(emGramas, 'quantidade', gramasEquivalentes);
+
+  let sugestaoMedidaCaseira: ResultadoSubstituicaoEquivalente['sugestaoMedidaCaseira'] = null;
+  const mcCandidata = inicial._medidasCaseiras.find(
+    (m) => m.quantidadeEmGramas > 1 && m.nome.trim().toLowerCase() !== 'ml',
+  );
+  if (mcCandidata) {
+    const unidadesRaw = gramasEquivalentes / mcCandidata.quantidadeEmGramas;
+    const quantidadeUnidades = Math.max(0.5, Math.round(unidadesRaw * 2) / 2);
+    sugestaoMedidaCaseira = {
+      id: mcCandidata.id,
+      nome: mcCandidata.nome,
+      quantidadeUnidades,
+      quantidadeEmGramas: mcCandidata.quantidadeEmGramas,
+    };
+  }
+
+  const diferencaKcal = Math.round((alimentoCalculado.calorias ?? 0) - (origem.calorias ?? 0));
+
+  return {
+    alimentoCalculado,
+    gramasEquivalentes,
+    criterioUsado,
+    diferencaKcal,
+    sugestaoMedidaCaseira,
+  };
+}
+
+// ============================================================================
+// EVOLUÇÃO ANTROPOMÉTRICA (SÉRIE TEMPORAL PARA GRÁFICOS)
+// ============================================================================
+
+export interface PontoEvolucaoAntropometrica {
+  id: string;
+  dataIso: string;
+  dataLabel: string;
+  peso: number | null;
+  imc: number | null;
+  percentualGordura: number | null;
+  massaMagraKg: number | null;
+  massaGordaKg: number | null;
+  cintura: number | null;
+  abdomen: number | null;
+  quadril: number | null;
+}
+
+export interface SerieEvolucaoAntropometrica {
+  pontos: PontoEvolucaoAntropometrica[];
+  variacoes: {
+    peso: number | null;
+    imc: number | null;
+    percentualGordura: number | null;
+    massaMagraKg: number | null;
+    cintura: number | null;
+  };
+}
+
+function diffMetrica(
+  pontos: PontoEvolucaoAntropometrica[],
+  key: keyof Pick<
+    PontoEvolucaoAntropometrica,
+    'peso' | 'imc' | 'percentualGordura' | 'massaMagraKg' | 'cintura'
+  >,
+): number | null {
+  const validos = pontos.map((p) => p[key]).filter((v): v is number => typeof v === 'number');
+  if (validos.length < 2) return null;
+  return round1(validos[validos.length - 1] - validos[0]);
+}
+
+export function prepararSerieEvolucaoAntropometrica(
+  medidas: Array<Record<string, any>>,
+): SerieEvolucaoAntropometrica {
+  const ordenadas = [...(medidas || [])].sort(
+    (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime(),
+  );
+
+  const pontos: PontoEvolucaoAntropometrica[] = ordenadas.map((m) => {
+    const imcRaw = calcularIMC(m.peso, m.altura);
+    return {
+      id: m.id,
+      dataIso: m.data,
+      dataLabel: new Date(m.data).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit',
+        timeZone: 'UTC',
+      }),
+      peso: typeof m.peso === 'number' ? m.peso : null,
+      imc: imcRaw !== null ? round1(imcRaw) : null,
+      percentualGordura: typeof m.percentualGordura === 'number' ? m.percentualGordura : null,
+      massaMagraKg: typeof m.massaMagraKg === 'number' ? m.massaMagraKg : null,
+      massaGordaKg: typeof m.massaGordaKg === 'number' ? m.massaGordaKg : null,
+      cintura: typeof m.cintura === 'number' ? m.cintura : null,
+      abdomen: typeof m.abdomen === 'number' ? m.abdomen : null,
+      quadril: typeof m.quadril === 'number' ? m.quadril : null,
+    };
+  });
+
+  return {
+    pontos,
+    variacoes: {
+      peso: diffMetrica(pontos, 'peso'),
+      imc: diffMetrica(pontos, 'imc'),
+      percentualGordura: diffMetrica(pontos, 'percentualGordura'),
+      massaMagraKg: diffMetrica(pontos, 'massaMagraKg'),
+      cintura: diffMetrica(pontos, 'cintura'),
+    },
+  };
 }

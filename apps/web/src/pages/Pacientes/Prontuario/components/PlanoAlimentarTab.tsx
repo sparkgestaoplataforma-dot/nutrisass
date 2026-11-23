@@ -4,7 +4,11 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { PlusSignIcon, Restaurant01Icon, Copy01Icon } from "@hugeicons/core-free-icons";
 import { listarPlanos, buscarPlano, criarPlano, atualizarPlano, deletarPlano, type PlanoAlimentarAPI } from "@/services/planoAlimentar";
 import type { CreatePlanoAlimentarInput } from "@nutricao/shared";
-import { calcularTotaisPlano, duplicarPlanoParaInput } from "@/utils/nutricaoCalculos";
+import {
+  calcularTotaisPlano,
+  duplicarPlanoParaInput,
+  converterPlanoParaModeloInput,
+} from "@/utils/nutricaoCalculos";
 import { PlanoAlimentarView } from "./PlanoAlimentarView";
 import { PlanoAlimentarBuilder } from "./PlanoAlimentarBuilder";
 import { Skeleton } from "@/components/Loading/Skeleton";
@@ -28,6 +32,7 @@ const OBJETIVO_LABELS: Record<string, string> = {
 export function PlanoAlimentarTab({ pacienteId, isNutricionista = false }: Props) {
   const [mode, setMode] = useState<Mode>("list");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [templateSaved, setTemplateSaved] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: planos = [], isLoading } = useQuery({
@@ -72,6 +77,18 @@ export function PlanoAlimentarTab({ pacienteId, isNutricionista = false }: Props
     },
   });
 
+  const salvarModeloMutation = useMutation({
+    mutationFn: (plano: PlanoAlimentarAPI) => {
+      const payload = converterPlanoParaModeloInput(plano);
+      return criarPlano(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["planos-modelos"] });
+      setTemplateSaved(true);
+      setTimeout(() => setTemplateSaved(false), 3000);
+    },
+  });
+
   const atualizarMutation = useMutation({
     mutationFn: (data: CreatePlanoAlimentarInput) => atualizarPlano(selectedId!, data),
     onSuccess: () => {
@@ -108,6 +125,9 @@ export function PlanoAlimentarTab({ pacienteId, isNutricionista = false }: Props
         onEdit={() => setMode("edit")}
         onDuplicate={() => duplicarMutation.mutate(planoDetalhe)}
         isDuplicating={duplicarMutation.isPending}
+        onSaveAsTemplate={() => salvarModeloMutation.mutate(planoDetalhe)}
+        isSavingTemplate={salvarModeloMutation.isPending}
+        templateSaved={templateSaved}
         onDelete={() => deletarMutation.mutate()}
         isDeleting={deletarMutation.isPending}
         isNutricionista={isNutricionista}

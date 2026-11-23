@@ -67,7 +67,8 @@ export interface PlanoRefeicaoAPI {
 export interface PlanoAlimentarAPI {
   id: string;
   clinicaId: string;
-  pacienteId: string;
+  pacienteId: string | null;
+  isTemplate?: boolean;
   usuarioId: string;
   titulo: string;
   objetivo: string | null;
@@ -98,7 +99,14 @@ export interface AlimentosListResponse {
 
 export async function listarPlanos(pacienteId: string) {
   const response = await api.get<ApiResponse<PlanoAlimentarAPI[]>>("/planos-alimentares", {
-    params: { pacienteId },
+    params: { pacienteId, isTemplate: "false" },
+  });
+  return response.data;
+}
+
+export async function listarModelosPlano() {
+  const response = await api.get<ApiResponse<PlanoAlimentarAPI[]>>("/planos-alimentares", {
+    params: { isTemplate: "true" },
   });
   return response.data;
 }

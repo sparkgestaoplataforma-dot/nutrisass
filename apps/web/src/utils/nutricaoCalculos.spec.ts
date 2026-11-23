@@ -25,7 +25,11 @@ import {
   validarValoresMedida,
   avaliarResultadoExame,
   duplicarPlanoParaInput,
+  converterPlanoParaModeloInput,
   gerarRefeicoesPadrao,
+  detectarCriterioEquivalenciaDominante,
+  calcularSubstituicaoEquivalente,
+  prepararSerieEvolucaoAntropometrica,
 } from './nutricaoCalculos';
 
 describe('nutricaoCalculos — Motor Clínico e Correções do Plano Alimentar (TDD)', () => {
@@ -711,6 +715,102 @@ describe('nutricaoCalculos — Motor Clínico e Correções do Plano Alimentar (
       expect(padrao[0].nome).toBe('Café da Manhã');
       expect(padrao[2].nome).toBe('Almoço');
       expect(padrao[4].nome).toBe('Jantar');
+    });
+
+    it('converterPlanoParaModeloInput deve gerar payload com isTemplate=true e pacienteId=null', () => {
+      const plano: any = {
+        pacienteId: 'pac-1',
+        titulo: 'Dieta Base 1800 kcal',
+        objetivo: 'EMAGRECIMENTO',
+        metaCalorias: 1800,
+        refeicoes: [],
+      };
+      const tpl = converterPlanoParaModeloInput(plano, 'Modelo Cutting 1800 kcal');
+      expect(tpl.isTemplate).toBe(true);
+      expect(tpl.pacienteId).toBeNull();
+      expect(tpl.titulo).toBe('Modelo Cutting 1800 kcal');
+    });
+
+    it('detectarCriterioEquivalenciaDominante e calcularSubstituicaoEquivalente devem calcular gramatura equivalente por carboidrato, proteína ou calorias', () => {
+      // 100g de Arroz cozido: 128 kcal, 28g carb, 2.5g prot, 0.2g gord
+      const arroz: any = {
+        _uid: 'orig-1',
+        alimentoId: 'al-arroz',
+        medidaCaseiraId: null,
+        alimento: 'Arroz Integral Cozido',
+        quantidade: 100,
+        unidade: 'g',
+        calorias: 128,
+        proteinas: 2.5,
+        carboidratos: 28,
+        gorduras: 0.2,
+        fibra: 2.7,
+        observacao: null,
+        _basePer100: { cal: 128, prot: 2.5, carb: 28, gord: 0.2, fibra: 2.7 },
+        _medidasCaseiras: [],
+      };
+
+      expect(detectarCriterioEquivalenciaDominante(arroz)).toBe('CARBOIDRATOS');
+
+      // Batata doce cozida (por 100g): 77 kcal, 18.4g carb, 0.6g prot, 0.1g gord
+      const batataDoceApi: any = {
+        id: 'al-batata',
+        nome: 'Batata Doce Cozida',
+        calorias: 77,
+        proteinas: 0.6,
+        carboidratos: 18.4,
+        gorduras: 0.1,
+        fibra: 2.2,
+        medidasCaseiras: [{ id: 'mc-rodela', nome: 'Rodela média', quantidadeEmGramas: 75 }],
+      };
+
+      // Equivalência por CARBOIDRATOS: 28g / 18.4g * 100 = 152.2g
+      const eqCarb = calcularSubstituicaoEquivalente(
+        arroz,
+        batataDoceApi,
+        'CARBOIDRATOS',
+        'sub-1',
+      )!;
+      expect(eqCarb.criterioUsado).toBe('CARBOIDRATOS');
+      expect(eqCarb.gramasEquivalentes).toBeCloseTo(152.2, 1);
+      expect(eqCarb.alimentoCalculado.carboidratos).toBeCloseTo(28, 0);
+      expect(eqCarb.sugestaoMedidaCaseira?.quantidadeUnidades).toBe(2);
+
+      // Equivalência por CALORIAS: 128 / 77 * 100 = 166.2g
+      const eqCal = calcularSubstituicaoEquivalente(arroz, batataDoceApi, 'CALORIAS', 'sub-2')!;
+      expect(eqCal.criterioUsado).toBe('CALORIAS');
+      expect(eqCal.gramasEquivalentes).toBeCloseTo(166.2, 1);
+      expect(eqCal.alimentoCalculado.calorias).toBeCloseTo(128, 0);
+    });
+
+    it('prepararSerieEvolucaoAntropometrica deve ordenar medidas por data em UTC e calcular variações do período', () => {
+      const serie = prepararSerieEvolucaoAntropometrica([
+        {
+          id: 'm2',
+          data: '2026-11-15T00:00:00.000Z',
+          peso: 76.5,
+          altura: 175,
+          percentualGordura: 18.2,
+          massaMagraKg: 62.6,
+          cintura: 82,
+        },
+        {
+          id: 'm1',
+          data: '2026-10-15T00:00:00.000Z',
+          peso: 80.0,
+          altura: 175,
+          percentualGordura: 21.0,
+          massaMagraKg: 63.2,
+          cintura: 86,
+        },
+      ]);
+
+      expect(serie.pontos).toHaveLength(2);
+      expect(serie.pontos[0].peso).toBe(80.0);
+      expect(serie.pontos[1].peso).toBe(76.5);
+      expect(serie.variacoes.peso).toBe(-3.5);
+      expect(serie.variacoes.percentualGordura).toBe(-2.8);
+      expect(serie.variacoes.cintura).toBe(-4);
     });
   });
 });

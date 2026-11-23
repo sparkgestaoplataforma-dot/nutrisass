@@ -8,24 +8,29 @@ export async function criarPlanoAlimentar(
   data: CreatePlanoAlimentarInput
 ) {
   const { 
-    pacienteId, titulo, objetivo, 
+    pacienteId, isTemplate, titulo, objetivo, 
     metaCalorias, metaProteinas, metaCarboidratos, metaGorduras, 
     recomendacaoAguaMl, observacoes, refeicoes 
   } = data;
 
-  const paciente = await prisma.paciente.findFirst({
-    where: { id: pacienteId, clinicaId },
-  });
+  if (!isTemplate) {
+    const paciente = pacienteId
+      ? await prisma.paciente.findFirst({
+          where: { id: pacienteId, clinicaId },
+        })
+      : null;
 
-  if (!paciente) {
-    throw new AppError("Paciente não encontrado nesta clínica", 404);
+    if (!paciente) {
+      throw new AppError("Paciente não encontrado nesta clínica", 404);
+    }
   }
 
   const plano = await prisma.planoAlimentar.create({
     data: {
       clinicaId,
       usuarioId,
-      pacienteId,
+      pacienteId: isTemplate ? null : (pacienteId ?? null),
+      ...(isTemplate ? { isTemplate: true } : {}),
       titulo,
       objetivo,
       metaCalorias,
@@ -86,10 +91,17 @@ export async function criarPlanoAlimentar(
   return plano;
 }
 
-export async function pegarPlanosAlimentares(clinicaId: string, pacienteId?: string) {
+export async function pegarPlanosAlimentares(
+  clinicaId: string,
+  pacienteId?: string,
+  isTemplate?: boolean,
+) {
   const where: any = { clinicaId };
   if (pacienteId) {
     where.pacienteId = pacienteId;
+  }
+  if (isTemplate !== undefined) {
+    where.isTemplate = isTemplate;
   }
 
   return prisma.planoAlimentar.findMany({

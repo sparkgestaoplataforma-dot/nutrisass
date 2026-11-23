@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   DndContext,
   closestCenter,
@@ -27,7 +27,13 @@ import {
 import { listarMedidas } from "@/services/prontuario";
 import { getPacientePorId } from "@/services/pacientes";
 import { AlimentoSearch } from "./AlimentoSearch";
-import type { AlimentoAPI, PlanoAlimentarAPI } from "@/services/planoAlimentar";
+import {
+  listarModelosPlano,
+  criarPlano,
+  deletarPlano,
+  type AlimentoAPI,
+  type PlanoAlimentarAPI,
+} from "@/services/planoAlimentar";
 import {
   type CreatePlanoAlimentarInput,
   createPlanoAlimentarSchema,
@@ -35,6 +41,7 @@ import {
 import {
   type AlimentoCalculavel,
   type ProtocoloTMB,
+  type CriterioEquivalencia,
   FATORES_ATIVIDADE,
   hidratarAlimentoSalvo,
   criarAlimentoInicial,
@@ -48,6 +55,9 @@ import {
   calcularMetricasMacro,
   calcularRecomendacaoAgua,
   gerarRefeicoesPadrao,
+  converterPlanoParaModeloInput,
+  detectarCriterioEquivalenciaDominante,
+  calcularSubstituicaoEquivalente,
 } from "@/utils/nutricaoCalculos";
 import styles from "./PlanoAlimentar.module.scss";
 
@@ -148,6 +158,25 @@ export function PlanoAlimentarBuilder({
   );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [editingOpcao, setEditingOpcao] = useState<{ ruid: string; ouid: string } | null>(null);
+  const [showModelosModal, setShowModelosModal] = useState(false);
+  const [modeloSalvoToast, setModeloSalvoToast] = useState(false);
+  const [substituindoItem, setSubstituindoItem] = useState<{
+    ruid: string;
+    ouid: string;
+    alimento: AlimentoCalculavel;
+  } | null>(null);
+  const [criterioEquiv, setCriterioEquiv] = useState<CriterioEquivalencia>("CARBOIDRATOS");
+  const [substitutoCandidato, setSubstitutoCandidato] = useState<AlimentoAPI | null>(null);
+  const [usarMedidaCaseiraEquiv, setUsarMedidaCaseiraEquiv] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: modelosClinica = [] } = useQuery({
+    queryKey: ["planos-modelos"],
+    queryFn: async () => {
+      const res = await listarModelosPlano();
+      return (res.data || []) as PlanoAlimentarAPI[];
+    },
+  });
 
   // --- Dados do Paciente e Última Medida para a Calculadora TMB/GET/g-kg ---
   const { data: paciente } = useQuery({
@@ -444,6 +473,155 @@ export function PlanoAlimentarBuilder({
     });
   }, []);
 
+  // === Modelos de Cardápio da Clínica ===
+  function aplicarModeloClinica(modelo: PlanoAlimentarAPI) {
+    if (!titulo.trim()) {
+      setTitulo(modelo.titulo.replace(/\s*\(Modelo\)$/i, ""));
+    }
+    if (modelo.objetivo) setObjetivo(modelo.objetivo);
+    if (modelo.metaCalorias != null) setMetaCalorias(String(modelo.metaCalorias));
+    if (modelo.metaProteinas != null) setMetaProteinas(String(modelo.metaProteinas));
+    if (modelo.metaCarboidratos != null) setMetaCarboidratos(String(modelo.metaCarboidratos));
+    if (modelo.metaGorduras != null) setMetaGorduras(String(modelo.metaGorduras));
+    if (modelo.recomendacaoAguaMl != null) setAguaMl(String(modelo.recomendacaoAguaMl));
+    if (modelo.observacoes) setObservacoes(modelo.observacoes);
+
+    setRefeicoes(
+      (modelo.refeicoes || []).map((r, rIdx) => ({
+        _uid: uid(),
+        nome: r.nome,
+        horario: r.horario,
+        ordem: r.ordem ?? rIdx,
+        _activeOpcao: 0,
+        opcoes: (r.opcoes || []).map((o, oIdx) => ({
+          _uid: uid(),
+          nome: o.nome,
+          ordem: o.ordem ?? oIdx,
+          alimentos: (o.alimentos || []).map((a) => hidratarAlimentoSalvo(a, uid())),
+        })),
+      })),
+    );
+    setShowModelosModal(false);
+  }
+
+  const salvarModeloMutation = useMutation({
+    mutationFn: () => {
+      const payload = converterPlanoParaModeloInput(
+        {
+          titulo: titulo.trim() || "Modelo de Cardápio",
+          objetivo: (objetivo as any) || null,
+          metaCalorias: metaCalorias ? parseFloat(metaCalorias) : null,
+          metaProteinas: metaProteinas ? parseFloat(metaProteinas) : null,
+          metaCarboidratos: metaCarboidratos ? parseFloat(metaCarboidratos) : null,
+          metaGorduras: metaGorduras ? parseFloat(metaGorduras) : null,
+          recomendacaoAguaMl: aguaMl ? parseInt(aguaMl) : null,
+          observacoes: observacoes || null,
+          refeicoes,
+        },
+        titulo.trim() ? `${titulo.trim()}` : "Modelo de Cardápio",
+      );
+      return criarPlano(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["planos-modelos"] });
+      setModeloSalvoToast(true);
+      setTimeout(() => setModeloSalvoToast(false), 3000);
+    },
+  });
+
+  const excluirModeloMutation = useMutation({
+    mutationFn: (id: string) => deletarPlano(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["planos-modelos"] });
+    },
+  });
+
+  // === Substituição Inteligente de Alimentos por Equivalência ===
+  function abrirModalSubstituicao(ruid: string, ouid: string, al: AlimentoCalculavel) {
+    setSubstituindoItem({ ruid, ouid, alimento: al });
+    setCriterioEquiv(detectarCriterioEquivalenciaDominante(al));
+    setSubstitutoCandidato(null);
+    setUsarMedidaCaseiraEquiv(false);
+  }
+
+  const resultadoEquivalencia = useMemo(() => {
+    if (!substituindoItem || !substitutoCandidato) return null;
+    return calcularSubstituicaoEquivalente(
+      substituindoItem.alimento,
+      substitutoCandidato,
+      criterioEquiv,
+      uid(),
+    );
+  }, [substituindoItem, substitutoCandidato, criterioEquiv]);
+
+  function construirAlimentoEquivalenteFinal(): AlimentoCalculavel | null {
+    if (!resultadoEquivalencia) return null;
+    const base = { ...resultadoEquivalencia.alimentoCalculado, _uid: uid() };
+    if (usarMedidaCaseiraEquiv && resultadoEquivalencia.sugestaoMedidaCaseira) {
+      const sug = resultadoEquivalencia.sugestaoMedidaCaseira;
+      const comMc = recalcularAlimentoPlano(base, "medidaCaseiraId", sug.id);
+      return recalcularAlimentoPlano(comMc, "quantidade", sug.quantidadeUnidades);
+    }
+    return base;
+  }
+
+  function aplicarSubstituicaoNoMesmoItem() {
+    if (!substituindoItem) return;
+    const novoAl = construirAlimentoEquivalenteFinal();
+    if (!novoAl) return;
+
+    setRefeicoes((prev) =>
+      prev.map((r) => {
+        if (r._uid !== substituindoItem.ruid) return r;
+        return {
+          ...r,
+          opcoes: r.opcoes.map((o) => {
+            if (o._uid !== substituindoItem.ouid) return o;
+            return {
+              ...o,
+              alimentos: o.alimentos.map((a) =>
+                a._uid === substituindoItem.alimento._uid ? novoAl : a,
+              ),
+            };
+          }),
+        };
+      }),
+    );
+    setSubstituindoItem(null);
+  }
+
+  function aplicarSubstituicaoEmNovaOpcao() {
+    if (!substituindoItem) return;
+    const novoAl = construirAlimentoEquivalenteFinal();
+    if (!novoAl) return;
+
+    setRefeicoes((prev) =>
+      prev.map((r) => {
+        if (r._uid !== substituindoItem.ruid) return r;
+        if (r.opcoes.length >= 10) return r;
+        const opcaoOrigem = r.opcoes.find((o) => o._uid === substituindoItem.ouid);
+        const alimentosClonados = opcaoOrigem
+          ? opcaoOrigem.alimentos.map((a) =>
+              a._uid === substituindoItem.alimento._uid ? novoAl : { ...a, _uid: uid() },
+            )
+          : [novoAl];
+        const novaOpcao: OpcaoLocal = {
+          _uid: uid(),
+          nome: `Subst. ${novoAl.alimento.split(",")[0]}`,
+          ordem: r.opcoes.length,
+          alimentos: alimentosClonados,
+        };
+        const novasOpcoes = [...r.opcoes, novaOpcao];
+        return {
+          ...r,
+          opcoes: novasOpcoes,
+          _activeOpcao: novasOpcoes.length - 1,
+        };
+      }),
+    );
+    setSubstituindoItem(null);
+  }
+
   // Totals (unificados com calcularTotaisPlano)
   const totaisDiarios = useMemo(
     () => calcularTotaisPlano(refeicoes, "principal"),
@@ -541,10 +719,36 @@ export function PlanoAlimentarBuilder({
 
   return (
     <div className={styles.builderContainer}>
-      <button className={styles.backBtn} onClick={onCancel}>
-        <HugeiconsIcon icon={ArrowLeft01Icon} size={14} strokeWidth={2} />
-        <span>Voltar</span>
-      </button>
+      <div className={styles.builderTopBar}>
+        <button className={styles.backBtn} onClick={onCancel} style={{ marginBottom: 0 }}>
+          <HugeiconsIcon icon={ArrowLeft01Icon} size={14} strokeWidth={2} />
+          <span>Voltar</span>
+        </button>
+
+        <div className={styles.templateActionsRow}>
+          {modeloSalvoToast && (
+            <span className={styles.templateSavedToast}>
+              ✓ Modelo salvo na biblioteca da clínica!
+            </span>
+          )}
+          <button
+            type="button"
+            className={styles.templateBtn}
+            onClick={() => setShowModelosModal(true)}
+          >
+            📋 Carregar Modelo da Clínica ({modelosClinica.length})
+          </button>
+          <button
+            type="button"
+            className={styles.templateBtn}
+            disabled={refeicoes.length === 0 || salvarModeloMutation.isPending}
+            onClick={() => salvarModeloMutation.mutate()}
+            title="Salva a estrutura atual de refeições e metas na biblioteca de modelos da clínica"
+          >
+            {salvarModeloMutation.isPending ? "Salvando Modelo..." : "💾 Salvar como Modelo"}
+          </button>
+        </div>
+      </div>
 
       {errorMsg && (
         <div className={styles.errorBanner}>
@@ -1200,22 +1404,36 @@ export function PlanoAlimentarBuilder({
                                   <span className={styles.macroCell}>
                                     {al.fibra != null ? al.fibra.toFixed(1) : "0"}
                                   </span>
-                                  <button
-                                    className={styles.removeAlimentoBtn}
-                                    onClick={() =>
-                                      removeAlimento(
-                                        ref._uid,
-                                        opcaoAtiva._uid,
-                                        al._uid,
-                                      )
-                                    }
-                                  >
-                                    <HugeiconsIcon
-                                      icon={Delete02Icon}
-                                      size={12}
-                                      strokeWidth={2}
-                                    />
-                                  </button>
+                                  <div className={styles.alimentoActionsCell}>
+                                    <button
+                                      type="button"
+                                      className={styles.substituirAlimentoBtn}
+                                      title="Substituir alimento por equivalência nutricional (1 clique)"
+                                      onClick={() =>
+                                        abrirModalSubstituicao(ref._uid, opcaoAtiva._uid, al)
+                                      }
+                                    >
+                                      ⇄
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className={styles.removeAlimentoBtn}
+                                      title="Remover alimento"
+                                      onClick={() =>
+                                        removeAlimento(
+                                          ref._uid,
+                                          opcaoAtiva._uid,
+                                          al._uid,
+                                        )
+                                      }
+                                    >
+                                      <HugeiconsIcon
+                                        icon={Delete02Icon}
+                                        size={12}
+                                        strokeWidth={2}
+                                      />
+                                    </button>
+                                  </div>
                                 </div>
                               ))}
                             </div>
@@ -1333,6 +1551,216 @@ export function PlanoAlimentarBuilder({
           </button>
         </div>
       </div>
+
+      {/* Modal: Biblioteca de Modelos de Cardápio da Clínica */}
+      {showModelosModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowModelosModal(false)}>
+          <div
+            className={`${styles.modalContent} ${styles.modalWide}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.modalHeader}>
+              <h3>Biblioteca de Modelos de Cardápio</h3>
+              <button
+                type="button"
+                className={styles.modalCloseBtn}
+                onClick={() => setShowModelosModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+            {modelosClinica.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "1.5rem 0", color: "#6b7280" }}>
+                <p style={{ margin: "0 0 0.5rem", fontWeight: 600 }}>
+                  Nenhum modelo salvo na clínica ainda.
+                </p>
+                <p style={{ margin: 0, fontSize: "0.8125rem" }}>
+                  Monte um plano e clique em <strong>"💾 Salvar como Modelo"</strong> para reutilizá-lo em 1 clique em outros pacientes.
+                </p>
+              </div>
+            ) : (
+              <div className={styles.templateList}>
+                {modelosClinica.map((mod) => {
+                  const kcalMod = Math.round(calcularTotaisPlano(mod.refeicoes || [], "principal").cal);
+                  return (
+                    <div key={mod.id} className={styles.templateItem}>
+                      <div className={styles.templateItemInfo}>
+                        <strong>{mod.titulo}</strong>
+                        <span>
+                          {kcalMod} kcal • {(mod.refeicoes || []).length} refeições
+                          {mod.objetivo ? ` • ${mod.objetivo}` : ""}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <button
+                          type="button"
+                          className={styles.modalSubmitBtn}
+                          style={{ padding: "0.375rem 0.75rem", fontSize: "0.75rem" }}
+                          onClick={() => aplicarModeloClinica(mod)}
+                        >
+                          Aplicar Modelo
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.removeRefeicaoBtn}
+                          title="Excluir modelo"
+                          onClick={() => {
+                            if (confirm(`Excluir o modelo "${mod.titulo}"?`)) {
+                              excluirModeloMutation.mutate(mod.id);
+                            }
+                          }}
+                        >
+                          <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={2} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Substituição Inteligente por Equivalência Nutricional */}
+      {substituindoItem && (
+        <div className={styles.modalOverlay} onClick={() => setSubstituindoItem(null)}>
+          <div
+            className={`${styles.modalContent} ${styles.modalWide}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.modalHeader}>
+              <h3>⇄ Substituição Inteligente por Equivalência</h3>
+              <button
+                type="button"
+                className={styles.modalCloseBtn}
+                onClick={() => setSubstituindoItem(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className={styles.modalForm}>
+              <div className={styles.equivOriginBox}>
+                <span>Alimento original na refeição:</span>
+                <strong>
+                  {substituindoItem.alimento.quantidade} {substituindoItem.alimento.unidade} de{" "}
+                  {substituindoItem.alimento.alimento}
+                </strong>
+                <span>
+                  {Math.round(substituindoItem.alimento.calorias ?? 0)} kcal • Carb:{" "}
+                  {(substituindoItem.alimento.carboidratos ?? 0).toFixed(1)}g • Prot:{" "}
+                  {(substituindoItem.alimento.proteinas ?? 0).toFixed(1)}g • Gord:{" "}
+                  {(substituindoItem.alimento.gorduras ?? 0).toFixed(1)}g
+                </span>
+              </div>
+
+              <div className={styles.modalField}>
+                <label>1. Igualar automaticamente por qual critério nutricional?</label>
+                <div className={styles.equivCriteriaPills}>
+                  {(
+                    [
+                      { key: "CARBOIDRATOS", label: "Carboidratos (g)" },
+                      { key: "PROTEINAS", label: "Proteínas (g)" },
+                      { key: "GORDURAS", label: "Gorduras (g)" },
+                      { key: "CALORIAS", label: "Calorias (kcal)" },
+                    ] as const
+                  ).map((c) => (
+                    <button
+                      key={c.key}
+                      type="button"
+                      className={`${styles.equivCriterionPill} ${
+                        criterioEquiv === c.key ? styles.equivCriterionPillActive : ""
+                      }`}
+                      onClick={() => setCriterioEquiv(c.key)}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.modalField}>
+                <label>2. Escolha o alimento substituto (TACO ou personalizado):</label>
+                <AlimentoSearch
+                  onSelect={(al) => {
+                    setSubstitutoCandidato(al);
+                    setUsarMedidaCaseiraEquiv(false);
+                  }}
+                />
+              </div>
+
+              {substitutoCandidato && resultadoEquivalencia && (
+                <div className={styles.equivResultBox}>
+                  <div>
+                    <span>Quantidade equivalente calculada para {substitutoCandidato.nome}:</span>
+                    <div>
+                      <strong>{resultadoEquivalencia.gramasEquivalentes} g</strong>
+                      {resultadoEquivalencia.sugestaoMedidaCaseira && (
+                        <span style={{ marginLeft: "0.5rem" }}>
+                          (≈ {resultadoEquivalencia.sugestaoMedidaCaseira.quantidadeUnidades}x{" "}
+                          {resultadoEquivalencia.sugestaoMedidaCaseira.nome})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    Resulta em:{" "}
+                    <strong>
+                      {Math.round(resultadoEquivalencia.alimentoCalculado.calorias ?? 0)} kcal
+                    </strong>{" "}
+                    ({resultadoEquivalencia.diferencaKcal >= 0 ? "+" : ""}
+                    {resultadoEquivalencia.diferencaKcal} kcal vs. original) • Carb:{" "}
+                    {(resultadoEquivalencia.alimentoCalculado.carboidratos ?? 0).toFixed(1)}g •
+                    Prot: {(resultadoEquivalencia.alimentoCalculado.proteinas ?? 0).toFixed(1)}g •
+                    Gord: {(resultadoEquivalencia.alimentoCalculado.gorduras ?? 0).toFixed(1)}g
+                  </div>
+
+                  {resultadoEquivalencia.sugestaoMedidaCaseira && (
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.4rem",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={usarMedidaCaseiraEquiv}
+                        onChange={(e) => setUsarMedidaCaseiraEquiv(e.target.checked)}
+                      />
+                      Usar medida caseira arredondada (
+                      {resultadoEquivalencia.sugestaoMedidaCaseira.quantidadeUnidades}x{" "}
+                      {resultadoEquivalencia.sugestaoMedidaCaseira.nome}) em vez de gramas
+                    </label>
+                  )}
+
+                  <div className={styles.modalActions}>
+                    <button
+                      type="button"
+                      className={styles.templateBtn}
+                      onClick={aplicarSubstituicaoEmNovaOpcao}
+                      title="Mantém a opção atual intacta e cria uma nova Opção de Substituição nesta refeição"
+                    >
+                      + Criar Nova Opção com esta Troca
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.modalSubmitBtn}
+                      onClick={aplicarSubstituicaoNoMesmoItem}
+                    >
+                      Substituir Item Atual
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

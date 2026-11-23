@@ -54,6 +54,15 @@ describe("planos-alimentares.controller", () => {
 
       expect(service.pegarPlanosAlimentares).toHaveBeenCalledWith("clinica-1", "paciente-1");
     });
+
+    it("deve passar isTemplate=true se fornecido na query", async () => {
+      req.query = { isTemplate: "true" };
+      vi.mocked(service.pegarPlanosAlimentares).mockResolvedValue([] as any);
+
+      await controller.listar(req as Request, res as Response);
+
+      expect(service.pegarPlanosAlimentares).toHaveBeenCalledWith("clinica-1", undefined, true);
+    });
   });
 
   describe("buscarPorId", () => {
