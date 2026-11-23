@@ -96,4 +96,5 @@ Todo desenvolvimento de feature ou correção de bug segue o ciclo **Red → Gre
   - `.agents/skills/criar-calculo-nutricional/SKILL.md`
   - `.agents/skills/padronizar-modulo/SKILL.md`
   - `.agents/skills/pre-pr-check/SKILL.md`
+  - `.agents/skills/gerar-descricao-pr/SKILL.md`
 

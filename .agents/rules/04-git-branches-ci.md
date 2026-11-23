@@ -33,3 +33,7 @@ O workflow `.github/workflows/ci.yml` valida automaticamente qualquer Push ou Pu
 4. Build completo de produção (`npm run build`)
 
 Nenhuma alteração deve ser considerada pronta sem que todos os passos passem localmente sem erros.
+
+## 4. Descrição de Pull Request (Code Review)
+- O template oficial fica em `.github/pull_request_template.md` (sem dependência de GitHub Issues).
+- Ao finalizar qualquer branch e fazer `git push`, utilize a skill `.agents/skills/gerar-descricao-pr/SKILL.md` para entregar ao usuário o Markdown preenchido com os critérios validados, comandos executados e avisos de migration para colar no PR.
