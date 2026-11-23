@@ -123,7 +123,7 @@ export async function pegarPlanoAlimentarPorId(id: string, clinicaId: string) {
     where: { id, clinicaId },
     include: {
       clinica: { select: { nome: true, logomarca: true } },
-      usuario: { select: { nome: true, email: true } },
+      usuario: { select: { nome: true, email: true, crn: true } },
       paciente: { select: { id: true, nome: true, dataNascimento: true } },
       refeicoes: {
         orderBy: { ordem: "asc" },

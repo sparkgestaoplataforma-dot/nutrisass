@@ -18,6 +18,11 @@ import {
   calcularRCE,
   calcularPollock3,
   calcularPollock7,
+  calcularComposicaoPorBioimpedancia,
+  classificarPercentualGordura,
+  formatarListaPortugues,
+  calcularProgressoAvaliacao,
+  validarValoresMedida,
   avaliarResultadoExame,
   duplicarPlanoParaInput,
   gerarRefeicoesPadrao,
@@ -547,6 +552,102 @@ describe('nutricaoCalculos — Motor Clínico e Correções do Plano Alimentar (
       expect(avaliarResultadoExame('88,5', 70, 99)).toBe('NORMAL');
       expect(avaliarResultadoExame('112 mg/dL', 70, 99)).toBe('ACIMA');
       expect(avaliarResultadoExame('Não reagente', null, null)).toBe('INDETERMINADO');
+    });
+
+    it('calcularComposicaoPorBioimpedancia deve calcular massa magra e gorda a partir do % de gordura', () => {
+      const res = calcularComposicaoPorBioimpedancia({
+        peso: 80,
+        percentualGordura: 20,
+      })!;
+      expect(res.percentualGordura).toBe(20);
+      expect(res.massaGordaKg).toBe(16);
+      expect(res.massaMagraKg).toBe(64);
+    });
+
+    it('calcularComposicaoPorBioimpedancia deve calcular % de gordura quando apenas massa magra for informada', () => {
+      const res = calcularComposicaoPorBioimpedancia({
+        peso: 70,
+        massaMagraKg: 52.5,
+      })!;
+      expect(res.massaMagraKg).toBe(52.5);
+      expect(res.massaGordaKg).toBe(17.5);
+      expect(res.percentualGordura).toBe(25);
+    });
+
+    it('calcularComposicaoPorBioimpedancia deve retornar null para entradas inválidas', () => {
+      expect(calcularComposicaoPorBioimpedancia({ peso: 0, percentualGordura: 20 })).toBeNull();
+      expect(calcularComposicaoPorBioimpedancia({ peso: 70 })).toBeNull();
+    });
+
+    it('classificarPercentualGordura deve classificar homem e mulher conforme referência clínica', () => {
+      expect(classificarPercentualGordura(14, 'MASCULINO', 28)?.label).toBe('Bom / Adequado');
+      expect(classificarPercentualGordura(28, 'MASCULINO', 28)?.badgeType).toBe('danger');
+      expect(classificarPercentualGordura(22, 'FEMININO', 30)?.label).toBe('Bom / Adequado');
+      expect(classificarPercentualGordura(36, 'FEMININO', 30)?.badgeType).toBe('danger');
+      expect(classificarPercentualGordura(null, 'FEMININO', 30)).toBeNull();
+    });
+
+    it('formatarListaPortugues deve formatar "X", "X e Y" e "X, Y e Z" corretamente', () => {
+      expect(formatarListaPortugues([])).toBe('');
+      expect(formatarListaPortugues(['Peso e Circunferências'])).toBe('Peso e Circunferências');
+      expect(formatarListaPortugues(['Peso e Circunferências', 'Dobras Cutâneas'])).toBe(
+        'Peso e Circunferências e Dobras Cutâneas',
+      );
+      expect(
+        formatarListaPortugues(['Peso e Circunferências', 'Dobras Cutâneas', 'Bioimpedância (BIA)']),
+      ).toBe('Peso e Circunferências, Dobras Cutâneas e Bioimpedância (BIA)');
+    });
+
+    it('calcularProgressoAvaliacao deve calcular % de preenchimento por aba, total e listar o que falta', () => {
+      const vazio = calcularProgressoAvaliacao({}, 'POLLOCK_3', 'MASCULINO');
+      expect(vazio.nenhumCampoPreenchido).toBe(true);
+      expect(vazio.percentualTotal).toBe(0);
+      expect(vazio.abasIncompletas).toEqual([
+        'Peso e Circunferências',
+        'Dobras Cutâneas (Pollock 3)',
+        'Bioimpedância (BIA)',
+      ]);
+      expect(vazio.textoAbasIncompletas).toBe(
+        'Peso e Circunferências, Dobras Cutâneas (Pollock 3) e Bioimpedância (BIA)',
+      );
+
+      const parcial = calcularProgressoAvaliacao(
+        {
+          peso: '80',
+          altura: '175',
+          dobraPeitoral: '12',
+          dobraAbdominal: '20',
+          dobraCoxa: '15',
+        },
+        'POLLOCK_3',
+        'MASCULINO',
+      );
+      expect(parcial.nenhumCampoPreenchido).toBe(false);
+      expect(parcial.abas.dobras.preenchidos).toBe(3);
+      expect(parcial.abas.dobras.total).toBe(3);
+      expect(parcial.abas.dobras.percentual).toBe(100);
+      expect(parcial.abasIncompletas).toEqual([
+        'Peso e Circunferências',
+        'Bioimpedância (BIA)',
+      ]);
+      expect(parcial.textoAbasIncompletas).toBe(
+        'Peso e Circunferências e Bioimpedância (BIA)',
+      );
+    });
+
+    it('validarValoresMedida deve apontar erros claros em português por campo quando valores excedem limites clínicos', () => {
+      const erros = validarValoresMedida({
+        percentualGordura: '123',
+        aguaCorporalPct: '123',
+        gorduraVisceral: '123',
+        idadeMetabolica: '123',
+        peso: '-5',
+      });
+      expect(erros.percentualGordura).toContain('entre 1% e 75%');
+      expect(erros.aguaCorporalPct).toContain('entre 10% e 90%');
+      expect(erros.gorduraVisceral).toContain('entre 1 e 60');
+      expect(erros.idadeMetabolica).toContain('entre 5 e 120 anos');
+      expect(erros.peso).toContain('maior que zero');
     });
   });
 

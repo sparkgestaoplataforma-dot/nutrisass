@@ -183,6 +183,9 @@ export function PlanoAlimentarBuilder({
   useEffect(() => {
     if (ultimaMedida?.peso) setCalcPeso(ultimaMedida.peso);
     if (ultimaMedida?.altura) setCalcAltura(ultimaMedida.altura);
+    if (ultimaMedida?.massaMagraKg) {
+      setCalcMassaMagra(String(ultimaMedida.massaMagraKg));
+    }
   }, [ultimaMedida]);
 
   useEffect(() => {
@@ -689,7 +692,14 @@ export function PlanoAlimentarBuilder({
               <div className={styles.calcGrid}>
                 {calcProtocolo === "CUNNINGHAM" && (
                   <div className={styles.fieldGroup}>
-                    <label className={styles.fieldLabel}>Massa Magra (kg)</label>
+                    <label className={styles.fieldLabel}>
+                      Massa Magra (kg)
+                      {ultimaMedida?.massaMagraKg && (
+                        <small style={{ marginLeft: "6px", fontWeight: 500, color: "#059669" }}>
+                          (Últ. medida: {ultimaMedida.massaMagraKg} kg)
+                        </small>
+                      )}
+                    </label>
                     <input
                       className={styles.fieldInput}
                       type="number"

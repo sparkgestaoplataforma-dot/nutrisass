@@ -4,11 +4,12 @@ import { ModoOperacaoConfig } from './ModoOperacao/ModoOperacaoConfig';
 import { ExamesBaseConfig } from './ExamesBase/ExamesBaseConfig';
 import { UsuariosConfig } from './Usuarios/UsuariosConfig';
 import { ClinicaConfig } from './Clinica/ClinicaConfig';
+import { PerfilConfig } from './Perfil/PerfilConfig';
 import { useAuthStore } from '@/stores/authStore';
 import { useIsAutonomo } from '@/hooks/useIsAutonomo';
 import styles from './ConfigPage.module.scss';
 
-type Tab = 'convenios' | 'exames' | 'usuarios' | 'modo' | 'clinica';
+type Tab = 'convenios' | 'exames' | 'usuarios' | 'modo' | 'clinica' | 'perfil';
 
 export function ConfigPage() {
   const [tab, setTab] = useState<Tab>('convenios');
@@ -59,6 +60,12 @@ export function ConfigPage() {
             Clínica
           </button>
         )}
+        <button
+          className={`${styles.tab} ${tab === 'perfil' ? styles.active : ''}`}
+          onClick={() => setTab('perfil')}
+        >
+          Meu Perfil (CRN)
+        </button>
       </div>
 
       {tab === 'convenios' && <ConveniosConfig />}
@@ -66,6 +73,7 @@ export function ConfigPage() {
       {tab === 'usuarios' && !isAutonomo && <UsuariosConfig />}
       {tab === 'modo' && <ModoOperacaoConfig />}
       {tab === 'clinica' && isAdmin && <ClinicaConfig />}
+      {tab === 'perfil' && <PerfilConfig />}
     </div>
   );
 }

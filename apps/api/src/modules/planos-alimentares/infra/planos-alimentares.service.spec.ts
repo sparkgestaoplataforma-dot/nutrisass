@@ -122,7 +122,9 @@ describe("planos-alimentares.service", () => {
 
       expect(prismaMock.planoAlimentar.findFirst).toHaveBeenCalledWith({
         where: { id: "plano-1", clinicaId: "clinica-1" },
-        include: expect.any(Object),
+        include: expect.objectContaining({
+          usuario: { select: { nome: true, email: true, crn: true } },
+        }),
       });
       expect(result.id).toBe("plano-1");
     });

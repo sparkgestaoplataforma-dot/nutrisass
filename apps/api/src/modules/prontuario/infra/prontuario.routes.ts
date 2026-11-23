@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createEvolucaoSchema, createMedidaSchema } from '@nutricao/shared';
+import { createEvolucaoSchema, createMedidaSchema, updateMedidaSchema } from '@nutricao/shared';
 import { validate } from "@/shared/middlewares/validate";
 import { authMiddleware } from "@/shared/middlewares/auth";
 import { clinicalGuard } from "@/shared/middlewares/clinicalGuard";
@@ -19,7 +19,7 @@ router.delete('/evolucoes/:id', controller.excluirEvolucao);
 // Medidas
 router.get('/:pacienteId/medidas', controller.listarMedidas);
 router.post('/:pacienteId/medidas', validate(createMedidaSchema), controller.criarMedida);
-router.put('/medidas/:id', controller.editarMedida);
+router.put('/medidas/:id', validate(updateMedidaSchema), controller.editarMedida);
 router.delete('/medidas/:id', controller.excluirMedida);
 
 export { router as prontuarioRoutes };

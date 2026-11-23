@@ -301,7 +301,9 @@ export function PlanoAlimentarPdfPage() {
         <div className={styles.assinatura}>
           <div className={styles.linha} />
           <p className={styles.nomeProfissional}>{usuario?.nome || 'Profissional NutriSaaS'}</p>
-          <p className={styles.cargo}>Nutricionista</p>
+          <p className={styles.cargo}>
+            {usuario?.crn ? `Nutricionista — ${usuario.crn}` : 'Nutricionista'}
+          </p>
           <p className={styles.cargo}>{usuario?.email}</p>
         </div>
       </footer>

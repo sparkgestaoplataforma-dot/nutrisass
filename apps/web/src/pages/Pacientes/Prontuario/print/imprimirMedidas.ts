@@ -5,6 +5,7 @@ import {
   calcularFaixaPesoIdeal,
   calcularRCQ,
   calcularRCE,
+  classificarPercentualGordura,
 } from '@/utils/nutricaoCalculos';
 
 export interface MedidaRegistro {
@@ -19,6 +20,11 @@ interface PacienteResumo {
   sexo?: string | null;
 }
 
+interface ProfissionalResumo {
+  nome?: string | null;
+  crn?: string | null;
+}
+
 export const MEDIDA_CAMPOS = [
   { key: 'peso', label: 'Peso', unidade: 'kg' },
   { key: 'altura', label: 'Altura', unidade: 'cm' },
@@ -31,6 +37,22 @@ export const MEDIDA_CAMPOS = [
   { key: 'coxaEsquerda', label: 'Coxa Esquerda', unidade: 'cm' },
   { key: 'culote', label: 'Culote', unidade: 'cm' },
 ] as const;
+
+export const MEDIDA_COMPOSICAO_CAMPOS = [
+  { key: 'percentualGordura', label: '% Gordura Corporal', unidade: '%' },
+  { key: 'massaMagraKg', label: 'Massa Magra', unidade: 'kg' },
+  { key: 'massaGordaKg', label: 'Massa Gorda', unidade: 'kg' },
+  { key: 'massaMuscularKg', label: 'Massa Muscular Esq.', unidade: 'kg' },
+  { key: 'aguaCorporalPct', label: 'Água Corporal', unidade: '%' },
+  { key: 'gorduraVisceral', label: 'Gordura Visceral', unidade: 'nível' },
+] as const;
+
+const PROTOCOLO_LABELS: Record<string, string> = {
+  POLLOCK_3: 'Pollock 3 Dobras',
+  POLLOCK_7: 'Pollock 7 Dobras',
+  BIOIMPEDANCIA: 'Bioimpedância',
+  MANUAL: 'Manual',
+};
 
 /** Máximo de avaliações (colunas) que cabem em uma folha A4 retrato. */
 const MAX_COLUNAS = 6;
@@ -59,6 +81,7 @@ export function imprimirMedidas(
   medidas: MedidaRegistro[],
   paciente: PacienteResumo,
   clinica: ClinicaTimbrado | null | undefined,
+  profissional?: ProfissionalResumo | null,
 ) {
   const registros = [...medidas]
     .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
@@ -70,7 +93,13 @@ export function imprimirMedidas(
   const ultima = registros[registros.length - 1];
   const mostrarVariacao = registros.length > 1;
 
-  const linhas = MEDIDA_CAMPOS.map((campo) => {
+  const camposComposicaoPreenchidos = MEDIDA_COMPOSICAO_CAMPOS.filter((campo) =>
+    registros.some((r) => typeof r[campo.key] === 'number'),
+  );
+
+  const camposParaTabela = [...MEDIDA_CAMPOS, ...camposComposicaoPreenchidos];
+
+  const linhas = camposParaTabela.map((campo) => {
     const valores = registros.map((r) => `<td>${fmt(r[campo.key])}</td>`).join('');
     let variacao = '';
     if (mostrarVariacao) {
@@ -110,7 +139,15 @@ export function imprimirMedidas(
   const pesoAlvoMedio = faixaPeso ? (faixaPeso.min + faixaPeso.max) / 2 : null;
   const rcq = calcularRCQ(ultima.cintura, ultima.quadril, paciente.sexo as any);
   const rce = calcularRCE(ultima.cintura, ultima.altura);
+  const classificacaoGordura = classificarPercentualGordura(
+    ultima.percentualGordura,
+    paciente.sexo === 'MASCULINO' || paciente.sexo === 'FEMININO' ? paciente.sexo : null,
+    anos,
+  );
   const sexo = paciente.sexo === 'MASCULINO' ? 'Masculino' : paciente.sexo === 'FEMININO' ? 'Feminino' : null;
+  const assinaturaProfissional = profissional?.nome
+    ? `${escapeHtml(profissional.nome)}${profissional.crn ? ` — ${escapeHtml(profissional.crn)}` : ''}`
+    : 'Nutricionista responsável';
 
   const body = `
     ${renderTimbrado(clinica)}
@@ -159,6 +196,21 @@ export function imprimirMedidas(
           ? `<div>Relação Cintura-Estatura (RCE): <strong>${fmt(rce.valor, 2)}</strong> — Risco cardiometabólico: <strong>${escapeHtml(rce.risco)}</strong></div>`
           : ''
       }
+      ${
+        typeof ultima.percentualGordura === 'number'
+          ? `<div>Composição Corporal: <strong>${fmt(ultima.percentualGordura)}% gordura</strong>${
+              classificacaoGordura ? ` (${escapeHtml(classificacaoGordura.label)})` : ''
+            }${
+              typeof ultima.massaMagraKg === 'number' ? ` • Massa Magra: <strong>${fmt(ultima.massaMagraKg)} kg</strong>` : ''
+            }${
+              typeof ultima.massaGordaKg === 'number' ? ` • Massa Gorda: <strong>${fmt(ultima.massaGordaKg)} kg</strong>` : ''
+            }${
+              ultima.protocoloComposicao
+                ? ` <small>(${escapeHtml(PROTOCOLO_LABELS[ultima.protocoloComposicao] || ultima.protocoloComposicao)})</small>`
+                : ''
+            }</div>`
+          : ''
+      }
     </div>
 
     ${medidas.length > MAX_COLUNAS ? `<p class="nota">Exibindo as ${MAX_COLUNAS} avaliações mais recentes de ${medidas.length}.</p>` : ''}
@@ -166,7 +218,7 @@ export function imprimirMedidas(
     <footer>
       <div class="assinatura">
         <div class="linha"></div>
-        <span>Nutricionista responsável</span>
+        <span>${assinaturaProfissional}</span>
       </div>
       <div class="emissao">Emitido em ${new Date().toLocaleDateString('pt-BR')}</div>
     </footer>
