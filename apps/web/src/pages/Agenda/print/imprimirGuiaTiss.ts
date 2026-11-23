@@ -30,11 +30,13 @@ export interface GuiaTissData {
     id: string;
     nome: string;
     perfil: string;
+    crn?: string | null;
   } | null;
   nutricionista?: {
     id: string;
     nome: string;
     perfil: string;
+    crn?: string | null;
   } | null;
   clinica: {
     id: string;
@@ -50,6 +52,7 @@ export interface GuiaTissData {
 export function imprimirGuiaTiss(data: GuiaTissData) {
   const conv = data.convenio || data.paciente.convenio;
   const profissionalNome = data.nutricionista?.nome || data.usuario?.nome || '';
+  const profissionalCrn = data.nutricionista?.crn || data.usuario?.crn || '';
   const dataAtendimento = new Date(data.dataHora).toLocaleDateString('pt-BR');
   const horaAtendimento = new Date(data.dataHora).toLocaleTimeString('pt-BR', {
     hour: '2-digit',
@@ -177,7 +180,7 @@ export function imprimirGuiaTiss(data: GuiaTissData) {
         <div class="box">
           <span class="box-num">14</span>
           <span class="box-label">Número no Conselho / UF</span>
-          <span class="box-val">&nbsp;</span>
+          <span class="box-val">${profissionalCrn ? escapeHtml(profissionalCrn) : '&nbsp;'}</span>
         </div>
         <div class="box">
           <span class="box-num">15</span>
@@ -252,7 +255,7 @@ export function imprimirGuiaTiss(data: GuiaTissData) {
           <span class="box-label">Assinatura do Profissional Executante</span>
           <div class="campo-assinatura">
             <div class="linha-ass"></div>
-            <span>${escapeHtml(profissionalNome)} (CRN)</span>
+            <span>${escapeHtml(profissionalNome)}${profissionalCrn ? ` (${escapeHtml(profissionalCrn)})` : ' (CRN)'}</span>
           </div>
         </div>
         <div class="box assinatura-box">

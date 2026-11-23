@@ -10,6 +10,7 @@ export async function pegarUsuarios(clinicaId: string) {
       nome: true,
       email: true,
       perfil: true,
+      crn: true,
       criadoEm: true,
     },
     orderBy: { nome: "asc" },
@@ -26,7 +27,8 @@ export async function pegarTodosNutricionistas(clinicaId: string) {
     select: {
       id: true,
       nome: true,
-      perfil: true
+      perfil: true,
+      crn: true,
     },
     orderBy: { nome: "asc" }
   });
@@ -61,12 +63,14 @@ export async function criarUsuario(clinicaId: string, data: any) {
       email: data.email,
       senha: senhaHash,
       perfil: data.perfil,
+      crn: data.crn?.trim() || null,
     },
     select: {
       id: true,
       nome: true,
       email: true,
       perfil: true,
+      crn: true,
       criadoEm: true,
     },
   });
@@ -80,11 +84,11 @@ export async function editarUsuario(id: string, clinicaId: string, body: any) {
   });
   if (!existente) throw new AppError("Usuário não encontrado", 404);
 
-  const data: any = {
-    nome: body.nome,
-    email: body.email,
-    perfil: body.perfil,
-  };
+  const data: any = {};
+  if (body.nome !== undefined) data.nome = body.nome;
+  if (body.email !== undefined) data.email = body.email;
+  if (body.perfil !== undefined) data.perfil = body.perfil;
+  if (body.crn !== undefined) data.crn = body.crn?.trim() || null;
 
   if (body.senha) {
     data.senha = await bcrypt.hash(body.senha, 10);
@@ -98,11 +102,55 @@ export async function editarUsuario(id: string, clinicaId: string, body: any) {
       nome: true,
       email: true,
       perfil: true,
+      crn: true,
       criadoEm: true,
     },
   });
 
   return usuario;
+}
+
+export async function obterMeuPerfil(usuarioId: string, clinicaId: string) {
+  const usuario = await prisma.usuario.findFirst({
+    where: { id: usuarioId, clinicaId },
+    select: {
+      id: true,
+      nome: true,
+      email: true,
+      perfil: true,
+      crn: true,
+    },
+  });
+
+  if (!usuario) throw new AppError("Usuário não encontrado", 404);
+  return usuario;
+}
+
+export async function atualizarMeuPerfil(
+  usuarioId: string,
+  clinicaId: string,
+  body: { nome?: string; crn?: string | null },
+) {
+  const existente = await prisma.usuario.findFirst({
+    where: { id: usuarioId, clinicaId },
+  });
+  if (!existente) throw new AppError("Usuário não encontrado", 404);
+
+  const data: { nome?: string; crn?: string | null } = {};
+  if (body.nome !== undefined) data.nome = body.nome;
+  if (body.crn !== undefined) data.crn = body.crn?.trim() || null;
+
+  return prisma.usuario.update({
+    where: { id: usuarioId },
+    data,
+    select: {
+      id: true,
+      nome: true,
+      email: true,
+      perfil: true,
+      crn: true,
+    },
+  });
 }
 
 export async function excluirUsuario(id: string, clinicaId: string) {

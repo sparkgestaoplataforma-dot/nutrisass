@@ -1,6 +1,20 @@
 import { Request, Response } from "express";
-import { getClinicaId } from "@/shared/middlewares/auth";
+import { getClinicaId, getUsuarioId } from "@/shared/middlewares/auth";
 import * as service from "./usuarios.service.js";
+
+export async function meuPerfil(req: Request, res: Response) {
+  const usuarioId = getUsuarioId(req);
+  const clinicaId = getClinicaId(req);
+  const perfil = await service.obterMeuPerfil(usuarioId, clinicaId);
+  return res.json({ success: true, data: perfil });
+}
+
+export async function atualizarMeuPerfil(req: Request, res: Response) {
+  const usuarioId = getUsuarioId(req);
+  const clinicaId = getClinicaId(req);
+  const perfil = await service.atualizarMeuPerfil(usuarioId, clinicaId, req.body);
+  return res.json({ success: true, data: perfil });
+}
 
 export async function listar(req: Request, res: Response) {
   const clinicaId = getClinicaId(req);

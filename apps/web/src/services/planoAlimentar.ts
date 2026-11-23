@@ -80,7 +80,7 @@ export interface PlanoAlimentarAPI {
   criadoEm: string;
   atualizadoEm: string;
   clinica?: { nome: string; logomarca: string | null };
-  usuario?: { nome: string; email: string };
+  usuario?: { nome: string; email: string; crn?: string | null };
   paciente?: { id: string; nome: string; dataNascimento?: string | Date | null };
   refeicoes: PlanoRefeicaoAPI[];
 }

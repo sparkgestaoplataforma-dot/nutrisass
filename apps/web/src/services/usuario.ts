@@ -1,4 +1,9 @@
-import type { ApiResponse, CreateUsuarioInput } from "@nutricao/shared";
+import type {
+  ApiResponse,
+  CreateUsuarioInput,
+  UpdateUsuarioInput,
+  UpdateMeuPerfilInput,
+} from "@nutricao/shared";
 import { api } from "./api";
 
 export interface nutricionista {
@@ -8,8 +13,27 @@ export interface nutricionista {
   email: string;
   senha: string;
   perfil: string;
+  crn?: string | null;
   criadoEm: string;
   atualizadoEm: string;
+}
+
+export interface MeuPerfil {
+  id: string;
+  nome: string;
+  email: string;
+  perfil: string;
+  crn: string | null;
+}
+
+export async function obterMeuPerfil(): Promise<MeuPerfil> {
+  const { data } = await api.get<ApiResponse<MeuPerfil>>("/usuarios/meu-perfil");
+  return data.data!;
+}
+
+export async function atualizarMeuPerfil(payload: UpdateMeuPerfilInput): Promise<MeuPerfil> {
+  const { data } = await api.put<ApiResponse<MeuPerfil>>("/usuarios/meu-perfil", payload);
+  return data.data!;
 }
 
 export async function esqueciSenha(email: string) {
@@ -46,7 +70,7 @@ export async function criarUsuario(payload: CreateUsuarioInput) {
   return data.data;
 }
 
-export async function editarUsuario(id: string, payload: Partial<CreateUsuarioInput>) {
+export async function editarUsuario(id: string, payload: UpdateUsuarioInput) {
   const { data } = await api.put(`/usuarios/${id}`, payload);
   return data.data;
 }

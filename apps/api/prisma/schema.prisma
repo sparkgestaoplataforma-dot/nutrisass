@@ -81,6 +81,7 @@ model Usuario {
   email               String           @unique
   senha               String
   perfil              Perfil
+  crn                 String?
   criadoEm            DateTime         @default(now()) @map("criado_em")
   atualizadoEm        DateTime         @updatedAt @map("atualizado_em")
   agendamentosCriados Agendamento[]    @relation("emissor")
@@ -206,10 +207,27 @@ model Medida {
   quadril       Float?
   bracoDireito  Float?   @map("braco_direito")
   bracoEsquerdo Float?   @map("braco_esquerdo")
-  coxaDireita   Float?   @map("coxa_direita")
-  coxaEsquerda  Float?   @map("coxa_esquerda")
-  culote        Float?
-  criadoEm      DateTime @default(now()) @map("criado_em")
+  coxaDireita         Float?   @map("coxa_direita")
+  coxaEsquerda        Float?   @map("coxa_esquerda")
+  culote              Float?
+  protocoloComposicao String?  @map("protocolo_composicao")
+  dobraTriceps        Float?   @map("dobra_triceps")
+  dobraSubescapular   Float?   @map("dobra_subescapular")
+  dobraPeitoral       Float?   @map("dobra_peitoral")
+  dobraAxilarMedia    Float?   @map("dobra_axilar_media")
+  dobraSuprailiaca    Float?   @map("dobra_suprailiaca")
+  dobraAbdominal      Float?   @map("dobra_abdominal")
+  dobraCoxa           Float?   @map("dobra_coxa")
+  percentualGordura   Float?   @map("percentual_gordura")
+  massaMagraKg        Float?   @map("massa_magra_kg")
+  massaGordaKg        Float?   @map("massa_gorda_kg")
+  massaMuscularKg     Float?   @map("massa_muscular_kg")
+  aguaCorporalPct     Float?   @map("agua_corporal_pct")
+  gorduraVisceral     Float?   @map("gordura_visceral")
+  taxaMetabolicaBia   Float?   @map("taxa_metabolica_bia")
+  idadeMetabolica     Int?     @map("idade_metabolica")
+  observacoes         String?
+  criadoEm            DateTime @default(now()) @map("criado_em")
 
   @@index([pacienteId])
   @@map("medidas")

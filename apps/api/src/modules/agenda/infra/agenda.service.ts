@@ -252,8 +252,8 @@ export async function obterDadosGuiaTiss(id: string, clinicaId: string) {
         include: { convenio: true },
       },
       convenio: true,
-      nutricionista: { select: { id: true, nome: true, perfil: true } },
-      criadoPor: { select: { id: true, nome: true, perfil: true } },
+      nutricionista: { select: { id: true, nome: true, perfil: true, crn: true } },
+      criadoPor: { select: { id: true, nome: true, perfil: true, crn: true } },
       clinica: {
         select: {
           id: true,

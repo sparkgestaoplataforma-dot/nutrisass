@@ -793,6 +793,337 @@ export function calcularPollock7(params: {
   };
 }
 
+export interface ResultadoComposicaoBioimpedancia {
+  percentualGordura: number;
+  massaGordaKg: number;
+  massaMagraKg: number;
+}
+
+export function calcularComposicaoPorBioimpedancia(params: {
+  peso: number;
+  percentualGordura?: number | null;
+  massaGordaKg?: number | null;
+  massaMagraKg?: number | null;
+}): ResultadoComposicaoBioimpedancia | null {
+  const { peso, percentualGordura, massaGordaKg, massaMagraKg } = params;
+  if (!peso || peso <= 0 || Number.isNaN(peso)) return null;
+
+  if (percentualGordura != null && percentualGordura > 0 && percentualGordura < 80) {
+    const gorda =
+      massaGordaKg != null && massaGordaKg >= 0
+        ? round1(massaGordaKg)
+        : round1((peso * percentualGordura) / 100);
+    const magra =
+      massaMagraKg != null && massaMagraKg > 0
+        ? round1(massaMagraKg)
+        : round1(Math.max(0, peso - gorda));
+
+    return {
+      percentualGordura: round1(percentualGordura),
+      massaGordaKg: gorda,
+      massaMagraKg: magra,
+    };
+  }
+
+  if (massaMagraKg != null && massaMagraKg > 0 && massaMagraKg < peso) {
+    const magra = round1(massaMagraKg);
+    const gorda =
+      massaGordaKg != null && massaGordaKg >= 0
+        ? round1(massaGordaKg)
+        : round1(peso - magra);
+    const pct = round1((gorda / peso) * 100);
+    return {
+      percentualGordura: pct,
+      massaGordaKg: gorda,
+      massaMagraKg: magra,
+    };
+  }
+
+  if (massaGordaKg != null && massaGordaKg > 0 && massaGordaKg < peso) {
+    const gorda = round1(massaGordaKg);
+    const magra = round1(peso - gorda);
+    const pct = round1((gorda / peso) * 100);
+    return {
+      percentualGordura: pct,
+      massaGordaKg: gorda,
+      massaMagraKg: magra,
+    };
+  }
+
+  return null;
+}
+
+export interface ClassificacaoPercentualGordura {
+  label: string;
+  badgeType: 'ok' | 'warn' | 'danger';
+}
+
+export function classificarPercentualGordura(
+  percentual: number | null | undefined,
+  sexo: 'MASCULINO' | 'FEMININO' | null | undefined,
+  idade?: number | null,
+): ClassificacaoPercentualGordura | null {
+  if (percentual == null || Number.isNaN(percentual) || percentual <= 0 || !sexo) {
+    return null;
+  }
+
+  const ajusteIdade = idade != null && idade >= 55 ? 4 : idade != null && idade >= 40 ? 2 : 0;
+
+  if (sexo === 'MASCULINO') {
+    if (percentual < 6) return { label: 'Essencial / Baixo', badgeType: 'warn' };
+    if (percentual <= 12 + ajusteIdade) return { label: 'Excelente (Atleta)', badgeType: 'ok' };
+    if (percentual <= 18 + ajusteIdade) return { label: 'Bom / Adequado', badgeType: 'ok' };
+    if (percentual <= 24 + ajusteIdade) return { label: 'Moderado / Acima do ideal', badgeType: 'warn' };
+    return { label: 'Elevado', badgeType: 'danger' };
+  }
+
+  if (percentual < 14) return { label: 'Essencial / Baixo', badgeType: 'warn' };
+  if (percentual <= 20 + ajusteIdade) return { label: 'Excelente (Atleta)', badgeType: 'ok' };
+  if (percentual <= 26 + ajusteIdade) return { label: 'Bom / Adequado', badgeType: 'ok' };
+  if (percentual <= 32 + ajusteIdade) return { label: 'Moderado / Acima do ideal', badgeType: 'warn' };
+  return { label: 'Elevado', badgeType: 'danger' };
+}
+
+export function formatarListaPortugues(itens: string[]): string {
+  const limpos = itens.map((i) => i.trim()).filter(Boolean);
+  if (limpos.length === 0) return '';
+  if (limpos.length === 1) return limpos[0];
+  if (limpos.length === 2) return `${limpos[0]} e ${limpos[1]}`;
+  return `${limpos.slice(0, -1).join(', ')} e ${limpos[limpos.length - 1]}`;
+}
+
+export interface ProgressoAbaMedida {
+  nome: string;
+  preenchidos: number;
+  total: number;
+  percentual: number;
+  faltantes: string[];
+  textoFaltantes: string;
+}
+
+export interface ProgressoAvaliacaoResult {
+  abas: {
+    circunferencias: ProgressoAbaMedida;
+    dobras: ProgressoAbaMedida;
+    bioimpedancia: ProgressoAbaMedida;
+  };
+  totalPreenchidos: number;
+  totalCampos: number;
+  percentualTotal: number;
+  nenhumCampoPreenchido: boolean;
+  abasIncompletas: string[];
+  textoAbasIncompletas: string;
+}
+
+const CAMPOS_CIRCUNFERENCIAS_PROGRESSO = [
+  { key: 'peso', label: 'Peso' },
+  { key: 'altura', label: 'Altura' },
+  { key: 'cintura', label: 'Cintura' },
+  { key: 'abdomen', label: 'Abdômen' },
+  { key: 'quadril', label: 'Quadril' },
+  { key: 'bracoDireito', label: 'Braço Dir.' },
+  { key: 'bracoEsquerdo', label: 'Braço Esq.' },
+  { key: 'coxaDireita', label: 'Coxa Dir.' },
+  { key: 'coxaEsquerda', label: 'Coxa Esq.' },
+  { key: 'culote', label: 'Culote' },
+] as const;
+
+const CAMPOS_DOBRAS_PROGRESSO = [
+  { key: 'dobraPeitoral', label: 'Peitoral', p3M: true, p3F: false },
+  { key: 'dobraAxilarMedia', label: 'Axilar Média', p3M: false, p3F: false },
+  { key: 'dobraTriceps', label: 'Tríceps', p3M: false, p3F: true },
+  { key: 'dobraSubescapular', label: 'Subescapular', p3M: false, p3F: false },
+  { key: 'dobraAbdominal', label: 'Abdominal', p3M: true, p3F: false },
+  { key: 'dobraSuprailiaca', label: 'Suprailíaca', p3M: false, p3F: true },
+  { key: 'dobraCoxa', label: 'Coxa Medial', p3M: true, p3F: true },
+] as const;
+
+const CAMPOS_BIA_PROGRESSO = [
+  { key: 'percentualGordura', label: '% Gordura Corporal' },
+  { key: 'massaMagraKg', label: 'Massa Magra' },
+  { key: 'massaGordaKg', label: 'Massa Gorda' },
+  { key: 'massaMuscularKg', label: 'Massa Muscular Esq.' },
+  { key: 'aguaCorporalPct', label: 'Água Corporal' },
+  { key: 'gorduraVisceral', label: 'Gordura Visceral' },
+  { key: 'taxaMetabolicaBia', label: 'TMB Aparelho BIA' },
+  { key: 'idadeMetabolica', label: 'Idade Metabólica' },
+] as const;
+
+function campoTemValor(v: unknown): boolean {
+  if (v === '' || v === null || v === undefined) return false;
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0;
+}
+
+function avaliarAba(
+  nome: string,
+  campos: ReadonlyArray<{ key: string; label: string }>,
+  valores: Record<string, unknown>,
+): ProgressoAbaMedida {
+  const faltantes: string[] = [];
+  let preenchidos = 0;
+  for (const c of campos) {
+    if (campoTemValor(valores[c.key])) {
+      preenchidos++;
+    } else {
+      faltantes.push(c.label);
+    }
+  }
+  const total = campos.length;
+  const percentual = total > 0 ? Math.round((preenchidos / total) * 100) : 0;
+  return {
+    nome,
+    preenchidos,
+    total,
+    percentual,
+    faltantes,
+    textoFaltantes: formatarListaPortugues(faltantes),
+  };
+}
+
+export function calcularProgressoAvaliacao(
+  valores: Record<string, unknown> | null | undefined,
+  pollockModo: 'POLLOCK_3' | 'POLLOCK_7' = 'POLLOCK_3',
+  sexo: 'MASCULINO' | 'FEMININO' = 'FEMININO',
+): ProgressoAvaliacaoResult {
+  const vals = valores || {};
+
+  const dobrasAtivas =
+    pollockModo === 'POLLOCK_7'
+      ? CAMPOS_DOBRAS_PROGRESSO
+      : CAMPOS_DOBRAS_PROGRESSO.filter((d) => (sexo === 'MASCULINO' ? d.p3M : d.p3F));
+
+  const nomeDobras =
+    pollockModo === 'POLLOCK_3'
+      ? 'Dobras Cutâneas (Pollock 3)'
+      : 'Dobras Cutâneas (Pollock 7)';
+
+  const circunferencias = avaliarAba(
+    'Peso e Circunferências',
+    CAMPOS_CIRCUNFERENCIAS_PROGRESSO,
+    vals,
+  );
+  const dobras = avaliarAba(nomeDobras, dobrasAtivas, vals);
+  const bioimpedancia = avaliarAba('Bioimpedância (BIA)', CAMPOS_BIA_PROGRESSO, vals);
+
+  const totalPreenchidos =
+    circunferencias.preenchidos + dobras.preenchidos + bioimpedancia.preenchidos;
+  const totalCampos = circunferencias.total + dobras.total + bioimpedancia.total;
+  const percentualTotal =
+    totalCampos > 0 ? Math.round((totalPreenchidos / totalCampos) * 100) : 0;
+
+  const abasIncompletas = [circunferencias, dobras, bioimpedancia]
+    .filter((a) => a.preenchidos < a.total)
+    .map((a) => a.nome);
+
+  return {
+    abas: {
+      circunferencias,
+      dobras,
+      bioimpedancia,
+    },
+    totalPreenchidos,
+    totalCampos,
+    percentualTotal,
+    nenhumCampoPreenchido: totalPreenchidos === 0,
+    abasIncompletas,
+    textoAbasIncompletas: formatarListaPortugues(abasIncompletas),
+  };
+}
+
+const REGRAS_LIMITES_MEDIDA: Record<
+  string,
+  { label: string; min: number; max: number; unidade?: string; inteiro?: boolean }
+> = {
+  peso: { label: 'Peso', min: 0.1, max: 500, unidade: 'kg' },
+  altura: { label: 'Altura', min: 20, max: 280, unidade: 'cm' },
+  cintura: { label: 'Cintura', min: 10, max: 300, unidade: 'cm' },
+  abdomen: { label: 'Abdômen', min: 10, max: 300, unidade: 'cm' },
+  quadril: { label: 'Quadril', min: 10, max: 300, unidade: 'cm' },
+  bracoDireito: { label: 'Braço Direito', min: 5, max: 150, unidade: 'cm' },
+  bracoEsquerdo: { label: 'Braço Esquerdo', min: 5, max: 150, unidade: 'cm' },
+  coxaDireita: { label: 'Coxa Direita', min: 10, max: 200, unidade: 'cm' },
+  coxaEsquerda: { label: 'Coxa Esquerda', min: 10, max: 200, unidade: 'cm' },
+  culote: { label: 'Culote', min: 10, max: 300, unidade: 'cm' },
+  dobraPeitoral: { label: 'Dobra Peitoral', min: 1, max: 150, unidade: 'mm' },
+  dobraAxilarMedia: { label: 'Dobra Axilar Média', min: 1, max: 150, unidade: 'mm' },
+  dobraTriceps: { label: 'Dobra Tríceps', min: 1, max: 150, unidade: 'mm' },
+  dobraSubescapular: { label: 'Dobra Subescapular', min: 1, max: 150, unidade: 'mm' },
+  dobraAbdominal: { label: 'Dobra Abdominal', min: 1, max: 150, unidade: 'mm' },
+  dobraSuprailiaca: { label: 'Dobra Suprailíaca', min: 1, max: 150, unidade: 'mm' },
+  dobraCoxa: { label: 'Dobra Coxa Medial', min: 1, max: 150, unidade: 'mm' },
+  percentualGordura: { label: '% Gordura Corporal', min: 1, max: 75, unidade: '%' },
+  massaMagraKg: { label: 'Massa Magra', min: 1, max: 300, unidade: 'kg' },
+  massaGordaKg: { label: 'Massa Gorda', min: 0, max: 300, unidade: 'kg' },
+  massaMuscularKg: { label: 'Massa Muscular Esq.', min: 1, max: 250, unidade: 'kg' },
+  aguaCorporalPct: { label: 'Água Corporal', min: 10, max: 90, unidade: '%' },
+  gorduraVisceral: { label: 'Gordura Visceral', min: 1, max: 60 },
+  taxaMetabolicaBia: { label: 'TMB Aparelho BIA', min: 200, max: 10000, unidade: 'kcal' },
+  idadeMetabolica: { label: 'Idade Metabólica', min: 5, max: 120, unidade: 'anos', inteiro: true },
+};
+
+export function validarValoresMedida(
+  valores: Record<string, unknown> | null | undefined,
+): Record<string, string> {
+  const erros: Record<string, string> = {};
+  if (!valores) return erros;
+
+  for (const [key, regra] of Object.entries(REGRAS_LIMITES_MEDIDA)) {
+    const raw = valores[key];
+    if (raw === '' || raw === null || raw === undefined) continue;
+    const num = Number(raw);
+    const sufixoMin = regra.unidade === '%' ? '%' : '';
+    const sufixoMax = regra.unidade === '%' ? '%' : regra.unidade ? ` ${regra.unidade}` : '';
+
+    if (!Number.isFinite(num)) {
+      erros[key] = `${regra.label}: informe um número válido.`;
+      continue;
+    }
+    if (num <= 0 && regra.min > 0) {
+      erros[key] = `${regra.label}: deve ser maior que zero (entre ${regra.min}${sufixoMin} e ${regra.max}${sufixoMax}).`;
+      continue;
+    }
+    if (regra.inteiro && !Number.isInteger(num)) {
+      erros[key] = `${regra.label}: deve ser um número inteiro.`;
+      continue;
+    }
+    if (num < regra.min || num > regra.max) {
+      erros[key] = `${regra.label}: valor inválido (${num}). Deve estar entre ${regra.min}${sufixoMin} e ${regra.max}${sufixoMax}.`;
+    }
+  }
+
+  return erros;
+}
+
+export function traduzirErrosApiMedida(
+  apiErrors: Record<string, string[]> | undefined | null,
+): Record<string, string> {
+  const resultado: Record<string, string> = {};
+  if (!apiErrors) return resultado;
+
+  for (const [key, msgs] of Object.entries(apiErrors)) {
+    const msg = msgs?.[0];
+    if (!msg) continue;
+    const regra = REGRAS_LIMITES_MEDIDA[key];
+    if (!regra) {
+      resultado[key] = msg;
+      continue;
+    }
+    const sufixo = regra.unidade === '%' ? '%' : regra.unidade ? ` ${regra.unidade}` : '';
+    if (
+      msg.includes('less than or equal') ||
+      msg.includes('greater than') ||
+      msg.includes('Expected')
+    ) {
+      resultado[key] = `${regra.label}: deve estar entre ${regra.min}${sufixo} e ${regra.max}${sufixo}.`;
+    } else {
+      resultado[key] = msg.startsWith(regra.label) ? msg : `${regra.label}: ${msg}`;
+    }
+  }
+
+  return resultado;
+}
+
 export type StatusReferenciaExame = 'ABAIXO' | 'NORMAL' | 'ACIMA' | 'INDETERMINADO';
 
 export function avaliarResultadoExame(

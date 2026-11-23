@@ -8,6 +8,8 @@ import {
   excluirUsuario,
   esqueciSenha,
   alterarSenha,
+  obterMeuPerfil,
+  atualizarMeuPerfil,
 } from "./usuarios.service";
 import { AppError } from "@/shared/middlewares/errorHandler";
 import bcrypt from "bcryptjs";
@@ -61,6 +63,7 @@ describe("usuarios.service", () => {
           id: true,
           nome: true,
           perfil: true,
+          crn: true,
         },
         orderBy: { nome: "asc" },
       });
@@ -76,14 +79,21 @@ describe("usuarios.service", () => {
         id: "novo-id",
         nome: "Novo",
         email: "novo@example.com",
+        crn: "CRN-3 12345/P",
       } as any);
 
-      const data = { nome: "Novo", email: "novo@example.com", senha: "123", perfil: "NUTRICIONISTA" };
+      const data = { nome: "Novo", email: "novo@example.com", senha: "123", perfil: "NUTRICIONISTA", crn: "CRN-3 12345/P" };
       const result = await criarUsuario(mockClinicaId, data);
 
       expect(prismaMock.usuario.findUnique).toHaveBeenCalledWith({ where: { email: data.email } });
       expect(bcrypt.hash).toHaveBeenCalledWith("123", 10);
-      expect(prismaMock.usuario.create).toHaveBeenCalled();
+      expect(prismaMock.usuario.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            crn: "CRN-3 12345/P",
+          }),
+        })
+      );
       expect(result.id).toBe("novo-id");
     });
 
@@ -194,6 +204,69 @@ describe("usuarios.service", () => {
         data: { senha: "hashed_password" }
       });
       expect(result.senhaAtualizada).toBe(true);
+    });
+  });
+
+  describe("obterMeuPerfil e atualizarMeuPerfil", () => {
+    it("obterMeuPerfil deve retornar dados do usuário incluindo crn validando clinicaId", async () => {
+      prismaMock.usuario.findFirst.mockResolvedValue({
+        id: mockUsuarioId,
+        nome: "Dra. Ana",
+        email: "ana@nutri.com",
+        perfil: "NUTRICIONISTA",
+        crn: "CRN-3 9988/P",
+      } as any);
+
+      const res = await obterMeuPerfil(mockUsuarioId, mockClinicaId);
+
+      expect(prismaMock.usuario.findFirst).toHaveBeenCalledWith({
+        where: { id: mockUsuarioId, clinicaId: mockClinicaId },
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          perfil: true,
+          crn: true,
+        },
+      });
+      expect(res.crn).toBe("CRN-3 9988/P");
+    });
+
+    it("obterMeuPerfil deve lançar 404 se usuário não pertencer à clínica", async () => {
+      prismaMock.usuario.findFirst.mockResolvedValue(null);
+
+      await expect(obterMeuPerfil(mockUsuarioId, mockClinicaId)).rejects.toThrow(
+        new AppError("Usuário não encontrado", 404),
+      );
+    });
+
+    it("atualizarMeuPerfil deve atualizar nome e crn (normalizando string vazia para null)", async () => {
+      prismaMock.usuario.findFirst.mockResolvedValue({ id: mockUsuarioId, clinicaId: mockClinicaId } as any);
+      prismaMock.usuario.update.mockResolvedValue({
+        id: mockUsuarioId,
+        nome: "Dra. Ana Paula",
+        email: "ana@nutri.com",
+        perfil: "NUTRICIONISTA",
+        crn: "CRN-3 1234",
+      } as any);
+
+      const res = await atualizarMeuPerfil(mockUsuarioId, mockClinicaId, {
+        nome: "Dra. Ana Paula",
+        crn: "  CRN-3 1234  ",
+      });
+
+      expect(prismaMock.usuario.update).toHaveBeenCalledWith({
+        where: { id: mockUsuarioId },
+        data: { nome: "Dra. Ana Paula", crn: "CRN-3 1234" },
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          perfil: true,
+          crn: true,
+        },
+      });
+      expect(res.crn).toBe("CRN-3 1234");
     });
   });
 });

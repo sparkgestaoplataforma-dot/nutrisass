@@ -39,3 +39,6 @@ npm run build
 ```
 *(Garante que `tsc`, `tsc-alias` e `vite build` geram os artefatos de produção sem falhas)*.
 
+## 5. Descrição do Pull Request (GitFlow)
+Após o commit e `git push` da branch, execute a skill `.agents/skills/gerar-descricao-pr/SKILL.md` para gerar o Markdown preenchido com base em `.github/pull_request_template.md`, pronto para colar no GitHub.
+

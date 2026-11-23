@@ -51,12 +51,12 @@ export function UsuariosConfig() {
   function fecharForm() {
     setFormAberto(false);
     setEditandoId(null);
-    reset({ nome: '', email: '', senha: '', perfil: 'NUTRICIONISTA' });
+    reset({ nome: '', email: '', senha: '', perfil: 'NUTRICIONISTA', crn: '' });
   }
 
   function editar(user: any) {
     setEditandoId(user.id);
-    reset({ nome: user.nome, email: user.email, senha: '', perfil: user.perfil });
+    reset({ nome: user.nome, email: user.email, senha: '', perfil: user.perfil, crn: user.crn || '' });
     setFormAberto(true);
   }
 
@@ -93,6 +93,10 @@ export function UsuariosConfig() {
                   <option value="SECRETARIA">Secretária</option>
                 </select>
               </div>
+              <div className={styles.field}>
+                <label>CRN (opcional)</label>
+                <input {...register('crn')} placeholder="Ex: CRN-3 12345/P" maxLength={30} />
+              </div>
             </div>
             <div className={styles.formActions}>
               <button type="button" className={styles.cancelBtn} onClick={fecharForm}>Cancelar</button>
@@ -110,13 +114,14 @@ export function UsuariosConfig() {
         ) : (
           <table className={styles.table}>
             <thead>
-              <tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Ações</th></tr>
+              <tr><th>Nome</th><th>E-mail</th><th>CRN</th><th>Perfil</th><th>Ações</th></tr>
             </thead>
             <tbody>
               {usuarios.map((u: any) => (
                 <tr key={u.id}>
                   <td data-label="Nome">{u.nome}</td>
                   <td data-label="E-mail">{u.email}</td>
+                  <td data-label="CRN">{u.crn || '—'}</td>
                   <td data-label="Perfil">
                     <span className={`${styles.badge} ${perfilLabels[u.perfil]?.className || ''}`}>
                       {perfilLabels[u.perfil]?.label || u.perfil}

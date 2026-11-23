@@ -88,6 +88,76 @@ describe('Prontuario Service (TDD - Clean Architecture)', () => {
       });
       expect(res.peso).toBe(71.0);
     });
+
+    it('criarMedidaPaciente deve persistir dobras Pollock, bioimpedância e composição corporal', async () => {
+      prismaMock.paciente.findFirst.mockResolvedValue({ id: pacienteId, clinicaId } as any);
+      prismaMock.medida.create.mockResolvedValue({
+        id: 'med-comp-1',
+        protocoloComposicao: 'POLLOCK_3',
+        dobraPeitoral: 12,
+        dobraAbdominal: 22,
+        dobraCoxa: 18,
+        percentualGordura: 15.8,
+        massaGordaKg: 12.6,
+        massaMagraKg: 67.4,
+      } as any);
+
+      const res = await prontuarioService.criarMedidaPaciente(pacienteId, clinicaId, {
+        data: '2026-11-17',
+        peso: 80,
+        protocoloComposicao: 'POLLOCK_3',
+        dobraPeitoral: 12,
+        dobraAbdominal: 22,
+        dobraCoxa: 18,
+        percentualGordura: 15.8,
+        massaGordaKg: 12.6,
+        massaMagraKg: 67.4,
+      });
+
+      expect(prismaMock.medida.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          pacienteId,
+          peso: 80,
+          protocoloComposicao: 'POLLOCK_3',
+          dobraPeitoral: 12,
+          dobraAbdominal: 22,
+          dobraCoxa: 18,
+          percentualGordura: 15.8,
+          massaGordaKg: 12.6,
+          massaMagraKg: 67.4,
+        }),
+      });
+      expect(res.percentualGordura).toBe(15.8);
+    });
+
+    it('editarMedidaPaciente deve atualizar campos de bioimpedância validando clínica', async () => {
+      prismaMock.medida.findFirst.mockResolvedValue({ id: 'med-1' } as any);
+      prismaMock.medida.update.mockResolvedValue({
+        id: 'med-1',
+        protocoloComposicao: 'BIOIMPEDANCIA',
+        aguaCorporalPct: 55.2,
+        massaMuscularKg: 34.1,
+        gorduraVisceral: 6,
+      } as any);
+
+      const res = await prontuarioService.editarMedidaPaciente('med-1', clinicaId, {
+        protocoloComposicao: 'BIOIMPEDANCIA',
+        aguaCorporalPct: 55.2,
+        massaMuscularKg: 34.1,
+        gorduraVisceral: 6,
+      });
+
+      expect(prismaMock.medida.update).toHaveBeenCalledWith({
+        where: { id: 'med-1' },
+        data: expect.objectContaining({
+          protocoloComposicao: 'BIOIMPEDANCIA',
+          aguaCorporalPct: 55.2,
+          massaMuscularKg: 34.1,
+          gorduraVisceral: 6,
+        }),
+      });
+      expect(res.aguaCorporalPct).toBe(55.2);
+    });
   });
 });
 

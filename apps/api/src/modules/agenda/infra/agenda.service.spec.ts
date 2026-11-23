@@ -6,6 +6,7 @@ import {
   editarAgendamento,
   alterarStatusAgendamento,
   excluirAgendamento,
+  obterDadosGuiaTiss,
 } from "./agenda.service";
 import { AppError } from "@/shared/middlewares/errorHandler";
 
@@ -129,6 +130,29 @@ describe("agenda.service", () => {
       await excluirAgendamento(mockAgendamentoId, mockClinicaId);
 
       expect(prismaMock.agendamento.delete).toHaveBeenCalled();
+    });
+  });
+
+  describe("obterDadosGuiaTiss", () => {
+    it("deve incluir crn do nutricionista nos dados da Guia TISS validando clinicaId", async () => {
+      prismaMock.agendamento.findFirst.mockResolvedValue({
+        id: mockAgendamentoId,
+        nutricionista: { id: mockUsuarioId, nome: "Dra. Nutri", perfil: "NUTRICIONISTA", crn: "CRN-1 4567" },
+        criadoPor: { id: mockUsuarioId, nome: "Dra. Nutri", perfil: "NUTRICIONISTA", crn: "CRN-1 4567" },
+      } as any);
+
+      const res = await obterDadosGuiaTiss(mockAgendamentoId, mockClinicaId);
+
+      expect(prismaMock.agendamento.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: mockAgendamentoId, clinicaId: mockClinicaId },
+          include: expect.objectContaining({
+            nutricionista: { select: { id: true, nome: true, perfil: true, crn: true } },
+            criadoPor: { select: { id: true, nome: true, perfil: true, crn: true } },
+          }),
+        })
+      );
+      expect(res.usuario?.crn).toBe("CRN-1 4567");
     });
   });
 });
