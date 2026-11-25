@@ -2,6 +2,14 @@ import { api } from "./api";
 import type { ApiResponse } from "@nutricao/shared";
 import type { CreatePlanoAlimentarInput, UpdatePlanoAlimentarInput } from "@nutricao/shared";
 
+export const OBJETIVO_LABELS: Record<string, string> = {
+  EMAGRECIMENTO: "Emagrecimento",
+  HIPERTROFIA: "Hipertrofia",
+  MANUTENCAO: "Manutenção",
+  REEDUCACAO_ALIMENTAR: "Reeducação Alimentar",
+  OUTRO: "Outro",
+};
+
 // ==========================================
 // Types
 // ==========================================

@@ -1,4 +1,4 @@
-import type { CreatePlanoAlimentarInput } from '@nutricao/shared';
+import { ObjetivoPlano, type CreatePlanoAlimentarInput } from '@nutricao/shared';
 
 export interface BaseNutricional100g {
   cal: number;
@@ -607,9 +607,19 @@ export function calcularRecomendacaoAgua(pesoKg: number, mlPorKg: number = 35): 
 // ============================================================================
 
 export function calcularIMC(peso?: number | null, alturaCm?: number | null): number | null {
-  if (!peso || !alturaCm || peso <= 0 || alturaCm <= 0) return null;
+  if (
+    typeof peso !== 'number' ||
+    typeof alturaCm !== 'number' ||
+    !Number.isFinite(peso) ||
+    !Number.isFinite(alturaCm) ||
+    peso <= 0 ||
+    alturaCm <= 0
+  ) {
+    return null;
+  }
   const m = alturaCm / 100;
-  return peso / (m * m);
+  const imc = peso / (m * m);
+  return Number.isFinite(imc) ? imc : null;
 }
 
 /**
@@ -1148,69 +1158,94 @@ export function avaliarResultadoExame(
 // PRODUTIVIDADE NO PLANO ALIMENTAR (DUPLICAR PLANO E REFEIÇÕES PADRÃO)
 // ============================================================================
 
-export function duplicarPlanoParaInput(plano: {
+export interface PlanoAlimentoOrigem {
+  alimentoId?: string | null;
+  medidaCaseiraId?: string | null;
+  alimento: string;
+  quantidade: number;
+  unidade: string;
+  calorias?: number | null;
+  proteinas?: number | null;
+  carboidratos?: number | null;
+  gorduras?: number | null;
+  observacao?: string | null;
+}
+
+export interface PlanoOpcaoOrigem {
+  nome?: string | null;
+  ordem?: number;
+  alimentos: PlanoAlimentoOrigem[];
+}
+
+export interface PlanoRefeicaoOrigem {
+  nome: string;
+  horario: string;
+  ordem?: number;
+  opcoes: PlanoOpcaoOrigem[];
+}
+
+export interface PlanoAlimentarOrigem {
   pacienteId?: string | null;
   titulo: string;
-  objetivo?: any;
+  objetivo?: ObjetivoPlano | string | null;
   metaCalorias?: number | null;
   metaProteinas?: number | null;
   metaCarboidratos?: number | null;
   metaGorduras?: number | null;
   recomendacaoAguaMl?: number | null;
   observacoes?: string | null;
-  refeicoes: Array<{
-    nome: string;
-    horario: string;
-    ordem: number;
-    opcoes: Array<{
-      nome?: string | null;
-      ordem: number;
-      alimentos: Array<{
-        alimentoId?: string | null;
-        medidaCaseiraId?: string | null;
-        alimento: string;
-        quantidade: number;
-        unidade: string;
-        calorias?: number | null;
-        proteinas?: number | null;
-        carboidratos?: number | null;
-        gorduras?: number | null;
-        observacao?: string | null;
-      }>;
-    }>;
-  }>;
-}): CreatePlanoAlimentarInput {
+  refeicoes: PlanoRefeicaoOrigem[];
+}
+
+const OBJETIVOS_VALIDOS = new Set<string>(Object.values(ObjetivoPlano));
+
+function normalizarObjetivoPlano(
+  objetivo?: ObjetivoPlano | string | null,
+): ObjetivoPlano | null {
+  if (!objetivo) return null;
+  return OBJETIVOS_VALIDOS.has(objetivo) ? (objetivo as ObjetivoPlano) : null;
+}
+
+function mapearRefeicoesParaInput(
+  refeicoes: PlanoRefeicaoOrigem[],
+): CreatePlanoAlimentarInput['refeicoes'] {
+  return refeicoes.map((r, rIdx) => ({
+    nome: r.nome,
+    horario: r.horario,
+    ordem: r.ordem ?? rIdx,
+    opcoes: r.opcoes.map((o, oIdx) => ({
+      nome: o.nome ?? null,
+      ordem: o.ordem ?? oIdx,
+      alimentos: o.alimentos.map((a) => ({
+        alimentoId: a.alimentoId ?? null,
+        medidaCaseiraId: a.medidaCaseiraId ?? null,
+        alimento: a.alimento,
+        quantidade: a.quantidade,
+        unidade: a.unidade,
+        calorias: a.calorias ?? null,
+        proteinas: a.proteinas ?? null,
+        carboidratos: a.carboidratos ?? null,
+        gorduras: a.gorduras ?? null,
+        observacao: a.observacao ?? null,
+      })),
+    })),
+  }));
+}
+
+export function duplicarPlanoParaInput(
+  plano: PlanoAlimentarOrigem,
+): CreatePlanoAlimentarInput {
   return {
     pacienteId: plano.pacienteId ?? null,
     titulo: `${plano.titulo} (Cópia)`,
-    objetivo: plano.objetivo || null,
+    objetivo: normalizarObjetivoPlano(plano.objetivo),
     metaCalorias: plano.metaCalorias ?? null,
     metaProteinas: plano.metaProteinas ?? null,
     metaCarboidratos: plano.metaCarboidratos ?? null,
     metaGorduras: plano.metaGorduras ?? null,
     recomendacaoAguaMl: plano.recomendacaoAguaMl ?? null,
     observacoes: plano.observacoes ?? null,
-    refeicoes: plano.refeicoes.map((r, rIdx) => ({
-      nome: r.nome,
-      horario: r.horario,
-      ordem: r.ordem ?? rIdx,
-      opcoes: r.opcoes.map((o, oIdx) => ({
-        nome: o.nome ?? null,
-        ordem: o.ordem ?? oIdx,
-        alimentos: o.alimentos.map((a) => ({
-          alimentoId: a.alimentoId ?? null,
-          medidaCaseiraId: a.medidaCaseiraId ?? null,
-          alimento: a.alimento,
-          quantidade: a.quantidade,
-          unidade: a.unidade,
-          calorias: a.calorias ?? null,
-          proteinas: a.proteinas ?? null,
-          carboidratos: a.carboidratos ?? null,
-          gorduras: a.gorduras ?? null,
-          observacao: a.observacao ?? null,
-        })),
-      })),
-    })),
+    refeicoes: mapearRefeicoesParaInput(plano.refeicoes),
   };
 }
 
@@ -1229,29 +1264,21 @@ export function gerarRefeicoesPadrao(): Array<{
 }
 
 export function converterPlanoParaModeloInput(
-  plano: {
-    pacienteId?: string | null;
-    titulo: string;
-    objetivo?: any;
-    metaCalorias?: number | null;
-    metaProteinas?: number | null;
-    metaCarboidratos?: number | null;
-    metaGorduras?: number | null;
-    recomendacaoAguaMl?: number | null;
-    observacoes?: string | null;
-    refeicoes: Array<any>;
-  },
+  plano: PlanoAlimentarOrigem,
   tituloModelo?: string,
 ): CreatePlanoAlimentarInput {
-  const base = duplicarPlanoParaInput({
-    ...plano,
-    pacienteId: plano.pacienteId || '00000000-0000-0000-0000-000000000000',
-  });
   return {
-    ...base,
     pacienteId: null,
     isTemplate: true,
     titulo: tituloModelo?.trim() || plano.titulo,
+    objetivo: normalizarObjetivoPlano(plano.objetivo),
+    metaCalorias: plano.metaCalorias ?? null,
+    metaProteinas: plano.metaProteinas ?? null,
+    metaCarboidratos: plano.metaCarboidratos ?? null,
+    metaGorduras: plano.metaGorduras ?? null,
+    recomendacaoAguaMl: plano.recomendacaoAguaMl ?? null,
+    observacoes: plano.observacoes ?? null,
+    refeicoes: mapearRefeicoesParaInput(plano.refeicoes),
   };
 }
 
@@ -1260,6 +1287,9 @@ export function converterPlanoParaModeloInput(
 // ============================================================================
 
 export type CriterioEquivalencia = 'CALORIAS' | 'CARBOIDRATOS' | 'PROTEINAS' | 'GORDURAS';
+
+export const LIMITE_MIN_GRAMAS_SUBSTITUICAO = 5;
+export const LIMITE_MAX_GRAMAS_SUBSTITUICAO = 1500;
 
 export function detectarCriterioEquivalenciaDominante(alimento: {
   calorias?: number | null;
@@ -1291,17 +1321,111 @@ export function detectarCriterioEquivalenciaDominante(alimento: {
   return 'CALORIAS';
 }
 
+export interface SugestaoMedidaCaseiraEquivalencia {
+  id: string;
+  nome: string;
+  quantidadeUnidades: number;
+  quantidadeEmGramas: number;
+  gramasResultantes: number;
+  erroPercentual: number;
+}
+
 export interface ResultadoSubstituicaoEquivalente {
   alimentoCalculado: AlimentoCalculavel;
+  alimentoComMedidaCaseira: AlimentoCalculavel | null;
   gramasEquivalentes: number;
+  gramasCalculadasSemLimite: number;
+  criterioSolicitado: CriterioEquivalencia;
   criterioUsado: CriterioEquivalencia;
+  usouFallbackCalorias: boolean;
+  limiteAplicado: 'MINIMO' | 'MAXIMO' | null;
   diferencaKcal: number;
-  sugestaoMedidaCaseira: {
-    id: string;
-    nome: string;
-    quantidadeUnidades: number;
-    quantidadeEmGramas: number;
-  } | null;
+  diferencaKcalMedidaCaseira: number | null;
+  sugestaoMedidaCaseira: SugestaoMedidaCaseiraEquivalencia | null;
+}
+
+export interface PreviewSubstituicaoEquivalente {
+  alimentoFinal: AlimentoCalculavel;
+  gramasEfetivas: number;
+  diferencaKcal: number;
+  usandoMedidaCaseira: boolean;
+}
+
+/**
+ * Seleciona a medida caseira mais próxima da gramatura equivalente usando múltiplos de 0,5 unidade,
+ * priorizando quantidades práticas entre 0,5 e 6 unidades e menor erro percentual.
+ */
+export function selecionarMelhorMedidaCaseira(
+  medidas: MedidaCaseiraSimples[] | null | undefined,
+  gramasEquivalentes: number,
+): SugestaoMedidaCaseiraEquivalencia | null {
+  if (!medidas?.length || !Number.isFinite(gramasEquivalentes) || gramasEquivalentes <= 0) {
+    return null;
+  }
+
+  const candidatas = medidas.filter((m) => {
+    const nomeNorm = m.nome?.trim().toLowerCase() ?? '';
+    return (
+      nomeNorm.length > 0 &&
+      nomeNorm !== 'ml' &&
+      nomeNorm !== 'g' &&
+      nomeNorm !== 'grama' &&
+      nomeNorm !== 'gramas' &&
+      Number.isFinite(m.quantidadeEmGramas) &&
+      m.quantidadeEmGramas > 1
+    );
+  });
+
+  if (candidatas.length === 0) return null;
+
+  const avaliadas = candidatas.map((m) => {
+    const unidadesRaw = gramasEquivalentes / m.quantidadeEmGramas;
+    const quantidadeUnidades = Math.max(0.5, Math.round(unidadesRaw * 2) / 2);
+    const gramasResultantes = round1(quantidadeUnidades * m.quantidadeEmGramas);
+    const diffGramas = Math.abs(gramasResultantes - gramasEquivalentes);
+    const erroRelativo = diffGramas / gramasEquivalentes;
+    const isPratica = quantidadeUnidades >= 0.5 && quantidadeUnidades <= 6;
+    const distanciaInteiro = Math.abs(quantidadeUnidades - Math.round(quantidadeUnidades));
+
+    return {
+      medida: m,
+      quantidadeUnidades,
+      gramasResultantes,
+      diffGramas,
+      erroRelativo,
+      isPratica,
+      distanciaInteiro,
+    };
+  });
+
+  const praticas = avaliadas.filter((a) => a.isPratica);
+  const pool = praticas.length > 0 ? praticas : avaliadas;
+
+  pool.sort((a, b) => {
+    const erroDiff = a.erroRelativo - b.erroRelativo;
+    if (Math.abs(erroDiff) > 1e-6) return erroDiff;
+    const gramDiff = a.diffGramas - b.diffGramas;
+    if (Math.abs(gramDiff) > 1e-6) return gramDiff;
+    if (praticas.length > 0) {
+      const intDiff = a.distanciaInteiro - b.distanciaInteiro;
+      if (Math.abs(intDiff) > 1e-6) return intDiff;
+    }
+    return a.quantidadeUnidades - b.quantidadeUnidades;
+  });
+
+  const melhor = pool[0];
+  return {
+    id: melhor.medida.id,
+    nome: melhor.medida.nome,
+    quantidadeUnidades: melhor.quantidadeUnidades,
+    quantidadeEmGramas: melhor.medida.quantidadeEmGramas,
+    gramasResultantes: melhor.gramasResultantes,
+    erroPercentual: round1(melhor.erroRelativo * 100),
+  };
+}
+
+function valorPositivoFinito(val: number | null | undefined): number {
+  return typeof val === 'number' && Number.isFinite(val) && val > 0 ? val : 0;
 }
 
 export function calcularSubstituicaoEquivalente(
@@ -1326,33 +1450,65 @@ export function calcularSubstituicaoEquivalente(
 ): ResultadoSubstituicaoEquivalente | null {
   const obterPar = (crit: CriterioEquivalencia): { alvo: number; base100: number } => {
     if (crit === 'CARBOIDRATOS') {
-      return { alvo: origem.carboidratos ?? 0, base100: substitutoApi.carboidratos ?? 0 };
+      return {
+        alvo: valorPositivoFinito(origem.carboidratos),
+        base100: valorPositivoFinito(substitutoApi.carboidratos),
+      };
     }
     if (crit === 'PROTEINAS') {
-      return { alvo: origem.proteinas ?? 0, base100: substitutoApi.proteinas ?? 0 };
+      return {
+        alvo: valorPositivoFinito(origem.proteinas),
+        base100: valorPositivoFinito(substitutoApi.proteinas),
+      };
     }
     if (crit === 'GORDURAS') {
-      return { alvo: origem.gorduras ?? 0, base100: substitutoApi.gorduras ?? 0 };
+      return {
+        alvo: valorPositivoFinito(origem.gorduras),
+        base100: valorPositivoFinito(substitutoApi.gorduras),
+      };
     }
-    return { alvo: origem.calorias ?? 0, base100: substitutoApi.calorias ?? 0 };
+    return {
+      alvo: valorPositivoFinito(origem.calorias),
+      base100: valorPositivoFinito(substitutoApi.calorias),
+    };
   };
 
+  const criterioSolicitado: CriterioEquivalencia = criterio;
   let criterioUsado: CriterioEquivalencia = criterio;
+  let usouFallbackCalorias = false;
   let { alvo, base100 } = obterPar(criterio);
 
   if (alvo <= 0 || base100 <= 0) {
-    const fallbackCal = obterPar('CALORIAS');
-    if (fallbackCal.alvo > 0 && fallbackCal.base100 > 0) {
-      criterioUsado = 'CALORIAS';
-      alvo = fallbackCal.alvo;
-      base100 = fallbackCal.base100;
+    if (criterio !== 'CALORIAS') {
+      const fallbackCal = obterPar('CALORIAS');
+      if (fallbackCal.alvo > 0 && fallbackCal.base100 > 0) {
+        criterioUsado = 'CALORIAS';
+        usouFallbackCalorias = true;
+        alvo = fallbackCal.alvo;
+        base100 = fallbackCal.base100;
+      } else {
+        return null;
+      }
     } else {
       return null;
     }
   }
 
   const gramasRaw = (alvo / base100) * 100;
-  const gramasEquivalentes = round1(Math.max(5, Math.min(1500, gramasRaw)));
+  if (!Number.isFinite(gramasRaw) || gramasRaw <= 0) {
+    return null;
+  }
+
+  const gramasCalculadasSemLimite = round1(gramasRaw);
+  const limiteAplicado: 'MINIMO' | 'MAXIMO' | null =
+    gramasRaw < LIMITE_MIN_GRAMAS_SUBSTITUICAO
+      ? 'MINIMO'
+      : gramasRaw > LIMITE_MAX_GRAMAS_SUBSTITUICAO
+        ? 'MAXIMO'
+        : null;
+  const gramasEquivalentes = round1(
+    Math.max(LIMITE_MIN_GRAMAS_SUBSTITUICAO, Math.min(LIMITE_MAX_GRAMAS_SUBSTITUICAO, gramasRaw)),
+  );
 
   const inicial = criarAlimentoInicial(substitutoApi, uidStr);
   const emGramas: AlimentoCalculavel = {
@@ -1363,35 +1519,88 @@ export function calcularSubstituicaoEquivalente(
   };
   const alimentoCalculado = recalcularAlimentoPlano(emGramas, 'quantidade', gramasEquivalentes);
 
-  let sugestaoMedidaCaseira: ResultadoSubstituicaoEquivalente['sugestaoMedidaCaseira'] = null;
-  const mcCandidata = inicial._medidasCaseiras.find(
-    (m) => m.quantidadeEmGramas > 1 && m.nome.trim().toLowerCase() !== 'ml',
+  const sugestaoMedidaCaseira = selecionarMelhorMedidaCaseira(
+    inicial._medidasCaseiras,
+    gramasEquivalentes,
   );
-  if (mcCandidata) {
-    const unidadesRaw = gramasEquivalentes / mcCandidata.quantidadeEmGramas;
-    const quantidadeUnidades = Math.max(0.5, Math.round(unidadesRaw * 2) / 2);
-    sugestaoMedidaCaseira = {
-      id: mcCandidata.id,
-      nome: mcCandidata.nome,
-      quantidadeUnidades,
-      quantidadeEmGramas: mcCandidata.quantidadeEmGramas,
-    };
-  }
 
-  const diferencaKcal = Math.round((alimentoCalculado.calorias ?? 0) - (origem.calorias ?? 0));
+  let alimentoComMedidaCaseira: AlimentoCalculavel | null = null;
+  let diferencaKcalMedidaCaseira: number | null = null;
+
+  const calOrigem = valorPositivoFinito(origem.calorias);
+  const diferencaKcal = Math.round((alimentoCalculado.calorias ?? 0) - calOrigem);
+
+  if (sugestaoMedidaCaseira) {
+    const comMc = recalcularAlimentoPlano(
+      alimentoCalculado,
+      'medidaCaseiraId',
+      sugestaoMedidaCaseira.id,
+    );
+    alimentoComMedidaCaseira = recalcularAlimentoPlano(
+      comMc,
+      'quantidade',
+      sugestaoMedidaCaseira.quantidadeUnidades,
+    );
+    diferencaKcalMedidaCaseira = Math.round(
+      (alimentoComMedidaCaseira.calorias ?? 0) - calOrigem,
+    );
+  }
 
   return {
     alimentoCalculado,
+    alimentoComMedidaCaseira,
     gramasEquivalentes,
+    gramasCalculadasSemLimite,
+    criterioSolicitado,
     criterioUsado,
+    usouFallbackCalorias,
+    limiteAplicado,
     diferencaKcal,
+    diferencaKcalMedidaCaseira,
     sugestaoMedidaCaseira,
+  };
+}
+
+/**
+ * Fonte única de verdade para o preview e para a confirmação da substituição no plano alimentar.
+ */
+export function obterPreviewSubstituicao(
+  resultado: ResultadoSubstituicaoEquivalente,
+  usarMedidaCaseira: boolean,
+): PreviewSubstituicaoEquivalente {
+  if (usarMedidaCaseira && resultado.alimentoComMedidaCaseira && resultado.sugestaoMedidaCaseira) {
+    return {
+      alimentoFinal: resultado.alimentoComMedidaCaseira,
+      gramasEfetivas: resultado.sugestaoMedidaCaseira.gramasResultantes,
+      diferencaKcal: resultado.diferencaKcalMedidaCaseira ?? resultado.diferencaKcal,
+      usandoMedidaCaseira: true,
+    };
+  }
+
+  return {
+    alimentoFinal: resultado.alimentoCalculado,
+    gramasEfetivas: resultado.gramasEquivalentes,
+    diferencaKcal: resultado.diferencaKcal,
+    usandoMedidaCaseira: false,
   };
 }
 
 // ============================================================================
 // EVOLUÇÃO ANTROPOMÉTRICA (SÉRIE TEMPORAL PARA GRÁFICOS)
 // ============================================================================
+
+export interface MedidaEvolucaoInput {
+  id: string;
+  data: string | Date;
+  peso?: number | null;
+  altura?: number | null;
+  percentualGordura?: number | null;
+  massaMagraKg?: number | null;
+  massaGordaKg?: number | null;
+  cintura?: number | null;
+  abdomen?: number | null;
+  quadril?: number | null;
+}
 
 export interface PontoEvolucaoAntropometrica {
   id: string;
@@ -1418,6 +1627,16 @@ export interface SerieEvolucaoAntropometrica {
   };
 }
 
+function numeroFinitoOuNulo(valor: unknown): number | null {
+  return typeof valor === 'number' && Number.isFinite(valor) ? valor : null;
+}
+
+function parseDataValida(data: string | Date | null | undefined): Date | null {
+  if (data === null || data === undefined || data === '') return null;
+  const parsed = data instanceof Date ? new Date(data.getTime()) : new Date(data);
+  return Number.isFinite(parsed.getTime()) ? parsed : null;
+}
+
 function diffMetrica(
   pontos: PontoEvolucaoAntropometrica[],
   key: keyof Pick<
@@ -1425,37 +1644,73 @@ function diffMetrica(
     'peso' | 'imc' | 'percentualGordura' | 'massaMagraKg' | 'cintura'
   >,
 ): number | null {
-  const validos = pontos.map((p) => p[key]).filter((v): v is number => typeof v === 'number');
+  const validos = pontos
+    .map((p) => p[key])
+    .filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
   if (validos.length < 2) return null;
-  return round1(validos[validos.length - 1] - validos[0]);
+  const delta = validos[validos.length - 1] - validos[0];
+  return Number.isFinite(delta) ? round1(delta) : null;
 }
 
 export function prepararSerieEvolucaoAntropometrica(
-  medidas: Array<Record<string, any>>,
+  medidas: ReadonlyArray<MedidaEvolucaoInput>,
 ): SerieEvolucaoAntropometrica {
-  const ordenadas = [...(medidas || [])].sort(
-    (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime(),
+  const medidasComData = (medidas || [])
+    .map((medida, index) => {
+      const dataObj = parseDataValida(medida.data);
+      return dataObj ? { medida, dataObj, timestamp: dataObj.getTime(), index } : null;
+    })
+    .filter(
+      (
+        item,
+      ): item is { medida: MedidaEvolucaoInput; dataObj: Date; timestamp: number; index: number } =>
+        item !== null,
+    );
+
+  medidasComData.sort((a, b) => a.timestamp - b.timestamp || a.index - b.index);
+
+  const labelsBase = medidasComData.map((item) =>
+    item.dataObj.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit',
+      timeZone: 'UTC',
+    }),
   );
 
-  const pontos: PontoEvolucaoAntropometrica[] = ordenadas.map((m) => {
-    const imcRaw = calcularIMC(m.peso, m.altura);
+  const contagemPorDia = new Map<string, number>();
+  for (const label of labelsBase) {
+    contagemPorDia.set(label, (contagemPorDia.get(label) ?? 0) + 1);
+  }
+
+  const indicePorDia = new Map<string, number>();
+
+  const pontos: PontoEvolucaoAntropometrica[] = medidasComData.map(({ medida, dataObj }, idx) => {
+    const labelBase = labelsBase[idx];
+    const totalNoDia = contagemPorDia.get(labelBase) ?? 1;
+    let dataLabel = labelBase;
+    if (totalNoDia > 1) {
+      const seq = (indicePorDia.get(labelBase) ?? 0) + 1;
+      indicePorDia.set(labelBase, seq);
+      dataLabel = `${labelBase} (#${seq})`;
+    }
+
+    const peso = numeroFinitoOuNulo(medida.peso);
+    const altura = numeroFinitoOuNulo(medida.altura);
+    const imcRaw = calcularIMC(peso, altura);
+
     return {
-      id: m.id,
-      dataIso: m.data,
-      dataLabel: new Date(m.data).toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: '2-digit',
-        timeZone: 'UTC',
-      }),
-      peso: typeof m.peso === 'number' ? m.peso : null,
-      imc: imcRaw !== null ? round1(imcRaw) : null,
-      percentualGordura: typeof m.percentualGordura === 'number' ? m.percentualGordura : null,
-      massaMagraKg: typeof m.massaMagraKg === 'number' ? m.massaMagraKg : null,
-      massaGordaKg: typeof m.massaGordaKg === 'number' ? m.massaGordaKg : null,
-      cintura: typeof m.cintura === 'number' ? m.cintura : null,
-      abdomen: typeof m.abdomen === 'number' ? m.abdomen : null,
-      quadril: typeof m.quadril === 'number' ? m.quadril : null,
+      id: medida.id,
+      dataIso: typeof medida.data === 'string' ? medida.data : dataObj.toISOString(),
+      dataLabel,
+      peso,
+      imc: imcRaw !== null && Number.isFinite(imcRaw) ? round1(imcRaw) : null,
+      percentualGordura: numeroFinitoOuNulo(medida.percentualGordura),
+      massaMagraKg: numeroFinitoOuNulo(medida.massaMagraKg),
+      massaGordaKg: numeroFinitoOuNulo(medida.massaGordaKg),
+      cintura: numeroFinitoOuNulo(medida.cintura),
+      abdomen: numeroFinitoOuNulo(medida.abdomen),
+      quadril: numeroFinitoOuNulo(medida.quadril),
     };
   });
 
@@ -1468,5 +1723,44 @@ export function prepararSerieEvolucaoAntropometrica(
       massaMagraKg: diffMetrica(pontos, 'massaMagraKg'),
       cintura: diffMetrica(pontos, 'cintura'),
     },
+  };
+}
+
+export type AbaGraficoAntropometrico = 'pesoImc' | 'composicao' | 'circunferencias';
+
+export function verificarDadosAbaGrafico(
+  pontos: ReadonlyArray<PontoEvolucaoAntropometrica>,
+  aba: AbaGraficoAntropometrico,
+): { temDadosSuficientes: boolean; mensagemVazio: string } {
+  const contarPontos = (keys: Array<keyof PontoEvolucaoAntropometrica>) =>
+    keys.some(
+      (k) =>
+        pontos.filter((p) => typeof p[k] === 'number' && Number.isFinite(p[k] as number)).length >=
+        2,
+    );
+
+  if (aba === 'pesoImc') {
+    const ok = contarPontos(['peso', 'imc']);
+    return {
+      temDadosSuficientes: ok,
+      mensagemVazio:
+        'São necessárias pelo menos 2 avaliações com Peso ou IMC registrados para exibir o gráfico.',
+    };
+  }
+
+  if (aba === 'composicao') {
+    const ok = contarPontos(['percentualGordura', 'massaMagraKg', 'massaGordaKg']);
+    return {
+      temDadosSuficientes: ok,
+      mensagemVazio:
+        'São necessárias pelo menos 2 avaliações com % de Gordura, Massa Magra ou Massa Gorda para exibir a evolução de composição corporal.',
+    };
+  }
+
+  const ok = contarPontos(['cintura', 'abdomen', 'quadril']);
+  return {
+    temDadosSuficientes: ok,
+    mensagemVazio:
+      'São necessárias pelo menos 2 avaliações com medidas de Cintura, Abdômen ou Quadril para exibir este gráfico.',
   };
 }

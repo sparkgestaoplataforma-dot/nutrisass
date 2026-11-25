@@ -29,7 +29,10 @@ import {
   gerarRefeicoesPadrao,
   detectarCriterioEquivalenciaDominante,
   calcularSubstituicaoEquivalente,
+  selecionarMelhorMedidaCaseira,
+  obterPreviewSubstituicao,
   prepararSerieEvolucaoAntropometrica,
+  verificarDadosAbaGrafico,
 } from './nutricaoCalculos';
 
 describe('nutricaoCalculos — Motor Clínico e Correções do Plano Alimentar (TDD)', () => {
@@ -717,7 +720,7 @@ describe('nutricaoCalculos — Motor Clínico e Correções do Plano Alimentar (
       expect(padrao[4].nome).toBe('Jantar');
     });
 
-    it('converterPlanoParaModeloInput deve gerar payload com isTemplate=true e pacienteId=null', () => {
+    it('converterPlanoParaModeloInput deve gerar payload com isTemplate=true e pacienteId=null sem UUID sentinela', () => {
       const plano: any = {
         pacienteId: 'pac-1',
         titulo: 'Dieta Base 1800 kcal',
@@ -729,9 +732,19 @@ describe('nutricaoCalculos — Motor Clínico e Correções do Plano Alimentar (
       expect(tpl.isTemplate).toBe(true);
       expect(tpl.pacienteId).toBeNull();
       expect(tpl.titulo).toBe('Modelo Cutting 1800 kcal');
+      expect(tpl.objetivo).toBe('EMAGRECIMENTO');
+
+      const semPaciente = converterPlanoParaModeloInput({
+        titulo: 'Dieta Livre',
+        objetivo: 'INVALIDO',
+        refeicoes: [],
+      });
+      expect(semPaciente.isTemplate).toBe(true);
+      expect(semPaciente.pacienteId).toBeNull();
+      expect(semPaciente.objetivo).toBeNull();
     });
 
-    it('detectarCriterioEquivalenciaDominante e calcularSubstituicaoEquivalente devem calcular gramatura equivalente por carboidrato, proteína ou calorias', () => {
+    it('detectarCriterioEquivalenciaDominante e calcularSubstituicaoEquivalente devem cobrir carb, prot, gord, calorias, fallback, nulos e limites', () => {
       // 100g de Arroz cozido: 128 kcal, 28g carb, 2.5g prot, 0.2g gord
       const arroz: any = {
         _uid: 'orig-1',
@@ -752,7 +765,6 @@ describe('nutricaoCalculos — Motor Clínico e Correções do Plano Alimentar (
 
       expect(detectarCriterioEquivalenciaDominante(arroz)).toBe('CARBOIDRATOS');
 
-      // Batata doce cozida (por 100g): 77 kcal, 18.4g carb, 0.6g prot, 0.1g gord
       const batataDoceApi: any = {
         id: 'al-batata',
         nome: 'Batata Doce Cozida',
@@ -771,32 +783,216 @@ describe('nutricaoCalculos — Motor Clínico e Correções do Plano Alimentar (
         'CARBOIDRATOS',
         'sub-1',
       )!;
+      expect(eqCarb.criterioSolicitado).toBe('CARBOIDRATOS');
       expect(eqCarb.criterioUsado).toBe('CARBOIDRATOS');
+      expect(eqCarb.usouFallbackCalorias).toBe(false);
+      expect(eqCarb.limiteAplicado).toBeNull();
       expect(eqCarb.gramasEquivalentes).toBeCloseTo(152.2, 1);
       expect(eqCarb.alimentoCalculado.carboidratos).toBeCloseTo(28, 0);
       expect(eqCarb.sugestaoMedidaCaseira?.quantidadeUnidades).toBe(2);
 
+      // Equivalência por PROTEINAS: 30g prot -> frango (32g/100g) => 93.8g
+      const frangoApi: any = {
+        id: 'al-frango',
+        nome: 'Peito de Frango Grelhado',
+        calorias: 159,
+        proteinas: 32,
+        carboidratos: 0,
+        gorduras: 2.5,
+      };
+      const eqProt = calcularSubstituicaoEquivalente(
+        { calorias: 200, proteinas: 30, carboidratos: 0, gorduras: 5 },
+        frangoApi,
+        'PROTEINAS',
+        'sub-prot',
+      )!;
+      expect(eqProt.criterioUsado).toBe('PROTEINAS');
+      expect(eqProt.gramasEquivalentes).toBeCloseTo(93.8, 1);
+
+      // Equivalência por GORDURAS: 10g gord -> azeite (100g/100g) => 10g
+      const azeiteApi: any = {
+        id: 'al-azeite',
+        nome: 'Azeite de Oliva',
+        calorias: 884,
+        proteinas: 0,
+        carboidratos: 0,
+        gorduras: 100,
+      };
+      const eqGord = calcularSubstituicaoEquivalente(
+        { calorias: 120, proteinas: 0, carboidratos: 0, gorduras: 10 },
+        azeiteApi,
+        'GORDURAS',
+        'sub-gord',
+      )!;
+      expect(eqGord.criterioUsado).toBe('GORDURAS');
+      expect(eqGord.gramasEquivalentes).toBe(10);
+
       // Equivalência por CALORIAS: 128 / 77 * 100 = 166.2g
       const eqCal = calcularSubstituicaoEquivalente(arroz, batataDoceApi, 'CALORIAS', 'sub-2')!;
       expect(eqCal.criterioUsado).toBe('CALORIAS');
+      expect(eqCal.usouFallbackCalorias).toBe(false);
       expect(eqCal.gramasEquivalentes).toBeCloseTo(166.2, 1);
       expect(eqCal.alimentoCalculado.calorias).toBeCloseTo(128, 0);
+
+      // Fallback para CALORIAS quando substituto tem 0g no macro solicitado
+      const eqFallback = calcularSubstituicaoEquivalente(
+        arroz,
+        { id: 'al-oleo', nome: 'Óleo', calorias: 884, proteinas: 0, carboidratos: 0, gorduras: 100 },
+        'CARBOIDRATOS',
+        'sub-fb',
+      )!;
+      expect(eqFallback.criterioSolicitado).toBe('CARBOIDRATOS');
+      expect(eqFallback.criterioUsado).toBe('CALORIAS');
+      expect(eqFallback.usouFallbackCalorias).toBe(true);
+      expect(eqFallback.gramasEquivalentes).toBeCloseTo(14.5, 1);
+
+      // Limite mínimo (5g) e máximo (1500g)
+      const eqMin = calcularSubstituicaoEquivalente(
+        { calorias: 10, proteinas: 0, carboidratos: 0, gorduras: 1 },
+        azeiteApi,
+        'GORDURAS',
+        'sub-min',
+      )!;
+      expect(eqMin.limiteAplicado).toBe('MINIMO');
+      expect(eqMin.gramasCalculadasSemLimite).toBe(1);
+      expect(eqMin.gramasEquivalentes).toBe(5);
+
+      const eqMax = calcularSubstituicaoEquivalente(
+        { calorias: 500, proteinas: 0, carboidratos: 200, gorduras: 0 },
+        { id: 'al-folha', nome: 'Alface', calorias: 15, proteinas: 1.4, carboidratos: 2.9, gorduras: 0.2 },
+        'CARBOIDRATOS',
+        'sub-max',
+      )!;
+      expect(eqMax.limiteAplicado).toBe('MAXIMO');
+      expect(eqMax.gramasCalculadasSemLimite).toBeCloseTo(6896.6, 1);
+      expect(eqMax.gramasEquivalentes).toBe(1500);
+
+      // Divisão por zero / valores nulos / zero -> retorna null
+      expect(
+        calcularSubstituicaoEquivalente(
+          { calorias: 0, carboidratos: 0, proteinas: null, gorduras: 0 },
+          batataDoceApi,
+          'CARBOIDRATOS',
+          'sub-null-1',
+        ),
+      ).toBeNull();
+      expect(
+        calcularSubstituicaoEquivalente(
+          arroz,
+          { id: 'al-zero', nome: 'Água', calorias: 0, proteinas: 0, carboidratos: 0, gorduras: 0 },
+          'CALORIAS',
+          'sub-null-2',
+        ),
+      ).toBeNull();
     });
 
-    it('prepararSerieEvolucaoAntropometrica deve ordenar medidas por data em UTC e calcular variações do período', () => {
+    it('selecionarMelhorMedidaCaseira deve escolher a medida prática (0.5 a 6) com menor erro percentual e não apenas a primeira', () => {
+      const medidas = [
+        { id: 'mc-cha', nome: 'Colher de chá', quantidadeEmGramas: 5 }, // 150g => 30x (não prática)
+        { id: 'mc-sopa', nome: 'Colher de sopa', quantidadeEmGramas: 25 }, // 150g => 6x (exata!)
+        { id: 'mc-concha', nome: 'Concha grande', quantidadeEmGramas: 140 }, // 150g => 1x = 140g (6.7% erro)
+      ];
+
+      const escolhida = selecionarMelhorMedidaCaseira(medidas, 150)!;
+      expect(escolhida.id).toBe('mc-sopa');
+      expect(escolhida.quantidadeUnidades).toBe(6);
+      expect(escolhida.gramasResultantes).toBe(150);
+      expect(escolhida.erroPercentual).toBe(0);
+
+      // Listas vazias e medidas inválidas
+      expect(selecionarMelhorMedidaCaseira([], 100)).toBeNull();
+      expect(
+        selecionarMelhorMedidaCaseira(
+          [
+            { id: 'mc-g', nome: 'g', quantidadeEmGramas: 1 },
+            { id: 'mc-ml', nome: 'ml', quantidadeEmGramas: 1 },
+            { id: 'mc-inv', nome: 'Inválida', quantidadeEmGramas: 0 },
+          ],
+          100,
+        ),
+      ).toBeNull();
+    });
+
+    it('obterPreviewSubstituicao deve manter consistência exata entre preview e item inserido em gramas ou medida caseira', () => {
+      const origem = { calorias: 128, carboidratos: 28, proteinas: 2.5, gorduras: 0.2 };
+      const substituto = {
+        id: 'al-batata',
+        nome: 'Batata Doce',
+        calorias: 77,
+        carboidratos: 18.4,
+        proteinas: 0.6,
+        gorduras: 0.1,
+        fibra: 2.2,
+        medidasCaseiras: [
+          { id: 'mc-picada', nome: 'Colher de sopa', quantidadeEmGramas: 20 },
+          { id: 'mc-rodela', nome: 'Rodela média', quantidadeEmGramas: 75 },
+        ],
+      };
+
+      const res = calcularSubstituicaoEquivalente(origem, substituto, 'CARBOIDRATOS', 'prev-1')!;
+      // 152.2g: 2x Rodela média = 150g (erro ~1.4%) ganha de 7.5x Colher de sopa (fora de 0.5..6)
+      expect(res.sugestaoMedidaCaseira?.id).toBe('mc-rodela');
+      expect(res.sugestaoMedidaCaseira?.quantidadeUnidades).toBe(2);
+
+      const previewGramas = obterPreviewSubstituicao(res, false);
+      expect(previewGramas.usandoMedidaCaseira).toBe(false);
+      expect(previewGramas.gramasEfetivas).toBe(152.2);
+      expect(previewGramas.alimentoFinal.quantidade).toBe(152.2);
+      expect(previewGramas.alimentoFinal.unidade).toBe('g');
+      expect(previewGramas.alimentoFinal.calorias).toBe(res.alimentoCalculado.calorias);
+
+      const previewMc = obterPreviewSubstituicao(res, true);
+      expect(previewMc.usandoMedidaCaseira).toBe(true);
+      expect(previewMc.gramasEfetivas).toBe(150);
+      expect(previewMc.alimentoFinal.quantidade).toBe(2);
+      expect(previewMc.alimentoFinal.medidaCaseiraId).toBe('mc-rodela');
+      expect(previewMc.alimentoFinal.unidade).toBe('Rodela média');
+      expect(previewMc.alimentoFinal.calorias).toBeCloseTo(115.5, 1);
+      expect(previewMc.diferencaKcal).toBe(Math.round(115.5 - 128));
+    });
+
+    it('prepararSerieEvolucaoAntropometrica deve ordenar medidas por data em UTC, tratar NaN/Infinity/datas inválidas e datas iguais', () => {
+      expect(prepararSerieEvolucaoAntropometrica([])).toEqual({
+        pontos: [],
+        variacoes: {
+          peso: null,
+          imc: null,
+          percentualGordura: null,
+          massaMagraKg: null,
+          cintura: null,
+        },
+      });
+
+      const umaMedida = prepararSerieEvolucaoAntropometrica([
+        { id: 'only', data: '2026-10-01T00:00:00.000Z', peso: 70, altura: 170 },
+      ]);
+      expect(umaMedida.pontos).toHaveLength(1);
+      expect(umaMedida.variacoes.peso).toBeNull();
+
       const serie = prepararSerieEvolucaoAntropometrica([
         {
+          id: 'm-invalida',
+          data: 'data-quebrada',
+          peso: 90,
+        },
+        {
           id: 'm2',
-          data: '2026-11-15T00:00:00.000Z',
+          data: '2026-11-15T14:00:00.000Z',
           peso: 76.5,
           altura: 175,
-          percentualGordura: 18.2,
-          massaMagraKg: 62.6,
+          percentualGordura: Number.NaN,
+          massaMagraKg: Number.POSITIVE_INFINITY,
           cintura: 82,
         },
         {
-          id: 'm1',
-          data: '2026-10-15T00:00:00.000Z',
+          id: 'm1-b',
+          data: '2026-10-15T18:00:00.000Z',
+          peso: 79.0,
+          altura: 175,
+        },
+        {
+          id: 'm1-a',
+          data: '2026-10-15T08:00:00.000Z',
           peso: 80.0,
           altura: 175,
           percentualGordura: 21.0,
@@ -805,12 +1001,26 @@ describe('nutricaoCalculos — Motor Clínico e Correções do Plano Alimentar (
         },
       ]);
 
-      expect(serie.pontos).toHaveLength(2);
-      expect(serie.pontos[0].peso).toBe(80.0);
-      expect(serie.pontos[1].peso).toBe(76.5);
+      expect(serie.pontos).toHaveLength(3);
+      expect(serie.pontos.some((p) => p.dataLabel.includes('Invalid'))).toBe(false);
+      expect(serie.pontos[0].id).toBe('m1-a');
+      expect(serie.pontos[0].dataLabel).toBe('15/10/26 (#1)');
+      expect(serie.pontos[1].id).toBe('m1-b');
+      expect(serie.pontos[1].dataLabel).toBe('15/10/26 (#2)');
+      expect(serie.pontos[2].id).toBe('m2');
+      expect(serie.pontos[2].dataLabel).toBe('15/11/26');
+      expect(serie.pontos[2].percentualGordura).toBeNull();
+      expect(serie.pontos[2].massaMagraKg).toBeNull();
       expect(serie.variacoes.peso).toBe(-3.5);
-      expect(serie.variacoes.percentualGordura).toBe(-2.8);
       expect(serie.variacoes.cintura).toBe(-4);
+      // Apenas 1 valor finito de percentualGordura e massaMagraKg => variação null
+      expect(serie.variacoes.percentualGordura).toBeNull();
+      expect(serie.variacoes.massaMagraKg).toBeNull();
+
+      // Verificação de estado vazio por aba
+      expect(verificarDadosAbaGrafico(serie.pontos, 'pesoImc').temDadosSuficientes).toBe(true);
+      expect(verificarDadosAbaGrafico(serie.pontos, 'composicao').temDadosSuficientes).toBe(false);
+      expect(verificarDadosAbaGrafico(serie.pontos, 'circunferencias').temDadosSuficientes).toBe(true);
     });
   });
 });

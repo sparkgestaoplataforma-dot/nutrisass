@@ -75,9 +75,10 @@ function tokenFor(
   perfil: Perfil,
   tipoClinica: TipoClinica = "CLINICA",
   clinicaId: string = CLINICA_A,
+  userId: string = USER_ID,
 ) {
   return jwt.sign(
-    { userId: USER_ID, clinicaId, email: "teste@nutri.com", perfil, tipoClinica },
+    { userId, clinicaId, email: "teste@nutri.com", perfil, tipoClinica },
     env.JWT_SECRET,
   );
 }
@@ -356,7 +357,11 @@ const clinicalEndpoints: ClinicalEndpoint[] = [
     path: `/api/planos-alimentares/${RECURSO_ID}`,
     expectedStatus: 200,
     arrange: () => {
-      mockOwned(db.planoAlimentar.findFirst, { id: RECURSO_ID });
+      mockOwned(db.planoAlimentar.findFirst, {
+        id: RECURSO_ID,
+        isTemplate: false,
+        usuarioId: USER_ID,
+      });
       mockValue(db.planoAlimentar.delete, {});
     },
     effect: () => db.planoAlimentar.delete,
@@ -683,6 +688,169 @@ describe("autorização clínica (HTTP)", () => {
       expect(resultado.status).toBe(401);
       expect(db.avaliacao.findMany).not.toHaveBeenCalled();
       expect(db.avaliacao.findFirst).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("governança e validação de planos alimentares e modelos (SEC-01 / SEC-02 / SEC-03)", () => {
+    const OUTRO_NUTRI_ID = "99999999-9999-4999-8999-999999999999";
+
+    it("GET /planos-alimentares sem isTemplate filtra isTemplate=false e não mistura modelos", async () => {
+      vi.clearAllMocks();
+      mockValue(db.planoAlimentar.findMany, []);
+
+      const res = await call(
+        "GET",
+        "/api/planos-alimentares",
+        tokenFor("NUTRICIONISTA", "CLINICA", CLINICA_A),
+      );
+
+      expect(res.status).toBe(200);
+      expect(db.planoAlimentar.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { clinicaId: CLINICA_A, isTemplate: false },
+        }),
+      );
+    });
+
+    it("GET /planos-alimentares rejeita query params inválidos, repetidos ou semanticamente inconsistentes com 422", async () => {
+      const token = tokenFor("NUTRICIONISTA", "CLINICA", CLINICA_A);
+      const invalidPaths = [
+        "/api/planos-alimentares?pacienteId=invalido",
+        "/api/planos-alimentares?isTemplate=sim",
+        "/api/planos-alimentares?isTemplate=true&isTemplate=false",
+        `/api/planos-alimentares?pacienteId=${PACIENTE_ID}&pacienteId=${PACIENTE_ID}`,
+        `/api/planos-alimentares?pacienteId=${PACIENTE_ID}&isTemplate=true`,
+        "/api/planos-alimentares?campoExtra=1",
+      ];
+
+      for (const path of invalidPaths) {
+        vi.clearAllMocks();
+        const res = await call("GET", path, token);
+        expect(res.status).toBe(422);
+        expect(db.planoAlimentar.findMany).not.toHaveBeenCalled();
+      }
+    });
+
+    it("POST /planos-alimentares valida consistência entre isTemplate e pacienteId", async () => {
+      const token = tokenFor("NUTRICIONISTA", "CLINICA", CLINICA_A);
+
+      vi.clearAllMocks();
+      mockValue(db.planoAlimentar.create, { id: RECURSO_ID, isTemplate: true, pacienteId: null });
+      const okTemplate = await call("POST", "/api/planos-alimentares", token, {
+        isTemplate: true,
+        pacienteId: null,
+        titulo: "Modelo Padrão",
+        refeicoes: [],
+      });
+      expect(okTemplate.status).toBe(201);
+      expect(db.paciente.findFirst).not.toHaveBeenCalled();
+
+      vi.clearAllMocks();
+      const modeloComPaciente = await call("POST", "/api/planos-alimentares", token, {
+        isTemplate: true,
+        pacienteId: PACIENTE_ID,
+        titulo: "Inconsistente",
+        refeicoes: [],
+      });
+      expect(modeloComPaciente.status).toBe(422);
+      expect(db.planoAlimentar.create).not.toHaveBeenCalled();
+
+      vi.clearAllMocks();
+      const planoSemPaciente = await call("POST", "/api/planos-alimentares", token, {
+        isTemplate: false,
+        pacienteId: null,
+        titulo: "Plano Sem Paciente",
+        refeicoes: [],
+      });
+      expect(planoSemPaciente.status).toBe(422);
+      expect(db.planoAlimentar.create).not.toHaveBeenCalled();
+
+      vi.clearAllMocks();
+      const planoSemFlags = await call("POST", "/api/planos-alimentares", token, {
+        titulo: "Sem Paciente",
+        refeicoes: [],
+      });
+      expect(planoSemFlags.status).toBe(422);
+      expect(db.planoAlimentar.create).not.toHaveBeenCalled();
+    });
+
+    it("PUT /planos-alimentares/:id ignora pacienteId e isTemplate enviados no corpo", async () => {
+      vi.clearAllMocks();
+      mockOwned(db.planoAlimentar.findFirst, { id: RECURSO_ID, isTemplate: false, usuarioId: USER_ID });
+      db.$transaction.mockImplementation(async (callback: any) => callback(prismaMock));
+      mockValue(db.planoAlimentar.update, { id: RECURSO_ID, titulo: "Atualizado" });
+
+      const res = await call(
+        "PUT",
+        `/api/planos-alimentares/${RECURSO_ID}`,
+        tokenFor("NUTRICIONISTA", "CLINICA", CLINICA_A),
+        { titulo: "Atualizado", pacienteId: PACIENTE_ID, isTemplate: true },
+      );
+
+      expect(res.status).toBe(200);
+      const updateArgs = db.planoAlimentar.update.mock.calls[0][0];
+      expect(updateArgs.data).not.toHaveProperty("pacienteId");
+      expect(updateArgs.data).not.toHaveProperty("isTemplate");
+    });
+
+    it("DELETE /planos-alimentares/:id aplica governança em modelos compartilhados e preserva planos de pacientes", async () => {
+      // Autor NUTRICIONISTA pode excluir próprio modelo
+      vi.clearAllMocks();
+      mockOwned(db.planoAlimentar.findFirst, { id: RECURSO_ID, isTemplate: true, usuarioId: USER_ID });
+      mockValue(db.planoAlimentar.delete, { id: RECURSO_ID });
+      const resAutor = await call(
+        "DELETE",
+        `/api/planos-alimentares/${RECURSO_ID}`,
+        tokenFor("NUTRICIONISTA", "CLINICA", CLINICA_A, USER_ID),
+      );
+      expect(resAutor.status).toBe(200);
+      expect(db.planoAlimentar.delete).toHaveBeenCalledTimes(1);
+
+      // Outro NUTRICIONISTA em CLINICA recebe 403 ao tentar excluir modelo de colega
+      vi.clearAllMocks();
+      mockOwned(db.planoAlimentar.findFirst, { id: RECURSO_ID, isTemplate: true, usuarioId: USER_ID });
+      const resOutroNutri = await call(
+        "DELETE",
+        `/api/planos-alimentares/${RECURSO_ID}`,
+        tokenFor("NUTRICIONISTA", "CLINICA", CLINICA_A, OUTRO_NUTRI_ID),
+      );
+      expect(resOutroNutri.status).toBe(403);
+      expect(db.planoAlimentar.delete).not.toHaveBeenCalled();
+
+      // ADMIN em CLINICA pode excluir modelo de qualquer profissional da mesma clínica
+      vi.clearAllMocks();
+      mockOwned(db.planoAlimentar.findFirst, { id: RECURSO_ID, isTemplate: true, usuarioId: USER_ID });
+      mockValue(db.planoAlimentar.delete, { id: RECURSO_ID });
+      const resAdmin = await call(
+        "DELETE",
+        `/api/planos-alimentares/${RECURSO_ID}`,
+        tokenFor("ADMIN", "CLINICA", CLINICA_A, OUTRO_NUTRI_ID),
+      );
+      expect(resAdmin.status).toBe(200);
+      expect(db.planoAlimentar.delete).toHaveBeenCalledTimes(1);
+
+      // Isolamento multi-tenant mantido (404 para outra clínica)
+      vi.clearAllMocks();
+      mockOwned(db.planoAlimentar.findFirst, { id: RECURSO_ID, isTemplate: true, usuarioId: USER_ID });
+      const resOutraClinica = await call(
+        "DELETE",
+        `/api/planos-alimentares/${RECURSO_ID}`,
+        tokenFor("ADMIN", "CLINICA", CLINICA_B, USER_ID),
+      );
+      expect(resOutraClinica.status).toBe(404);
+      expect(db.planoAlimentar.delete).not.toHaveBeenCalled();
+
+      // Plano de paciente (isTemplate: false) mantém permissão para outro nutricionista da clínica
+      vi.clearAllMocks();
+      mockOwned(db.planoAlimentar.findFirst, { id: RECURSO_ID, isTemplate: false, usuarioId: USER_ID });
+      mockValue(db.planoAlimentar.delete, { id: RECURSO_ID });
+      const resPlanoPaciente = await call(
+        "DELETE",
+        `/api/planos-alimentares/${RECURSO_ID}`,
+        tokenFor("NUTRICIONISTA", "CLINICA", CLINICA_A, OUTRO_NUTRI_ID),
+      );
+      expect(resPlanoPaciente.status).toBe(200);
+      expect(db.planoAlimentar.delete).toHaveBeenCalledTimes(1);
     });
   });
 });

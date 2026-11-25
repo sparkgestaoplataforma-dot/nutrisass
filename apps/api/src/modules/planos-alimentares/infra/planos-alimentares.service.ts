@@ -1,6 +1,12 @@
-import { prisma } from "@/shared/providers/prisma";
+import { prisma, type Prisma } from "@/shared/providers/prisma";
 import { AppError } from "@/shared/middlewares/errorHandler";
 import { CreatePlanoAlimentarInput, UpdatePlanoAlimentarInput } from "@nutricao/shared";
+
+export interface ExcluirPlanoActor {
+  usuarioId: string;
+  perfil: string;
+  tipoClinica?: "AUTONOMO" | "CLINICA";
+}
 
 export async function criarPlanoAlimentar(
   clinicaId: string,
@@ -94,14 +100,21 @@ export async function criarPlanoAlimentar(
 export async function pegarPlanosAlimentares(
   clinicaId: string,
   pacienteId?: string,
-  isTemplate?: boolean,
+  isTemplate: boolean = false,
 ) {
-  const where: any = { clinicaId };
+  if (isTemplate && pacienteId) {
+    throw new AppError(
+      "Não é permitido filtrar por pacienteId ao listar modelos de cardápio",
+      400,
+    );
+  }
+
+  const where: Prisma.PlanoAlimentarWhereInput = {
+    clinicaId,
+    isTemplate,
+  };
   if (pacienteId) {
     where.pacienteId = pacienteId;
-  }
-  if (isTemplate !== undefined) {
-    where.isTemplate = isTemplate;
   }
 
   return prisma.planoAlimentar.findMany({
@@ -182,7 +195,7 @@ export async function editarPlanoAlimentar(
     metaGorduras, recomendacaoAguaMl, observacoes, refeicoes 
   } = data;
 
-  const updateData: any = {
+  const updateData: Prisma.PlanoAlimentarUpdateInput = {
     titulo,
     objetivo,
     metaCalorias,
@@ -257,13 +270,28 @@ export async function editarPlanoAlimentar(
   });
 }
 
-export async function excluirPlanoAlimentar(id: string, clinicaId: string) {
+export async function excluirPlanoAlimentar(
+  id: string,
+  clinicaId: string,
+  actor: ExcluirPlanoActor,
+) {
   const existente = await prisma.planoAlimentar.findFirst({
     where: { id, clinicaId },
   });
 
   if (!existente) {
     throw new AppError("Plano alimentar não encontrado", 404);
+  }
+
+  if (existente.isTemplate && actor.tipoClinica !== "AUTONOMO") {
+    const isAdmin = actor.perfil === "ADMIN";
+    const isAutor = existente.usuarioId === actor.usuarioId;
+    if (!isAdmin && !isAutor) {
+      throw new AppError(
+        "Apenas o autor ou um administrador pode excluir modelos compartilhados da clínica",
+        403,
+      );
+    }
   }
 
   await prisma.planoAlimentar.delete({

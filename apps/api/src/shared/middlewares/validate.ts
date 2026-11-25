@@ -7,3 +7,16 @@ export function validate(schema: ZodSchema) {
     next();
   };
 }
+
+export function validateQuery(schema: ZodSchema) {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    const parsed = schema.parse(req.query);
+    Object.defineProperty(req, 'query', {
+      value: parsed,
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    });
+    next();
+  };
+}

@@ -34,7 +34,7 @@ export const planoRefeicaoSchema = z.object({
   opcoes: z.array(planoOpcaoRefeicaoSchema).max(10, "Máximo de 10 opções por refeição"),
 });
 
-export const createPlanoAlimentarSchema = z.object({
+export const basePlanoAlimentarSchema = z.object({
   pacienteId: z.string().uuid("ID do paciente inválido").optional().nullable(),
   isTemplate: z.boolean().optional(),
   titulo: z.string().trim().min(1, "O título é obrigatório"),
@@ -48,10 +48,56 @@ export const createPlanoAlimentarSchema = z.object({
   refeicoes: z.array(planoRefeicaoSchema),
 });
 
-export type CreatePlanoAlimentarInput = z.infer<typeof createPlanoAlimentarSchema>;
+export const createPlanoAlimentarSchema = basePlanoAlimentarSchema.superRefine((data, ctx) => {
+  if (data.isTemplate === true) {
+    if (data.pacienteId != null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["pacienteId"],
+        message: "Modelos de cardápio não podem ser vinculados a um paciente",
+      });
+    }
+    return;
+  }
 
-export const updatePlanoAlimentarSchema = createPlanoAlimentarSchema.partial().extend({
-  refeicoes: z.array(planoRefeicaoSchema).optional(),
+  if (!data.pacienteId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["pacienteId"],
+      message: "O paciente é obrigatório para planos alimentares",
+    });
+  }
 });
 
+export type CreatePlanoAlimentarInput = z.infer<typeof createPlanoAlimentarSchema>;
+
+export const updatePlanoAlimentarSchema = basePlanoAlimentarSchema
+  .omit({ pacienteId: true, isTemplate: true })
+  .partial()
+  .extend({
+    refeicoes: z.array(planoRefeicaoSchema).optional(),
+  });
+
 export type UpdatePlanoAlimentarInput = z.infer<typeof updatePlanoAlimentarSchema>;
+
+export const listPlanosAlimentaresQuerySchema = z
+  .object({
+    pacienteId: z.string().uuid("ID do paciente inválido").optional(),
+    isTemplate: z
+      .enum(["true", "false"], {
+        errorMap: () => ({ message: "isTemplate deve ser 'true' ou 'false'" }),
+      })
+      .optional(),
+  })
+  .strict()
+  .superRefine((data, ctx) => {
+    if (data.pacienteId && data.isTemplate === "true") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["pacienteId"],
+        message: "Não é permitido informar pacienteId ao listar modelos de cardápio",
+      });
+    }
+  });
+
+export type ListPlanosAlimentaresQuery = z.infer<typeof listPlanosAlimentaresQuerySchema>;

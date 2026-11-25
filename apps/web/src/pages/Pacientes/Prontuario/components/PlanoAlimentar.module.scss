@@ -1418,3 +1418,48 @@
   }
 }
 
+.equivWarningBanner {
+  padding: $space-2 $space-3;
+  border-radius: $radius-sm;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+  font-size: $font-size-xs;
+  line-height: 1.4;
+}
+
+.equivErrorBox {
+  padding: $space-3 $space-4;
+  border-radius: $radius-md;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  font-size: $font-size-xs;
+  line-height: 1.45;
+}
+
+.templateConfirmBox {
+  padding: $space-3 $space-4;
+  margin-bottom: $space-4;
+  border-radius: $radius-md;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #78350f;
+  font-size: $font-size-xs;
+  line-height: 1.45;
+
+  p {
+    margin: 0 0 $space-3;
+  }
+}
+
+.optionLimitHint {
+  margin: $space-1 0 0;
+  font-size: $font-size-xs;
+  color: #92400e;
+  font-weight: $font-weight-medium;
+}
+
