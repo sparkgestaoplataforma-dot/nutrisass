@@ -77,6 +77,35 @@ describe("planos-alimentares.service", () => {
       );
       expect(result).toEqual(mockPlanoCreated);
     });
+
+    it("deve criar um modelo de cardápio da clínica (isTemplate=true) sem exigir paciente", async () => {
+      const templatePayload = {
+        ...mockPayload,
+        pacienteId: null,
+        isTemplate: true,
+        titulo: "Modelo Cutting 1600 kcal",
+      };
+      prismaMock.planoAlimentar.create.mockResolvedValue({
+        id: "tpl-1",
+        ...templatePayload,
+      } as any);
+
+      const result = await criarPlanoAlimentar("clinica-1", "usuario-1", templatePayload as any);
+
+      expect(prismaMock.paciente.findFirst).not.toHaveBeenCalled();
+      expect(prismaMock.planoAlimentar.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            clinicaId: "clinica-1",
+            usuarioId: "usuario-1",
+            pacienteId: null,
+            isTemplate: true,
+            titulo: "Modelo Cutting 1600 kcal",
+          }),
+        }),
+      );
+      expect(result.id).toBe("tpl-1");
+    });
   });
 
   describe("pegarPlanosAlimentares", () => {
@@ -87,6 +116,19 @@ describe("planos-alimentares.service", () => {
 
       expect(prismaMock.planoAlimentar.findMany).toHaveBeenCalledWith({
         where: { clinicaId: "clinica-1" },
+        orderBy: { criadoEm: "desc" },
+        include: expect.any(Object),
+      });
+      expect(result).toHaveLength(1);
+    });
+
+    it("deve filtrar apenas modelos da clínica quando isTemplate=true for passado", async () => {
+      prismaMock.planoAlimentar.findMany.mockResolvedValue([{ id: "tpl-1", isTemplate: true }] as any);
+
+      const result = await pegarPlanosAlimentares("clinica-1", undefined, true);
+
+      expect(prismaMock.planoAlimentar.findMany).toHaveBeenCalledWith({
+        where: { clinicaId: "clinica-1", isTemplate: true },
         orderBy: { criadoEm: "desc" },
         include: expect.any(Object),
       });

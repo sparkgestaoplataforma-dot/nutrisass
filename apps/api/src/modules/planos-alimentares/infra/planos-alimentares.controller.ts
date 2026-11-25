@@ -13,9 +13,16 @@ export async function criar(req: Request, res: Response) {
 
 export async function listar(req: Request, res: Response) {
   const clinicaId = getClinicaId(req);
-  const { pacienteId } = req.query;
+  const { pacienteId, isTemplate } = req.query;
 
-  const planos = await service.pegarPlanosAlimentares(clinicaId, pacienteId as string | undefined);
+  const planos =
+    isTemplate !== undefined
+      ? await service.pegarPlanosAlimentares(
+          clinicaId,
+          pacienteId as string | undefined,
+          isTemplate === "true",
+        )
+      : await service.pegarPlanosAlimentares(clinicaId, pacienteId as string | undefined);
 
   return res.json({ success: true, data: planos });
 }

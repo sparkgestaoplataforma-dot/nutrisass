@@ -19,6 +19,9 @@ interface Props {
   onEdit: () => void;
   onDuplicate?: () => void;
   isDuplicating?: boolean;
+  onSaveAsTemplate?: () => void;
+  isSavingTemplate?: boolean;
+  templateSaved?: boolean;
   onDelete: () => void;
   isDeleting?: boolean;
   isNutricionista?: boolean;
@@ -38,6 +41,9 @@ export function PlanoAlimentarView({
   onEdit,
   onDuplicate,
   isDuplicating,
+  onSaveAsTemplate,
+  isSavingTemplate,
+  templateSaved,
   onDelete,
   isDeleting,
   isNutricionista = false,
@@ -93,6 +99,23 @@ export function PlanoAlimentarView({
             >
               <HugeiconsIcon icon={Copy01Icon} size={14} strokeWidth={2} />
               <span>{isDuplicating ? "Duplicando..." : "Duplicar"}</span>
+            </button>
+          )}
+          {isNutricionista && onSaveAsTemplate && (
+            <button
+              className={styles.pdfBtn}
+              onClick={onSaveAsTemplate}
+              disabled={isSavingTemplate}
+              title="Salvar este cardápio na biblioteca de modelos da clínica"
+            >
+              <HugeiconsIcon icon={Copy01Icon} size={14} strokeWidth={2} />
+              <span>
+                {templateSaved
+                  ? "Modelo Salvo!"
+                  : isSavingTemplate
+                    ? "Salvando Modelo..."
+                    : "Salvar como Modelo"}
+              </span>
             </button>
           )}
           {isNutricionista && (

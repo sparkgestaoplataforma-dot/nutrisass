@@ -35,7 +35,8 @@ export const planoRefeicaoSchema = z.object({
 });
 
 export const createPlanoAlimentarSchema = z.object({
-  pacienteId: z.string().uuid("ID do paciente inválido"),
+  pacienteId: z.string().uuid("ID do paciente inválido").optional().nullable(),
+  isTemplate: z.boolean().optional(),
   titulo: z.string().trim().min(1, "O título é obrigatório"),
   objetivo: z.nativeEnum(ObjetivoPlano).optional().nullable(),
   metaCalorias: z.number().optional().nullable(),
