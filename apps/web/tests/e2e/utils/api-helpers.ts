@@ -50,6 +50,8 @@ export async function getPrimeiroPaciente(request: APIRequestContext, token: str
       data: {
         nome: `Paciente Mock E2E ${Date.now()}`,
         email: `mock-${Date.now()}@teste.com`,
+        cpf: '52998224725',
+        whatsapp: '11987654321',
       }
     });
     if (!createRes.ok()) throw new Error('Falha ao autocriar paciente para DB vazio');
