@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { listPlanosAlimentaresQuerySchema } from "@nutricao/shared";
 import { getClinicaId, getUsuarioId } from "@/shared/middlewares/auth";
 import * as service from "./planos-alimentares.service.js";
 
@@ -13,16 +14,14 @@ export async function criar(req: Request, res: Response) {
 
 export async function listar(req: Request, res: Response) {
   const clinicaId = getClinicaId(req);
-  const { pacienteId, isTemplate } = req.query;
+  const query = listPlanosAlimentaresQuerySchema.parse(req.query);
+  const isTemplate = query.isTemplate === "true";
 
-  const planos =
-    isTemplate !== undefined
-      ? await service.pegarPlanosAlimentares(
-          clinicaId,
-          pacienteId as string | undefined,
-          isTemplate === "true",
-        )
-      : await service.pegarPlanosAlimentares(clinicaId, pacienteId as string | undefined);
+  const planos = await service.pegarPlanosAlimentares(
+    clinicaId,
+    query.pacienteId,
+    isTemplate,
+  );
 
   return res.json({ success: true, data: planos });
 }
@@ -47,9 +46,14 @@ export async function editar(req: Request<{ id: string }>, res: Response) {
 
 export async function excluir(req: Request<{ id: string }>, res: Response) {
   const clinicaId = getClinicaId(req);
+  const usuarioId = getUsuarioId(req);
   const { id } = req.params;
 
-  await service.excluirPlanoAlimentar(id, clinicaId);
+  await service.excluirPlanoAlimentar(id, clinicaId, {
+    usuarioId,
+    perfil: req.user?.perfil ?? "",
+    tipoClinica: req.user?.tipoClinica,
+  });
 
   return res.json({ success: true, message: "Plano alimentar excluído com sucesso" });
 }

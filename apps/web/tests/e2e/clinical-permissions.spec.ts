@@ -89,9 +89,9 @@ test.describe('Autorização Clínica - Regra de Acesso (Testes Unitários)', ()
   });
 
   test('deve retornar false com segurança para objeto malformado ou campos faltantes', () => {
-    expect(canAccessClinical({} as any)).toBe(false);
-    expect(canAccessClinical({ perfil: 'ADMIN' } as any)).toBe(false);
-    expect(canAccessClinical({ tipoClinica: 'CLINICA' } as any)).toBe(false);
+    expect(canAccessClinical({} as unknown as TokenPayload)).toBe(false);
+    expect(canAccessClinical({ perfil: 'ADMIN' } as unknown as TokenPayload)).toBe(false);
+    expect(canAccessClinical({ tipoClinica: 'CLINICA' } as unknown as TokenPayload)).toBe(false);
   });
 });
 
@@ -285,9 +285,9 @@ test.describe('Proteção de Rotas e Interface para SECRETARIA em clínica CLINI
     await expect(page.getByText('Histórico de Consultas')).toBeVisible();
 
     // Elementos clínicos ocultos
-    await expect(page.locator('button:has-text("Iniciar Atendimento")')).not.toBeVisible();
-    await expect(page.locator('button:has-text("Plano Alimentar")')).not.toBeVisible();
-    await expect(page.locator('h2:has-text("Estado Clínico")')).not.toBeVisible();
+    await expect(page.getByRole('button', { name: /iniciar atendimento/i })).not.toBeVisible();
+    await expect(page.getByRole('button', { name: /plano alimentar/i })).not.toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Estado Clínico' })).not.toBeVisible();
   });
 
   test('no Dashboard, o botão "Atender" não deve estar visível', async ({ page }) => {

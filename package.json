@@ -24,8 +24,5 @@
   "packageManager": "npm@10.9.2",
   "engines": {
     "node": ">=22"
-  },
-  "dependencies": {
-    "recharts": "^3.8.1"
   }
 }

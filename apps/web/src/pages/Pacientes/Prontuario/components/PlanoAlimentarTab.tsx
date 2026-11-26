@@ -1,9 +1,21 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { PlusSignIcon, Restaurant01Icon, Copy01Icon } from "@hugeicons/core-free-icons";
-import { listarPlanos, buscarPlano, criarPlano, atualizarPlano, deletarPlano, type PlanoAlimentarAPI } from "@/services/planoAlimentar";
-import type { CreatePlanoAlimentarInput } from "@nutricao/shared";
+import { PlusSignIcon, Restaurant01Icon, Copy01Icon, Alert01Icon } from "@hugeicons/core-free-icons";
+import {
+  OBJETIVO_LABELS,
+  listarPlanos,
+  buscarPlano,
+  criarPlano,
+  atualizarPlano,
+  deletarPlano,
+  type PlanoAlimentarAPI,
+} from "@/services/planoAlimentar";
+import {
+  createPlanoAlimentarSchema,
+  updatePlanoAlimentarSchema,
+  type CreatePlanoAlimentarInput,
+} from "@nutricao/shared";
 import {
   calcularTotaisPlano,
   duplicarPlanoParaInput,
@@ -12,6 +24,11 @@ import {
 import { PlanoAlimentarView } from "./PlanoAlimentarView";
 import { PlanoAlimentarBuilder } from "./PlanoAlimentarBuilder";
 import { Skeleton } from "@/components/Loading/Skeleton";
+import {
+  extrairMensagemErroApi,
+  extrairUpdatePlanoInput,
+  formatarErroZodPlano,
+} from "./planoAlimentarHelpers";
 import styles from "./PlanoAlimentar.module.scss";
 
 interface Props {
@@ -21,19 +38,21 @@ interface Props {
 
 type Mode = "list" | "view" | "create" | "edit";
 
-const OBJETIVO_LABELS: Record<string, string> = {
-  EMAGRECIMENTO: "Emagrecimento",
-  HIPERTROFIA: "Hipertrofia",
-  MANUTENCAO: "Manutenção",
-  REEDUCACAO_ALIMENTAR: "Reeducação Alimentar",
-  OUTRO: "Outro",
-};
-
 export function PlanoAlimentarTab({ pacienteId, isNutricionista = false }: Props) {
   const [mode, setMode] = useState<Mode>("list");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [templateSaved, setTemplateSaved] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const templateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    return () => {
+      if (templateTimerRef.current) {
+        clearTimeout(templateTimerRef.current);
+      }
+    };
+  }, []);
 
   const { data: planos = [], isLoading } = useQuery({
     queryKey: ["planos-alimentares", pacienteId],
@@ -53,18 +72,33 @@ export function PlanoAlimentarTab({ pacienteId, isNutricionista = false }: Props
   });
 
   const criarMutation = useMutation({
-    mutationFn: (data: CreatePlanoAlimentarInput) => criarPlano(data),
+    mutationFn: async (data: CreatePlanoAlimentarInput) => {
+      const validation = createPlanoAlimentarSchema.safeParse(data);
+      if (!validation.success) {
+        throw new Error(formatarErroZodPlano(validation.error));
+      }
+      return criarPlano(validation.data);
+    },
+    onMutate: () => setFeedbackError(null),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planos-alimentares", pacienteId] });
       setMode("list");
     },
+    onError: (err) => {
+      setFeedbackError(extrairMensagemErroApi(err, "Não foi possível salvar o plano alimentar."));
+    },
   });
 
   const duplicarMutation = useMutation({
-    mutationFn: (plano: PlanoAlimentarAPI) => {
+    mutationFn: async (plano: PlanoAlimentarAPI) => {
       const payload = duplicarPlanoParaInput(plano);
-      return criarPlano(payload);
+      const validation = createPlanoAlimentarSchema.safeParse(payload);
+      if (!validation.success) {
+        throw new Error(formatarErroZodPlano(validation.error));
+      }
+      return criarPlano(validation.data);
     },
+    onMutate: () => setFeedbackError(null),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["planos-alimentares", pacienteId] });
       const novoId = res?.data?.id;
@@ -75,39 +109,71 @@ export function PlanoAlimentarTab({ pacienteId, isNutricionista = false }: Props
         setMode("list");
       }
     },
+    onError: (err) => {
+      setFeedbackError(extrairMensagemErroApi(err, "Não foi possível duplicar o plano alimentar."));
+    },
   });
 
   const salvarModeloMutation = useMutation({
-    mutationFn: (plano: PlanoAlimentarAPI) => {
+    mutationFn: async (plano: PlanoAlimentarAPI) => {
       const payload = converterPlanoParaModeloInput(plano);
-      return criarPlano(payload);
+      const validation = createPlanoAlimentarSchema.safeParse(payload);
+      if (!validation.success) {
+        throw new Error(formatarErroZodPlano(validation.error));
+      }
+      return criarPlano(validation.data);
     },
+    onMutate: () => setFeedbackError(null),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planos-modelos"] });
       setTemplateSaved(true);
-      setTimeout(() => setTemplateSaved(false), 3000);
+      if (templateTimerRef.current) {
+        clearTimeout(templateTimerRef.current);
+      }
+      templateTimerRef.current = setTimeout(() => setTemplateSaved(false), 3000);
+    },
+    onError: (err) => {
+      setFeedbackError(
+        extrairMensagemErroApi(err, "Não foi possível salvar o plano como modelo da clínica."),
+      );
     },
   });
 
   const atualizarMutation = useMutation({
-    mutationFn: (data: CreatePlanoAlimentarInput) => atualizarPlano(selectedId!, data),
+    mutationFn: async (data: CreatePlanoAlimentarInput) => {
+      const updatePayload = extrairUpdatePlanoInput(data);
+      const validation = updatePlanoAlimentarSchema.safeParse(updatePayload);
+      if (!validation.success) {
+        throw new Error(formatarErroZodPlano(validation.error));
+      }
+      return atualizarPlano(selectedId!, validation.data);
+    },
+    onMutate: () => setFeedbackError(null),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planos-alimentares", pacienteId] });
       queryClient.invalidateQueries({ queryKey: ["plano-alimentar", selectedId] });
       setMode("view");
     },
+    onError: (err) => {
+      setFeedbackError(extrairMensagemErroApi(err, "Não foi possível atualizar o plano alimentar."));
+    },
   });
 
   const deletarMutation = useMutation({
     mutationFn: () => deletarPlano(selectedId!),
+    onMutate: () => setFeedbackError(null),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planos-alimentares", pacienteId] });
       setSelectedId(null);
       setMode("list");
     },
+    onError: (err) => {
+      setFeedbackError(extrairMensagemErroApi(err, "Não foi possível excluir o plano alimentar."));
+    },
   });
 
   function openView(id: string) {
+    setFeedbackError(null);
     setSelectedId(id);
     setMode("view");
   }
@@ -116,22 +182,38 @@ export function PlanoAlimentarTab({ pacienteId, isNutricionista = false }: Props
     return Math.round(calcularTotaisPlano(plano.refeicoes, "principal").cal);
   }
 
+  const errorBanner = feedbackError ? (
+    <div className={styles.errorBanner} role="alert">
+      <HugeiconsIcon icon={Alert01Icon} size={18} strokeWidth={2} />
+      <span>{feedbackError}</span>
+    </div>
+  ) : null;
+
   // === VIEW MODE ===
   if (mode === "view" && planoDetalhe) {
     return (
-      <PlanoAlimentarView
-        plano={planoDetalhe}
-        onBack={() => { setSelectedId(null); setMode("list"); }}
-        onEdit={() => setMode("edit")}
-        onDuplicate={() => duplicarMutation.mutate(planoDetalhe)}
-        isDuplicating={duplicarMutation.isPending}
-        onSaveAsTemplate={() => salvarModeloMutation.mutate(planoDetalhe)}
-        isSavingTemplate={salvarModeloMutation.isPending}
-        templateSaved={templateSaved}
-        onDelete={() => deletarMutation.mutate()}
-        isDeleting={deletarMutation.isPending}
-        isNutricionista={isNutricionista}
-      />
+      <>
+        {errorBanner}
+        <PlanoAlimentarView
+          plano={planoDetalhe}
+          onBack={() => { setFeedbackError(null); setSelectedId(null); setMode("list"); }}
+          onEdit={() => { setFeedbackError(null); setMode("edit"); }}
+          onDuplicate={() => {
+            if (!duplicarMutation.isPending) duplicarMutation.mutate(planoDetalhe);
+          }}
+          isDuplicating={duplicarMutation.isPending}
+          onSaveAsTemplate={() => {
+            if (!salvarModeloMutation.isPending) salvarModeloMutation.mutate(planoDetalhe);
+          }}
+          isSavingTemplate={salvarModeloMutation.isPending}
+          templateSaved={templateSaved}
+          onDelete={() => {
+            if (!deletarMutation.isPending) deletarMutation.mutate();
+          }}
+          isDeleting={deletarMutation.isPending}
+          isNutricionista={isNutricionista}
+        />
+      </>
     );
   }
   if (mode === "view" && loadingDetalhe) {
@@ -141,25 +223,35 @@ export function PlanoAlimentarTab({ pacienteId, isNutricionista = false }: Props
   // === CREATE MODE (nutricionista only) ===
   if (mode === "create" && isNutricionista) {
     return (
-      <PlanoAlimentarBuilder
-        pacienteId={pacienteId}
-        onSave={(data) => criarMutation.mutate(data)}
-        onCancel={() => setMode("list")}
-        saving={criarMutation.isPending}
-      />
+      <>
+        {errorBanner}
+        <PlanoAlimentarBuilder
+          pacienteId={pacienteId}
+          onSave={(data) => {
+            if (!criarMutation.isPending) criarMutation.mutate(data);
+          }}
+          onCancel={() => { setFeedbackError(null); setMode("list"); }}
+          saving={criarMutation.isPending}
+        />
+      </>
     );
   }
 
   // === EDIT MODE (nutricionista only) ===
   if (mode === "edit" && isNutricionista && planoDetalhe) {
     return (
-      <PlanoAlimentarBuilder
-        pacienteId={pacienteId}
-        initialData={planoDetalhe}
-        onSave={(data) => atualizarMutation.mutate(data)}
-        onCancel={() => setMode("view")}
-        saving={atualizarMutation.isPending}
-      />
+      <>
+        {errorBanner}
+        <PlanoAlimentarBuilder
+          pacienteId={pacienteId}
+          initialData={planoDetalhe}
+          onSave={(data) => {
+            if (!atualizarMutation.isPending) atualizarMutation.mutate(data);
+          }}
+          onCancel={() => { setFeedbackError(null); setMode("view"); }}
+          saving={atualizarMutation.isPending}
+        />
+      </>
     );
   }
   if (mode === "edit" && loadingDetalhe) {
@@ -169,13 +261,14 @@ export function PlanoAlimentarTab({ pacienteId, isNutricionista = false }: Props
   // === LIST MODE ===
   return (
     <div className={styles.tabContainer}>
+      {errorBanner}
       <div className={styles.headerRow}>
         <div>
           <h2 className={styles.headerTitle}>Planos Alimentares</h2>
           <p className={styles.headerSubtitle}>Prescrições nutricionais do paciente</p>
         </div>
         {isNutricionista && (
-          <button className={styles.newPlanBtn} onClick={() => setMode("create")}>
+          <button className={styles.newPlanBtn} onClick={() => { setFeedbackError(null); setMode("create"); }}>
             <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={2} />
             Novo Plano
           </button>

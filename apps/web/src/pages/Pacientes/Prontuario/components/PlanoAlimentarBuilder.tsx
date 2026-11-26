@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   DndContext,
@@ -26,6 +26,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { listarMedidas } from "@/services/prontuario";
 import { getPacientePorId } from "@/services/pacientes";
+import { useAuthStore } from "@/stores/authStore";
 import { AlimentoSearch } from "./AlimentoSearch";
 import {
   listarModelosPlano,
@@ -37,6 +38,7 @@ import {
 import {
   type CreatePlanoAlimentarInput,
   createPlanoAlimentarSchema,
+  ObjetivoPlano,
 } from "@nutricao/shared";
 import {
   type AlimentoCalculavel,
@@ -57,25 +59,17 @@ import {
   gerarRefeicoesPadrao,
   converterPlanoParaModeloInput,
   detectarCriterioEquivalenciaDominante,
-  calcularSubstituicaoEquivalente,
 } from "@/utils/nutricaoCalculos";
+import { ModelosCardapioModal } from "./ModelosCardapioModal";
+import { SubstituicaoEquivalenciaModal } from "./SubstituicaoEquivalenciaModal";
+import {
+  type RefeicaoLocal,
+  aplicarModeloNoEstadoFormulario,
+  criarNovaOpcaoComSubstituicao,
+  extrairMensagemErroApi,
+  formatarErroZodPlano,
+} from "./planoAlimentarHelpers";
 import styles from "./PlanoAlimentar.module.scss";
-
-interface OpcaoLocal {
-  _uid: string;
-  nome: string | null;
-  ordem: number;
-  alimentos: AlimentoCalculavel[];
-}
-
-interface RefeicaoLocal {
-  _uid: string;
-  nome: string;
-  horario: string;
-  ordem: number;
-  opcoes: OpcaoLocal[];
-  _activeOpcao: number;
-}
 
 interface Props {
   pacienteId: string;
@@ -159,23 +153,38 @@ export function PlanoAlimentarBuilder({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [editingOpcao, setEditingOpcao] = useState<{ ruid: string; ouid: string } | null>(null);
   const [showModelosModal, setShowModelosModal] = useState(false);
+  const [modeloModalError, setModeloModalError] = useState<string | null>(null);
   const [modeloSalvoToast, setModeloSalvoToast] = useState(false);
+  const modeloToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [substituindoItem, setSubstituindoItem] = useState<{
     ruid: string;
     ouid: string;
     alimento: AlimentoCalculavel;
+    defaultCriterio: CriterioEquivalencia;
   } | null>(null);
-  const [criterioEquiv, setCriterioEquiv] = useState<CriterioEquivalencia>("CARBOIDRATOS");
-  const [substitutoCandidato, setSubstitutoCandidato] = useState<AlimentoAPI | null>(null);
-  const [usarMedidaCaseiraEquiv, setUsarMedidaCaseiraEquiv] = useState(false);
+  const currentUser = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
 
-  const { data: modelosClinica = [] } = useQuery({
+  useEffect(() => {
+    return () => {
+      if (modeloToastTimerRef.current) {
+        clearTimeout(modeloToastTimerRef.current);
+      }
+    };
+  }, []);
+
+  const {
+    data: modelosClinica = [],
+    isLoading: loadingModelos,
+    isError: errorModelos,
+  } = useQuery({
     queryKey: ["planos-modelos"],
     queryFn: async () => {
       const res = await listarModelosPlano();
       return (res.data || []) as PlanoAlimentarAPI[];
     },
+    enabled: showModelosModal,
+    staleTime: 60 * 1000,
   });
 
   // --- Dados do Paciente e Última Medida para a Calculadora TMB/GET/g-kg ---
@@ -475,100 +484,83 @@ export function PlanoAlimentarBuilder({
 
   // === Modelos de Cardápio da Clínica ===
   function aplicarModeloClinica(modelo: PlanoAlimentarAPI) {
-    if (!titulo.trim()) {
-      setTitulo(modelo.titulo.replace(/\s*\(Modelo\)$/i, ""));
-    }
-    if (modelo.objetivo) setObjetivo(modelo.objetivo);
-    if (modelo.metaCalorias != null) setMetaCalorias(String(modelo.metaCalorias));
-    if (modelo.metaProteinas != null) setMetaProteinas(String(modelo.metaProteinas));
-    if (modelo.metaCarboidratos != null) setMetaCarboidratos(String(modelo.metaCarboidratos));
-    if (modelo.metaGorduras != null) setMetaGorduras(String(modelo.metaGorduras));
-    if (modelo.recomendacaoAguaMl != null) setAguaMl(String(modelo.recomendacaoAguaMl));
-    if (modelo.observacoes) setObservacoes(modelo.observacoes);
-
-    setRefeicoes(
-      (modelo.refeicoes || []).map((r, rIdx) => ({
-        _uid: uid(),
-        nome: r.nome,
-        horario: r.horario,
-        ordem: r.ordem ?? rIdx,
-        _activeOpcao: 0,
-        opcoes: (r.opcoes || []).map((o, oIdx) => ({
-          _uid: uid(),
-          nome: o.nome,
-          ordem: o.ordem ?? oIdx,
-          alimentos: (o.alimentos || []).map((a) => hidratarAlimentoSalvo(a, uid())),
-        })),
-      })),
-    );
+    const estado = aplicarModeloNoEstadoFormulario(modelo, uid);
+    setTitulo(estado.titulo);
+    setObjetivo(estado.objetivo);
+    setMetaCalorias(estado.metaCalorias);
+    setMetaProteinas(estado.metaProteinas);
+    setMetaCarboidratos(estado.metaCarboidratos);
+    setMetaGorduras(estado.metaGorduras);
+    setAguaMl(estado.aguaMl);
+    setObservacoes(estado.observacoes);
+    setRefeicoes(estado.refeicoes);
+    setErrorMsg(null);
+    setModeloModalError(null);
     setShowModelosModal(false);
   }
 
   const salvarModeloMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const payload = converterPlanoParaModeloInput(
         {
           titulo: titulo.trim() || "Modelo de Cardápio",
-          objetivo: (objetivo as any) || null,
+          objetivo: (objetivo as ObjetivoPlano) || null,
           metaCalorias: metaCalorias ? parseFloat(metaCalorias) : null,
           metaProteinas: metaProteinas ? parseFloat(metaProteinas) : null,
           metaCarboidratos: metaCarboidratos ? parseFloat(metaCarboidratos) : null,
           metaGorduras: metaGorduras ? parseFloat(metaGorduras) : null,
-          recomendacaoAguaMl: aguaMl ? parseInt(aguaMl) : null,
+          recomendacaoAguaMl: aguaMl ? parseInt(aguaMl, 10) : null,
           observacoes: observacoes || null,
           refeicoes,
         },
         titulo.trim() ? `${titulo.trim()}` : "Modelo de Cardápio",
       );
-      return criarPlano(payload);
+      const validation = createPlanoAlimentarSchema.safeParse(payload);
+      if (!validation.success) {
+        throw new Error(formatarErroZodPlano(validation.error));
+      }
+      return criarPlano(validation.data);
     },
+    onMutate: () => setErrorMsg(null),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planos-modelos"] });
       setModeloSalvoToast(true);
-      setTimeout(() => setModeloSalvoToast(false), 3000);
+      if (modeloToastTimerRef.current) {
+        clearTimeout(modeloToastTimerRef.current);
+      }
+      modeloToastTimerRef.current = setTimeout(() => setModeloSalvoToast(false), 3000);
+    },
+    onError: (err) => {
+      setErrorMsg(extrairMensagemErroApi(err, "Não foi possível salvar o modelo da clínica."));
+      window.scrollTo({ top: 0, behavior: "smooth" });
     },
   });
 
   const excluirModeloMutation = useMutation({
     mutationFn: (id: string) => deletarPlano(id),
+    onMutate: () => setModeloModalError(null),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["planos-modelos"] });
+    },
+    onError: (err) => {
+      setModeloModalError(
+        extrairMensagemErroApi(err, "Não foi possível excluir o modelo da clínica."),
+      );
     },
   });
 
   // === Substituição Inteligente de Alimentos por Equivalência ===
   function abrirModalSubstituicao(ruid: string, ouid: string, al: AlimentoCalculavel) {
-    setSubstituindoItem({ ruid, ouid, alimento: al });
-    setCriterioEquiv(detectarCriterioEquivalenciaDominante(al));
-    setSubstitutoCandidato(null);
-    setUsarMedidaCaseiraEquiv(false);
+    setSubstituindoItem({
+      ruid,
+      ouid,
+      alimento: al,
+      defaultCriterio: detectarCriterioEquivalenciaDominante(al),
+    });
   }
 
-  const resultadoEquivalencia = useMemo(() => {
-    if (!substituindoItem || !substitutoCandidato) return null;
-    return calcularSubstituicaoEquivalente(
-      substituindoItem.alimento,
-      substitutoCandidato,
-      criterioEquiv,
-      uid(),
-    );
-  }, [substituindoItem, substitutoCandidato, criterioEquiv]);
-
-  function construirAlimentoEquivalenteFinal(): AlimentoCalculavel | null {
-    if (!resultadoEquivalencia) return null;
-    const base = { ...resultadoEquivalencia.alimentoCalculado, _uid: uid() };
-    if (usarMedidaCaseiraEquiv && resultadoEquivalencia.sugestaoMedidaCaseira) {
-      const sug = resultadoEquivalencia.sugestaoMedidaCaseira;
-      const comMc = recalcularAlimentoPlano(base, "medidaCaseiraId", sug.id);
-      return recalcularAlimentoPlano(comMc, "quantidade", sug.quantidadeUnidades);
-    }
-    return base;
-  }
-
-  function aplicarSubstituicaoNoMesmoItem() {
+  function aplicarSubstituicaoNoMesmoItem(novoAl: AlimentoCalculavel) {
     if (!substituindoItem) return;
-    const novoAl = construirAlimentoEquivalenteFinal();
-    if (!novoAl) return;
 
     setRefeicoes((prev) =>
       prev.map((r) => {
@@ -590,34 +582,18 @@ export function PlanoAlimentarBuilder({
     setSubstituindoItem(null);
   }
 
-  function aplicarSubstituicaoEmNovaOpcao() {
+  function aplicarSubstituicaoEmNovaOpcao(novoAl: AlimentoCalculavel) {
     if (!substituindoItem) return;
-    const novoAl = construirAlimentoEquivalenteFinal();
-    if (!novoAl) return;
 
     setRefeicoes((prev) =>
-      prev.map((r) => {
-        if (r._uid !== substituindoItem.ruid) return r;
-        if (r.opcoes.length >= 10) return r;
-        const opcaoOrigem = r.opcoes.find((o) => o._uid === substituindoItem.ouid);
-        const alimentosClonados = opcaoOrigem
-          ? opcaoOrigem.alimentos.map((a) =>
-              a._uid === substituindoItem.alimento._uid ? novoAl : { ...a, _uid: uid() },
-            )
-          : [novoAl];
-        const novaOpcao: OpcaoLocal = {
-          _uid: uid(),
-          nome: `Subst. ${novoAl.alimento.split(",")[0]}`,
-          ordem: r.opcoes.length,
-          alimentos: alimentosClonados,
-        };
-        const novasOpcoes = [...r.opcoes, novaOpcao];
-        return {
-          ...r,
-          opcoes: novasOpcoes,
-          _activeOpcao: novasOpcoes.length - 1,
-        };
-      }),
+      criarNovaOpcaoComSubstituicao(
+        prev,
+        substituindoItem.ruid,
+        substituindoItem.ouid,
+        substituindoItem.alimento._uid,
+        novoAl,
+        uid,
+      ),
     );
     setSubstituindoItem(null);
   }
@@ -693,25 +669,12 @@ export function PlanoAlimentarBuilder({
 
     const validation = createPlanoAlimentarSchema.safeParse(payload);
     if (!validation.success) {
-      const err = validation.error.issues[0];
-      let msg = err.message;
-
-      if (err.path[0] === "refeicoes") {
-        const refIdx = Number(err.path[1]) + 1;
-        if (err.path[2] === "nome")
-          msg = `A refeição ${refIdx} precisa de um nome.`;
-        if (err.path[2] === "horario")
-          msg = `A refeição ${refIdx} precisa de um horário.`;
-      } else if (err.path[0] === "titulo") {
-        msg = "O título do plano é obrigatório.";
-      }
-
-      setErrorMsg(msg);
+      setErrorMsg(formatarErroZodPlano(validation.error));
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
-    onSave(validation.data as CreatePlanoAlimentarInput);
+    onSave(validation.data);
   }
 
   const hasMetas =
@@ -734,15 +697,20 @@ export function PlanoAlimentarBuilder({
           <button
             type="button"
             className={styles.templateBtn}
-            onClick={() => setShowModelosModal(true)}
+            onClick={() => {
+              setModeloModalError(null);
+              setShowModelosModal(true);
+            }}
           >
-            📋 Carregar Modelo da Clínica ({modelosClinica.length})
+            📋 Carregar Modelo da Clínica
           </button>
           <button
             type="button"
             className={styles.templateBtn}
             disabled={refeicoes.length === 0 || salvarModeloMutation.isPending}
-            onClick={() => salvarModeloMutation.mutate()}
+            onClick={() => {
+              if (!salvarModeloMutation.isPending) salvarModeloMutation.mutate();
+            }}
             title="Salva a estrutura atual de refeições e metas na biblioteca de modelos da clínica"
           >
             {salvarModeloMutation.isPending ? "Salvando Modelo..." : "💾 Salvar como Modelo"}
@@ -1553,214 +1521,38 @@ export function PlanoAlimentarBuilder({
       </div>
 
       {/* Modal: Biblioteca de Modelos de Cardápio da Clínica */}
-      {showModelosModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowModelosModal(false)}>
-          <div
-            className={`${styles.modalContent} ${styles.modalWide}`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className={styles.modalHeader}>
-              <h3>Biblioteca de Modelos de Cardápio</h3>
-              <button
-                type="button"
-                className={styles.modalCloseBtn}
-                onClick={() => setShowModelosModal(false)}
-              >
-                ✕
-              </button>
-            </div>
-            {modelosClinica.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "1.5rem 0", color: "#6b7280" }}>
-                <p style={{ margin: "0 0 0.5rem", fontWeight: 600 }}>
-                  Nenhum modelo salvo na clínica ainda.
-                </p>
-                <p style={{ margin: 0, fontSize: "0.8125rem" }}>
-                  Monte um plano e clique em <strong>"💾 Salvar como Modelo"</strong> para reutilizá-lo em 1 clique em outros pacientes.
-                </p>
-              </div>
-            ) : (
-              <div className={styles.templateList}>
-                {modelosClinica.map((mod) => {
-                  const kcalMod = Math.round(calcularTotaisPlano(mod.refeicoes || [], "principal").cal);
-                  return (
-                    <div key={mod.id} className={styles.templateItem}>
-                      <div className={styles.templateItemInfo}>
-                        <strong>{mod.titulo}</strong>
-                        <span>
-                          {kcalMod} kcal • {(mod.refeicoes || []).length} refeições
-                          {mod.objetivo ? ` • ${mod.objetivo}` : ""}
-                        </span>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                        <button
-                          type="button"
-                          className={styles.modalSubmitBtn}
-                          style={{ padding: "0.375rem 0.75rem", fontSize: "0.75rem" }}
-                          onClick={() => aplicarModeloClinica(mod)}
-                        >
-                          Aplicar Modelo
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.removeRefeicaoBtn}
-                          title="Excluir modelo"
-                          onClick={() => {
-                            if (confirm(`Excluir o modelo "${mod.titulo}"?`)) {
-                              excluirModeloMutation.mutate(mod.id);
-                            }
-                          }}
-                        >
-                          <HugeiconsIcon icon={Delete02Icon} size={14} strokeWidth={2} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <ModelosCardapioModal
+        isOpen={showModelosModal}
+        onClose={() => setShowModelosModal(false)}
+        modelos={modelosClinica}
+        isLoading={loadingModelos}
+        isError={errorModelos}
+        errorMsg={modeloModalError}
+        temRefeicoesExistentes={refeicoes.length > 0}
+        onAplicarModelo={aplicarModeloClinica}
+        onExcluirModelo={(id) => {
+          if (!excluirModeloMutation.isPending) excluirModeloMutation.mutate(id);
+        }}
+        excluindoId={
+          excluirModeloMutation.isPending ? (excluirModeloMutation.variables ?? null) : null
+        }
+        currentUser={currentUser}
+      />
 
       {/* Modal: Substituição Inteligente por Equivalência Nutricional */}
-      {substituindoItem && (
-        <div className={styles.modalOverlay} onClick={() => setSubstituindoItem(null)}>
-          <div
-            className={`${styles.modalContent} ${styles.modalWide}`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className={styles.modalHeader}>
-              <h3>⇄ Substituição Inteligente por Equivalência</h3>
-              <button
-                type="button"
-                className={styles.modalCloseBtn}
-                onClick={() => setSubstituindoItem(null)}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className={styles.modalForm}>
-              <div className={styles.equivOriginBox}>
-                <span>Alimento original na refeição:</span>
-                <strong>
-                  {substituindoItem.alimento.quantidade} {substituindoItem.alimento.unidade} de{" "}
-                  {substituindoItem.alimento.alimento}
-                </strong>
-                <span>
-                  {Math.round(substituindoItem.alimento.calorias ?? 0)} kcal • Carb:{" "}
-                  {(substituindoItem.alimento.carboidratos ?? 0).toFixed(1)}g • Prot:{" "}
-                  {(substituindoItem.alimento.proteinas ?? 0).toFixed(1)}g • Gord:{" "}
-                  {(substituindoItem.alimento.gorduras ?? 0).toFixed(1)}g
-                </span>
-              </div>
-
-              <div className={styles.modalField}>
-                <label>1. Igualar automaticamente por qual critério nutricional?</label>
-                <div className={styles.equivCriteriaPills}>
-                  {(
-                    [
-                      { key: "CARBOIDRATOS", label: "Carboidratos (g)" },
-                      { key: "PROTEINAS", label: "Proteínas (g)" },
-                      { key: "GORDURAS", label: "Gorduras (g)" },
-                      { key: "CALORIAS", label: "Calorias (kcal)" },
-                    ] as const
-                  ).map((c) => (
-                    <button
-                      key={c.key}
-                      type="button"
-                      className={`${styles.equivCriterionPill} ${
-                        criterioEquiv === c.key ? styles.equivCriterionPillActive : ""
-                      }`}
-                      onClick={() => setCriterioEquiv(c.key)}
-                    >
-                      {c.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className={styles.modalField}>
-                <label>2. Escolha o alimento substituto (TACO ou personalizado):</label>
-                <AlimentoSearch
-                  onSelect={(al) => {
-                    setSubstitutoCandidato(al);
-                    setUsarMedidaCaseiraEquiv(false);
-                  }}
-                />
-              </div>
-
-              {substitutoCandidato && resultadoEquivalencia && (
-                <div className={styles.equivResultBox}>
-                  <div>
-                    <span>Quantidade equivalente calculada para {substitutoCandidato.nome}:</span>
-                    <div>
-                      <strong>{resultadoEquivalencia.gramasEquivalentes} g</strong>
-                      {resultadoEquivalencia.sugestaoMedidaCaseira && (
-                        <span style={{ marginLeft: "0.5rem" }}>
-                          (≈ {resultadoEquivalencia.sugestaoMedidaCaseira.quantidadeUnidades}x{" "}
-                          {resultadoEquivalencia.sugestaoMedidaCaseira.nome})
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    Resulta em:{" "}
-                    <strong>
-                      {Math.round(resultadoEquivalencia.alimentoCalculado.calorias ?? 0)} kcal
-                    </strong>{" "}
-                    ({resultadoEquivalencia.diferencaKcal >= 0 ? "+" : ""}
-                    {resultadoEquivalencia.diferencaKcal} kcal vs. original) • Carb:{" "}
-                    {(resultadoEquivalencia.alimentoCalculado.carboidratos ?? 0).toFixed(1)}g •
-                    Prot: {(resultadoEquivalencia.alimentoCalculado.proteinas ?? 0).toFixed(1)}g •
-                    Gord: {(resultadoEquivalencia.alimentoCalculado.gorduras ?? 0).toFixed(1)}g
-                  </div>
-
-                  {resultadoEquivalencia.sugestaoMedidaCaseira && (
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.4rem",
-                        cursor: "pointer",
-                        fontWeight: 600,
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={usarMedidaCaseiraEquiv}
-                        onChange={(e) => setUsarMedidaCaseiraEquiv(e.target.checked)}
-                      />
-                      Usar medida caseira arredondada (
-                      {resultadoEquivalencia.sugestaoMedidaCaseira.quantidadeUnidades}x{" "}
-                      {resultadoEquivalencia.sugestaoMedidaCaseira.nome}) em vez de gramas
-                    </label>
-                  )}
-
-                  <div className={styles.modalActions}>
-                    <button
-                      type="button"
-                      className={styles.templateBtn}
-                      onClick={aplicarSubstituicaoEmNovaOpcao}
-                      title="Mantém a opção atual intacta e cria uma nova Opção de Substituição nesta refeição"
-                    >
-                      + Criar Nova Opção com esta Troca
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.modalSubmitBtn}
-                      onClick={aplicarSubstituicaoNoMesmoItem}
-                    >
-                      Substituir Item Atual
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <SubstituicaoEquivalenciaModal
+        alimentoOriginal={substituindoItem?.alimento ?? null}
+        totalOpcoesRefeicao={
+          substituindoItem
+            ? (refeicoes.find((r) => r._uid === substituindoItem.ruid)?.opcoes.length ?? 0)
+            : 0
+        }
+        defaultCriterio={substituindoItem?.defaultCriterio ?? "CARBOIDRATOS"}
+        gerarUid={uid}
+        onClose={() => setSubstituindoItem(null)}
+        onSubstituirItem={aplicarSubstituicaoNoMesmoItem}
+        onCriarNovaOpcao={aplicarSubstituicaoEmNovaOpcao}
+      />
     </div>
   );
 }

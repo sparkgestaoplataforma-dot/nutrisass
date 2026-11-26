@@ -2228,6 +2228,19 @@
   margin-top: 0.2rem;
 }
 
+.antropoBadgeNeutral {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  background: #f3f4f6;
+  color: #374151;
+  margin-top: 0.2rem;
+}
+
 .medidaActionsCell {
   display: flex;
   align-items: center;
@@ -2677,4 +2690,18 @@
 .evolucaoChartWrapper {
   width: 100%;
   height: 270px;
+}
+
+.evolucaoChartEmpty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.5rem;
+  border-radius: $radius-md;
+  background: $gray-50;
+  border: 1px dashed $gray-300;
+  color: $gray-600;
+  font-size: 0.875rem;
 }

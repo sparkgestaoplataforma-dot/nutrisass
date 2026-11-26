@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import styles from "./DeleteConfirmModal.module.scss";
 
 interface DeleteConfirmModalProps {
@@ -20,22 +20,38 @@ export function DeleteConfirmModal({
   confirmText = "Confirmar Exclusão",
   isPending = false,
 }: DeleteConfirmModalProps) {
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && !isPending) {
+        onClose();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, isPending, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className={styles.excluirOverlay} onClick={onClose}>
+    <div className={styles.excluirOverlay} onClick={() => { if (!isPending) onClose(); }}>
       <div
         className={styles.excluirModal}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-confirm-modal-title"
         onClick={(e) => e.stopPropagation()}
       >
         <div className={styles.excluirHeader}>
           <div className={styles.excluirHeaderTitle}>
             <div className={styles.excluirIcon}>!</div>
-            <h3>{title}</h3>
+            <h3 id="delete-confirm-modal-title">{title}</h3>
           </div>
 
-          <button 
-            className={styles.excluirCloseBtn} 
+          <button
+            type="button"
+            className={styles.excluirCloseBtn}
+            aria-label="Fechar"
             onClick={onClose}
             disabled={isPending}
           >

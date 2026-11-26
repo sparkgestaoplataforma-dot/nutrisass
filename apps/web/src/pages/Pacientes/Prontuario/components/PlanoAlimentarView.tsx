@@ -8,7 +8,7 @@ import {
   WavingHand02Icon,
   Copy01Icon,
 } from "@hugeicons/core-free-icons";
-import type { PlanoAlimentarAPI } from "@/services/planoAlimentar";
+import { OBJETIVO_LABELS, type PlanoAlimentarAPI } from "@/services/planoAlimentar";
 import { calcularTotaisAlimentos, calcularTotaisPlano } from "@/utils/nutricaoCalculos";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal/DeleteConfirmModal";
 import styles from "./PlanoAlimentar.module.scss";
@@ -26,14 +26,6 @@ interface Props {
   isDeleting?: boolean;
   isNutricionista?: boolean;
 }
-
-const OBJETIVO_LABELS: Record<string, string> = {
-  EMAGRECIMENTO: "Emagrecimento",
-  HIPERTROFIA: "Hipertrofia",
-  MANUTENCAO: "Manutenção",
-  REEDUCACAO_ALIMENTAR: "Reeducação Alimentar",
-  OUTRO: "Outro",
-};
 
 export function PlanoAlimentarView({
   plano,

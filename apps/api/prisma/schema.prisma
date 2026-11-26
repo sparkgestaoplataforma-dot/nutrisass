@@ -379,6 +379,9 @@ model SolicitacaoExameItem {
   @@map("solicitacoes_exames_itens")
 }
 
+/// Integridade referencial garantida também via CHECK constraint PostgreSQL
+/// (`planos_alimentares_template_paciente_chk`):
+/// (is_template = true AND paciente_id IS NULL) OR (is_template = false AND paciente_id IS NOT NULL).
 model PlanoAlimentar {
   id                 String          @id @default(uuid())
   clinicaId          String          @map("clinica_id")
@@ -401,6 +404,7 @@ model PlanoAlimentar {
   refeicoes          PlanoRefeicao[]
 
   @@index([clinicaId])
+  @@index([clinicaId, isTemplate])
   @@index([pacienteId])
   @@index([usuarioId])
   @@map("planos_alimentares")
