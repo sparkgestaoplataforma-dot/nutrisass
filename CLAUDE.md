@@ -1,11 +1,13 @@
 # Claude Code & AI Agent Instructions — NutriSaaS
 
 Leia e siga rigorosamente as diretrizes centrais definidas em:
-- `AGENTS.md` (Arquitetura Geral, Clean Code, Multi-Tenancy, Segurança Clínica e TDD)
+- `AGENTS.md` (Arquitetura Geral, Clean Code, Multi-Tenancy, Segurança Clínica, Planos e TDD)
 - `.agents/rules/01-arquitetura-clean-code.md`
 - `.agents/rules/02-regras-negocio-seguranca.md`
 - `.agents/rules/03-tdd-e-testes.md`
 - `.agents/rules/04-git-branches-ci.md`
+- `.agents/rules/05-saas-planos-e-backoffice.md`
+- `plan/ordem-de-guerra-nutrisaas.md` (Plano Mestre SaaS, Cotas, Backoffice e Esteira DockNotes)
 
 ## Comandos Essenciais do Monorepo
 - **Rodar todos os testes unitários**: `npm test`
